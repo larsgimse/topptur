@@ -11,7 +11,7 @@
             --insta-pink: #e1306c;
             --dark-grey: #2c3e50;
             --slate-grey: #64748b;
-            --nve-red: #d32f2f;
+            --norgeskart-blue: #005a95;
         }
 
         body { 
@@ -24,12 +24,26 @@
         h1 { margin: 0; font-size: 2.2rem; font-weight: 800; }
         .subtitle { margin-top: 8px; font-size: 1.1rem; color: var(--slate-grey); }
 
-        #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; align-items: center; }
+        #buttons { 
+            margin-bottom: 20px; 
+            display: flex; 
+            justify-content: center; 
+            gap: 12px; 
+            flex-wrap: wrap; 
+            align-items: center; 
+        }
         
-        /* Stil for kartvelger */
+        /* Stil for kartvelger (dropdown) */
         .map-selector {
-            padding: 11px 15px; border-radius: 8px; border: 2px solid var(--dark-grey);
-            font-weight: 600; cursor: pointer; background: white; font-size: 15px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 2px solid var(--dark-grey);
+            font-weight: 600;
+            cursor: pointer;
+            background: white;
+            font-size: 15px;
+            color: var(--dark-grey);
+            outline: none;
         }
 
         .top-btn { 
@@ -41,18 +55,25 @@
         }
         
         .top-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        
         #resetBtn { background-color: var(--slate-grey); color: white; border: none; border-radius: 8px; padding: 12px 20px; cursor: pointer; font-weight: 600; }
 
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; }
-        #map { height: 600px; width: 100%; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        #map { 
+            height: 600px; width: 100%; border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+            background-color: #f0f0f0;
+        }
 
         path.leaflet-interactive:focus { outline: none; }
         * { -webkit-tap-highlight-color: transparent; }
 
         .custom-tooltip {
-            background-color: var(--dark-grey); color: white; border: none; border-radius: 4px; padding: 5px 10px;
+            background-color: var(--dark-grey);
+            color: white; border: none; border-radius: 4px; padding: 5px 10px;
             font-weight: 600; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
+        .leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before { display: none; }
 
         #insta-overlay-btn {
             position: absolute; top: 20px; right: 20px; z-index: 1000;
@@ -61,6 +82,7 @@
             display: none; text-decoration: none; box-shadow: 0 4px 15px rgba(225, 48, 108, 0.3);
             align-items: center; gap: 8px; font-size: 14px;
         }
+        #insta-overlay-btn:hover { background: var(--insta-pink); color: white; }
 
         #last-updated { margin-top: 20px; font-size: 12px; color: #94a3b8; }
         .leaflet-interactive { cursor: pointer !important; }
@@ -76,7 +98,7 @@
     <div id="buttons">
         <select id="mapSelect" class="map-selector">
             <option value="osm">Standardkart (OSM)</option>
-            <option value="norge">Toppo (Norgeskart)</option>
+            <option value="norge">Norgeskart (Toppo)</option>
             <option value="bratthet">Bratthetskart (NVE)</option>
         </select>
         <button id="resetBtn">Tilbake til oversikt</button>
@@ -103,23 +125,27 @@
         const instaText = document.getElementById('insta-text');
         const mapSelect = document.getElementById('mapSelect');
 
-        // LAG-DEFINISJONER
-        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
-        
-        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { attribution: '&copy; Kartverket' });
+        // KARTLAG DEFINISJONER
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        });
 
-        // Bratthet fra NVE (Legges som et lag på toppen av norgeLayer)
-        const bratthetLayer = L.tileLayer('https://gis3.nve.no/map/rest/services/wmts/Bratthet/MapServer/tile/10/Bratthet/{z}/{y}/{x}', {
+        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
+            attribution: '&copy; Kartverket'
+        });
+
+        const bratthetLayer = L.tileLayer('https://gis3.nve.no/map/rest/services/wmts/Bratthet/MapServer/WMTS/tile/1.0.0/Bratthet/default/googlemaps/{z}/{y}/{x}.png', {
             attribution: '&copy; NVE',
-            opacity: 0.6 // Gjør det litt gjennomsiktig så man ser kartet under
+            opacity: 0.6,
+            zIndex: 100
         });
 
         const nveGroup = L.layerGroup([norgeLayer, bratthetLayer]);
 
-        // Standard start
+        // Standard kart ved oppstart
         osmLayer.addTo(map);
 
-        // Håndter bytte av kart
+        // Håndter bytte av kartlag
         mapSelect.onchange = function() {
             map.removeLayer(osmLayer);
             map.removeLayer(norgeLayer);
@@ -131,15 +157,29 @@
         };
 
         const topper = [
-            { navn: "Gråtinden 871", fil: "2026_04_06.gpx", video: "https://www.instagram.com/reel/DW1xhPniK_l/" },
-            { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/" },
-            { navn: "Rema (800) 1000", fil: "2026_03_28.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/" }
+            {
+                navn: "Gråtinden 871",
+                fil: "2026_04_06.gpx",
+                video: "https://www.instagram.com/reel/DW1xhPniK_l/"
+            },
+            {
+                navn: "Bentsjordtinden (halvveis opp)",
+                fil: "2026_04_03.gpx",
+                video: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/"
+            },
+            {
+                navn: "Rema (800) 1000",
+                fil: "2026_03_28.gpx",
+                video: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/"
+            }
         ];
 
         function activatePeak(trackLayer, videoUrl, peakName) {
             map.flyToBounds(trackLayer.getBounds(), { padding: [50, 50], duration: 1.5 });
             instaBtn.href = videoUrl;
-            instaText.innerText = "Se video fra " + peakName.split('(')[0].trim();
+            let cleanName = peakName.split('(')[0].trim();
+            if(cleanName === "Rema") cleanName = "Rema 1000"; 
+            instaText.innerText = "Se video fra " + cleanName;
             instaBtn.style.display = 'flex';
         }
 
@@ -155,7 +195,12 @@
                 polyline_options: { color: 'var(--strava-orange)', opacity: 0.8, weight: 5 }
             }).on('loaded', function(e) {
                 const layer = e.target;
-                layer.bindTooltip(topp.navn, { sticky: true, className: 'custom-tooltip', direction: 'top', offset: [0, -10] });
+                layer.bindTooltip(topp.navn, { 
+                    sticky: true, 
+                    className: 'custom-tooltip', 
+                    direction: 'top', 
+                    offset: [0, -10] 
+                });
                 layer.on('click', () => activatePeak(layer, topp.video, topp.navn));
                 btn.onclick = () => activatePeak(layer, topp.video, topp.navn);
                 layer.on('mouseover', () => layer.setStyle({ weight: 9, opacity: 1 }));
@@ -167,6 +212,8 @@
             map.flyTo([69.68, 18.75], 10, { duration: 1.5 });
             instaBtn.style.display = 'none';
         };
+
+        map.on('zoomend', () => { if (map.getZoom() < 10) instaBtn.style.display = 'none'; });
     </script>
 </body>
 </html>
