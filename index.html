@@ -10,7 +10,6 @@
             --strava-orange: #fc4c02;
             --insta-pink: #e1306c;
             --dark-grey: #2c3e50;
-            --slate-grey: #64748b;
             --nve-red: #d32f2f;
         }
 
@@ -20,55 +19,27 @@
             background: #f1f5f9; color: var(--dark-grey);
         }
 
-        #buttons { 
-            margin-bottom: 20px; 
-            display: flex; 
-            justify-content: center; 
-            gap: 12px; 
-            flex-wrap: wrap; 
-            align-items: center; 
-        }
+        #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; align-items: center; }
         
-        .map-selector {
-            padding: 10px 15px; border-radius: 8px; border: 2px solid var(--dark-grey);
-            font-weight: 600; cursor: pointer; background: white; font-size: 15px;
-        }
+        .map-selector { padding: 10px 15px; border-radius: 8px; border: 2px solid var(--dark-grey); font-weight: 600; cursor: pointer; background: white; }
 
-        .top-btn { 
-            color: white; border: none; border-radius: 8px; padding: 12px 20px; 
-            cursor: pointer; font-size: 14px; font-weight: 600; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s ease;
-            background-color: var(--strava-orange);
-        }
+        .top-btn { background-color: var(--strava-orange); color: white; border: none; border-radius: 8px; padding: 12px 20px; cursor: pointer; font-weight: 600; }
         
-        /* Spesialknapp for Bratthet (UT.no stil) */
         #bratthetBtn {
-            background-color: white; color: var(--dark-grey);
-            border: 2px solid var(--nve-red); padding: 12px 20px;
-            border-radius: 8px; cursor: pointer; font-weight: 800;
-            transition: all 0.2s;
+            background-color: white; color: var(--dark-grey); border: 2px solid var(--nve-red); 
+            padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 800;
         }
-        #bratthetBtn.active {
-            background-color: var(--nve-red); color: white;
-        }
+        #bratthetBtn.active { background-color: var(--nve-red); color: white; }
 
-        #resetBtn { 
-            background-color: var(--dark-grey); color: white; border: none; 
-            border-radius: 8px; padding: 12px 20px; cursor: pointer; font-weight: 600; 
-        }
+        #resetBtn { background-color: var(--dark-grey); color: white; border: none; border-radius: 8px; padding: 12px 20px; cursor: pointer; }
 
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; }
-        #map { 
-            height: 600px; width: 100%; border-radius: 15px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
-            background-color: #ddd;
-        }
+        #map { height: 600px; width: 100%; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); background-color: #ddd; }
 
         #insta-overlay-btn {
             position: absolute; top: 20px; right: 20px; z-index: 1000;
             background: white; color: var(--insta-pink); border: 2px solid var(--insta-pink);
-            padding: 12px 18px; border-radius: 50px; font-weight: bold;
-            display: none; text-decoration: none; box-shadow: 0 4px 15px rgba(225, 48, 108, 0.3);
+            padding: 12px 18px; border-radius: 50px; font-weight: bold; display: none; text-decoration: none;
         }
 
         #legend {
@@ -84,9 +55,7 @@
 </head>
 <body>
 
-    <header>
-        <h1>Toppturer rundt Tromsø</h1>
-    </header>
+    <h1>Toppturer rundt Tromsø</h1>
 
     <div id="buttons">
         <select id="mapSelect" class="map-selector">
@@ -118,54 +87,53 @@
     <script>
         document.getElementById('last-updated').innerHTML = "Sist oppdatert: " + new Date(document.lastModified).toLocaleString('no-NO');
 
-        const map = L.map('map').setView([69.65, 18.95], 10);
+        const map = L.map('map').setView([69.65, 18.95], 11);
         const allTracksGroup = L.featureGroup().addTo(map);
-        const instaBtn = document.getElementById('insta-overlay-btn');
-        const legend = document.getElementById('legend');
-        const bratthetBtn = document.getElementById('bratthetBtn');
 
-        // Bakgrunnslag
+        // 1. Grunnkart
         const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
             attribution: '&copy; Kartverket'
         }).addTo(map);
 
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
 
-        // Bratthetslag (WMS)
-        const varsomBratthet = L.tileLayer.wms('https://gis3.nve.no/map/services/Bratthet/MapServer/WmsServer', {
-            layers: 'Bratthet_snoskred',
-            format: 'image/png',
-            transparent: true,
-            version: '1.3.0',
-            opacity: 0.6,
+        // 2. Bratthetslag (Alternativ URL-struktur fra NVE)
+        const varsomBratthet = L.tileLayer('https://gis3.nve.no/map/rest/services/Bratthet/MapServer/export?bbox={bbox}&bboxSR=3857&layers=show%3A0&layerDefs=&size={width}%2C{height}&imageSR=3857&format=png32&transparent=true&f=image', {
             attribution: '&copy; NVE',
-            crs: L.CRS.EPSG3857
+            opacity: 0.7,
+            zIndex: 1000
         });
 
-        // Håndtering av bakgrunnskart
+        // Eller hvis den over ikke virker, prøver vi denne faste flis-tjenesten:
+        const varsomTiles = L.tileLayer('https://gis3.nve.no/map/rest/services/wmts/Bratthet/MapServer/tile/10/Bratthet/{z}/{y}/{x}', {
+            attribution: '&copy; NVE',
+            opacity: 0.7,
+            zIndex: 1000
+        });
+
+        // Kontroll av bakgrunn
         document.getElementById('mapSelect').onchange = function() {
-            if (this.value === "osm") {
-                map.addLayer(osmLayer);
-                map.removeLayer(norgeLayer);
-            } else {
-                map.addLayer(norgeLayer);
-                map.removeLayer(osmLayer);
-            }
+            if (this.value === "osm") { map.addLayer(osmLayer); map.removeLayer(norgeLayer); }
+            else { map.addLayer(norgeLayer); map.removeLayer(osmLayer); }
         };
 
-        // Bratthet-knapp funksjonalitet (Toggle)
+        // Bratthet-knapp
+        const bratthetBtn = document.getElementById('bratthetBtn');
+        const legend = document.getElementById('legend');
+
         bratthetBtn.onclick = function() {
-            if (map.hasLayer(varsomBratthet)) {
-                map.removeLayer(varsomBratthet);
+            // Vi bruker varsomTiles her da den er mest stabil for flis-visning
+            if (map.hasLayer(varsomTiles)) {
+                map.removeLayer(varsomTiles);
                 this.classList.remove('active');
                 this.innerText = "Bratthet AV";
                 legend.style.display = "none";
             } else {
-                map.addLayer(varsomBratthet);
+                map.addLayer(varsomTiles);
                 this.classList.add('active');
                 this.innerText = "Bratthet PÅ";
                 legend.style.display = "inline-flex";
-                // Zoom inn litt hvis brukeren er for langt ute til å se bratthet
+                // NVE krever zoom 11+
                 if (map.getZoom() < 11) map.setZoom(11);
             }
         };
@@ -189,24 +157,26 @@
             }).on('loaded', function(e) {
                 const layer = e.target;
                 allTracksGroup.addLayer(layer);
+                layer.bindTooltip(topp.navn, { sticky: true });
                 
-                const activate = () => {
+                btn.onclick = () => {
                     map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
-                    instaBtn.href = topp.video;
-                    instaBtn.style.display = 'flex';
+                    document.getElementById('insta-overlay-btn').href = topp.video;
+                    document.getElementById('insta-overlay-btn').style.display = 'flex';
                 };
-                layer.on('click', activate);
-                btn.onclick = activate;
-
-                map.fitBounds(allTracksGroup.getBounds(), { padding: [40, 40] });
+                layer.on('click', () => {
+                    map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
+                    document.getElementById('insta-overlay-btn').href = topp.video;
+                    document.getElementById('insta-overlay-btn').style.display = 'flex';
+                });
+                
+                map.fitBounds(allTracksGroup.getBounds());
             });
         });
 
         document.getElementById('resetBtn').onclick = () => {
-            if (allTracksGroup.getLayers().length > 0) {
-                map.flyToBounds(allTracksGroup.getBounds(), { padding: [40, 40], duration: 1.5 });
-            }
-            instaBtn.style.display = 'none';
+            map.flyToBounds(allTracksGroup.getBounds(), { padding: [40, 40] });
+            document.getElementById('insta-overlay-btn').style.display = 'none';
         };
     </script>
 </body>
