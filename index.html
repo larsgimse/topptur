@@ -2,22 +2,27 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Top Rope Solo - Tromsø</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Top Rope Solo - Gråtinden</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <style>
         :root {
-            --primary-blue: #0066cc;
             --strava-orange: #fc4c02;
+            --dark-grey: #333;
             --bg-color: #f0f4f8;
         }
 
         body {
-            font-family: sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             text-align: center;
             padding: 20px 10px;
             margin: 0;
+        }
+
+        h1 {
+            color: var(--dark-grey);
+            margin-bottom: 20px;
         }
 
         #buttons {
@@ -25,28 +30,26 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 10px;
-            max-width: 1000px;
-            margin-left: auto;
-            margin-right: auto;
+            gap: 12px;
         }
 
         button {
-            background-color: var(--primary-blue);
             color: white;
             border: none;
-            border-radius: 6px;
-            padding: 10px 16px;
+            border-radius: 8px;
+            padding: 12px 24px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
+            font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 8px;
-            transition: opacity 0.2s;
+            gap: 10px;
+            transition: transform 0.1s, opacity 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        button:hover {
-            opacity: 0.9;
+        button:active {
+            transform: scale(0.98);
         }
 
         #gpxBtn {
@@ -54,16 +57,17 @@
         }
 
         #resetBtn {
-            background-color: #333; /* Mørk grå for reset-knapp */
+            background-color: var(--dark-grey);
         }
 
         #map {
-            height: 550px;
+            height: 600px;
             width: 100%;
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 0 auto;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border: 2px solid white;
         }
     </style>
 </head>
@@ -73,12 +77,12 @@
 
     <div id="buttons">
         <button id="resetBtn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
             Tilbake til oversikt
         </button>
 
         <button id="gpxBtn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L2 20h20L12 2zM12 6.5l5.5 11H6.5L12 6.5z"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L2 20h20L12 2zM12 6.5l5.5 11H6.5L12 6.5z"/></svg>
             Gråtinden 871
         </button>
     </div>
@@ -89,64 +93,50 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        const map = L.map('map');
+        // Initialiser kartet sentrert rundt Tromsø-området
+        const map = L.map('map').setView([69.65, 18.7], 11);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap'
+            attribution: '&copy; OpenStreetMap bidragsytere'
         }).addTo(map);
 
-        // Klatrefelt-data
-        const locations = [
-            { name: 'Korteidet', lat: 69.69472, lng: 18.63642 },
-            { name: 'Ersfjorden', lat: 69.70587, lng: 18.59339 },
-            { name: 'Lyfjorddalen', lat: 69.78386, lng: 18.78913 },
-            { name: 'Valhall', lat: 69.65974, lng: 18.95441 },
-            { name: 'Sjurfjellet', lat: 69.67684, lng: 18.71341 }
-        ];
-
-        const markersGroup = new L.featureGroup();
-
-        // Legg til klatrefelt på kartet
-        locations.forEach(loc => {
-            const marker = L.marker([loc.lat, loc.lng]).addTo(markersGroup);
-            marker.bindPopup(`<b>${loc.name}</b>`);
-        });
-        markersGroup.addTo(map);
+        // Sti til GPX-filen din på GitHub
+        const gpxUrl = '2026_04_06.gpx'; 
 
         // Last inn GPX-sporet
-        const gpxUrl = '2026_04_06.gpx'; 
         const track = new L.GPX(gpxUrl, {
             async: true,
-            marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-            polyline_options: { color: '#fc4c02', weight: 5 }
+            marker_options: {
+                startIconUrl: null,
+                endIconUrl: null,
+                shadowUrl: null
+            },
+            polyline_options: {
+                color: '#fc4c02',
+                opacity: 0.85,
+                weight: 6,
+                lineCap: 'round'
+            }
         }).addTo(map);
 
-        // Funksjon for å zoome til ALT (både klatrefelt og spor)
-        function zoomToAll() {
-            const bounds = markersGroup.getBounds();
-            if (track.getBounds().isValid()) {
-                bounds.extend(track.getBounds());
-            }
-            map.fitBounds(bounds, { padding: [50, 50] });
-        }
-
-        // Sett start-utsnitt når GPX er lastet
-        track.on('loaded', function() {
-            zoomToAll();
+        // Zoom til sporet automatisk når det er ferdig lastet
+        track.on('loaded', function(e) {
+            map.fitBounds(e.target.getBounds(), { padding: [40, 40] });
         });
 
-        // Knapp: Gråtinden 871
+        // Knapp: Zoom til Gråtinden
         document.getElementById('gpxBtn').addEventListener('click', () => {
             if (track.getBounds().isValid()) {
-                map.fitBounds(track.getBounds(), { padding: [40, 40] });
+                map.fitBounds(track.getBounds(), { padding: [50, 50] });
             }
         });
 
-        // Knapp: Tilbake til oversikt
+        // Knapp: Tilbake til oversikt (zoomer til sporet her også siden det er eneste data)
         document.getElementById('resetBtn').addEventListener('click', () => {
-            zoomToAll();
+            if (track.getBounds().isValid()) {
+                map.fitBounds(track.getBounds(), { padding: [80, 80] });
+            }
         });
-
     </script>
 </body>
 </html>
