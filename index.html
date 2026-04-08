@@ -11,7 +11,6 @@
             --insta-pink: #e1306c;
             --dark-grey: #2c3e50;
             --slate-grey: #64748b;
-            --norgeskart-blue: #005a95;
         }
 
         body { 
@@ -33,7 +32,6 @@
             align-items: center; 
         }
         
-        /* Stil for kartvelger (dropdown) */
         .map-selector {
             padding: 10px 15px;
             border-radius: 8px;
@@ -42,151 +40,112 @@
             cursor: pointer;
             background: white;
             font-size: 15px;
-            color: var(--dark-grey);
-            outline: none;
         }
 
         .top-btn { 
             color: white; border: none; border-radius: 8px; padding: 12px 20px; 
-            cursor: pointer; font-size: 16px; font-weight: 600; 
+            cursor: pointer; font-size: 14px; font-weight: 600; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s ease;
-            display: flex; align-items: center; gap: 8px;
             background-color: var(--strava-orange);
         }
         
         .top-btn:hover { opacity: 0.9; transform: translateY(-1px); }
         
-        #resetBtn { background-color: var(--slate-grey); color: white; border: none; border-radius: 8px; padding: 12px 20px; cursor: pointer; font-weight: 600; }
+        #resetBtn { 
+            background-color: var(--dark-grey); 
+            color: white; border: none; border-radius: 8px; 
+            padding: 12px 20px; cursor: pointer; font-weight: 600; 
+        }
 
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; }
         #map { 
             height: 600px; width: 100%; border-radius: 15px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
-            background-color: #f0f0f0;
+            background-color: #ddd;
         }
-
-        path.leaflet-interactive:focus { outline: none; }
-        * { -webkit-tap-highlight-color: transparent; }
-
-        .custom-tooltip {
-            background-color: var(--dark-grey);
-            color: white; border: none; border-radius: 4px; padding: 5px 10px;
-            font-weight: 600; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
-        .leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before { display: none; }
 
         #insta-overlay-btn {
             position: absolute; top: 20px; right: 20px; z-index: 1000;
             background: white; color: var(--insta-pink); border: 2px solid var(--insta-pink);
             padding: 12px 18px; border-radius: 50px; font-weight: bold;
             display: none; text-decoration: none; box-shadow: 0 4px 15px rgba(225, 48, 108, 0.3);
-            align-items: center; gap: 8px; font-size: 14px;
+            font-size: 14px;
         }
-        #insta-overlay-btn:hover { background: var(--insta-pink); color: white; }
 
-        #last-updated { margin-top: 20px; font-size: 12px; color: #94a3b8; }
-        .leaflet-interactive { cursor: pointer !important; }
+        .custom-tooltip {
+            background-color: var(--dark-grey);
+            color: white; border: none; border-radius: 4px; padding: 5px 10px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
 
     <header>
         <h1>Toppturer rundt Tromsø</h1>
-        <p class="subtitle">Klikk på sporene eller bruk knappene for å se video.</p>
+        <p class="subtitle">Velg "Bratthetskart" for skredvurdering eller klikk på en topp.</p>
     </header>
 
     <div id="buttons">
         <select id="mapSelect" class="map-selector">
-            <option value="osm">Standardkart (OSM)</option>
             <option value="norge">Norgeskart (Toppo)</option>
             <option value="bratthet">Bratthetskart (NVE)</option>
+            <option value="osm">Standardkart (OSM)</option>
         </select>
         <button id="resetBtn">Tilbake til oversikt</button>
     </div>
 
     <div id="map-container">
         <div id="map"></div>
-        <a id="insta-overlay-btn" href="#" target="_blank">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.366.062 2.633.332 3.608 1.308.975.975 1.245 2.242 1.308 3.608.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.063 1.366-.333 2.633-1.308 3.608-.975.975-2.242 1.245-3.608 1.308-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.366-.063-2.633-.333-3.608-1.308-.975-.975-1.245-2.242-1.308-3.608-.058-1.266-.07-1.646-.07-4.85s.012-3.584.07-4.85c.062-1.366.332-2.633 1.308-3.608.975-.975 2.242-1.245 3.608-1.308 1.266-.058-1.646-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-4.717 4.634-4.915 6.44-.058 1.281-.072 1.689-.072 4.948s.014 3.667.072 4.947c.2 4.337 4.626 4.71 6.44 4.915 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.354-.2 4.717-4.634 4.915-6.44.058-1.281.072-1.689.072-4.948s-.014-3.667-.072-4.947c-.2-4.347-4.63-4.706-6.44-4.915-1.281-.058-1.689-.072-4.948-.072zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.791-4-4s1.791-4 4-4 4 1.791 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-            <span id="insta-text">Se video</span>
-        </a>
+        <a id="insta-overlay-btn" href="#" target="_blank">Se video</a>
     </div>
 
-    <div id="last-updated"></div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        document.getElementById('last-updated').innerHTML = "Sist oppdatert: " + new Date(document.lastModified).toLocaleString('no-NO');
-
-        const map = L.map('map').setView([69.68, 18.75], 10);
+        const map = L.map('map').setView([69.65, 18.95], 10);
         const instaBtn = document.getElementById('insta-overlay-btn');
-        const instaText = document.getElementById('insta-text');
         const mapSelect = document.getElementById('mapSelect');
+        
+        // Vi lager en gruppe for å holde alle GPX-lagene
+        const allTracksGroup = L.featureGroup().addTo(map);
 
-        // KARTLAG DEFINISJONER
-        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
+        // KARTLAG
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
+        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { attribution: '&copy; Kartverket' });
+        const bratthetLayer = L.tileLayer('https://gis3.nve.no/map/rest/services/wmts/Bratthet/MapServer/tile/1.0.0/Bratthet/default/googlemaps/{z}/{y}/{x}.png', {
+            attribution: '&copy; NVE', opacity: 0.6, zIndex: 1000
         });
-
-        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
-            attribution: '&copy; Kartverket'
-        });
-
-        const bratthetLayer = L.tileLayer('https://gis3.nve.no/map/rest/services/wmts/Bratthet/MapServer/WMTS/tile/1.0.0/Bratthet/default/googlemaps/{z}/{y}/{x}.png', {
-            attribution: '&copy; NVE',
-            opacity: 0.6,
-            zIndex: 100
-        });
-
         const nveGroup = L.layerGroup([norgeLayer, bratthetLayer]);
 
-        // Standard kart ved oppstart
-        osmLayer.addTo(map);
+        norgeLayer.addTo(map);
 
-        // Håndter bytte av kartlag
         mapSelect.onchange = function() {
             map.removeLayer(osmLayer);
             map.removeLayer(norgeLayer);
             map.removeLayer(nveGroup);
-
             if (this.value === "osm") osmLayer.addTo(map);
             else if (this.value === "norge") norgeLayer.addTo(map);
             else if (this.value === "bratthet") nveGroup.addTo(map);
         };
 
         const topper = [
-            {
-                navn: "Gråtinden 871",
-                fil: "2026_04_06.gpx",
-                video: "https://www.instagram.com/reel/DW1xhPniK_l/"
-            },
-            {
-                navn: "Bentsjordtinden (halvveis opp)",
-                fil: "2026_04_03.gpx",
-                video: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/"
-            },
-            {
-                navn: "Rema (800) 1000",
-                fil: "2026_03_28.gpx",
-                video: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/"
-            }
+            { navn: "Gråtinden 871", fil: "2026_04_06.gpx", video: "https://www.instagram.com/reel/DW1xhPniK_l/" },
+            { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/" },
+            { navn: "Rema (800) 1000", fil: "2026_03_28.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/" }
         ];
 
-        function activatePeak(trackLayer, videoUrl, peakName) {
+        function activatePeak(trackLayer, videoUrl) {
             map.flyToBounds(trackLayer.getBounds(), { padding: [50, 50], duration: 1.5 });
             instaBtn.href = videoUrl;
-            let cleanName = peakName.split('(')[0].trim();
-            if(cleanName === "Rema") cleanName = "Rema 1000"; 
-            instaText.innerText = "Se video fra " + cleanName;
             instaBtn.style.display = 'flex';
         }
 
         topper.forEach(topp => {
             const btn = document.createElement('button');
             btn.className = 'top-btn';
-            btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M14,6l-3.75,5l2.85,3.8c0.09,0.13,0.01,0.3-0.15,0.3H4.35c-0.16,0-0.24-0.18-0.15-0.3L9,8l3.15,4.2L14,6z M22,18H2v2h20V18z M7,11l1.25,1.67L7,14.33L5.75,12.67L7,11z M18,7l-5,7h10L18,7z"/></svg> ${topp.navn}`;
+            btn.innerText = topp.navn;
             document.getElementById('buttons').appendChild(btn);
 
             new L.GPX(topp.fil, {
@@ -195,25 +154,32 @@
                 polyline_options: { color: 'var(--strava-orange)', opacity: 0.8, weight: 5 }
             }).on('loaded', function(e) {
                 const layer = e.target;
-                layer.bindTooltip(topp.navn, { 
-                    sticky: true, 
-                    className: 'custom-tooltip', 
-                    direction: 'top', 
-                    offset: [0, -10] 
-                });
-                layer.on('click', () => activatePeak(layer, topp.video, topp.navn));
-                btn.onclick = () => activatePeak(layer, topp.video, topp.navn);
-                layer.on('mouseover', () => layer.setStyle({ weight: 9, opacity: 1 }));
+                allTracksGroup.addLayer(layer); // Legger sporet inn i gruppen
+                
+                layer.bindTooltip(topp.navn, { sticky: true, className: 'custom-tooltip' });
+                layer.on('click', () => activatePeak(layer, topp.video));
+                btn.onclick = () => activatePeak(layer, topp.video);
+                
+                layer.on('mouseover', () => layer.setStyle({ weight: 8, opacity: 1 }));
                 layer.on('mouseout', () => layer.setStyle({ weight: 5, opacity: 0.8 }));
-            }).addTo(map);
+
+                // Når alle spor er lastet, kan vi automatisk zoome til oversikten med en gang hvis ønskelig
+                if (allTracksGroup.getLayers().length === topper.length) {
+                    map.fitBounds(allTracksGroup.getBounds(), { padding: [40, 40] });
+                }
+            });
         });
 
+        // Knappen som nå zoomer ut slik at ALT vises
         document.getElementById('resetBtn').onclick = () => {
-            map.flyTo([69.68, 18.75], 10, { duration: 1.5 });
+            if (allTracksGroup.getLayers().length > 0) {
+                map.flyToBounds(allTracksGroup.getBounds(), { 
+                    padding: [40, 40], 
+                    duration: 1.5 
+                });
+            }
             instaBtn.style.display = 'none';
         };
-
-        map.on('zoomend', () => { if (map.getZoom() < 10) instaBtn.style.display = 'none'; });
     </script>
 </body>
 </html>
