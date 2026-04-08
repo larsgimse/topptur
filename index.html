@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Toppturer rundt Tromsø</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <style>
+        :root {
+            --strava-orange: #fc4c02;
+            --insta-pink: #e1306c;
+            --dark-grey: #2c3e50;
+            --slate-grey: #64748b;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            text-align: center; padding: 20px 10px; margin: 0; 
+            background: #f8fafc; color: var(--dark-grey);
+        }
+
+        header { margin-bottom: 25px; }
+        h1 { margin: 0; font-size: 2.2rem; font-weight: 800; }
+        .subtitle { margin-top: 8px; font-size: 1.1rem; color: var(--slate-grey); }
+
+        #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+        
+        .top-btn { 
+            color: white; border: none; border-radius: 8px; padding: 12px 20px; 
+            cursor: pointer; font-size: 16px; font-weight: 600; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s ease;
+            display: flex; align-items: center; gap: 8px;
+            background-color: var(--strava-orange);
+        }
+        
+        .top-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        
+        #resetBtn { background-color: var(--slate-grey); color: white; border: none; border-radius: 8px; padding: 12px 20px; cursor: pointer; font-weight: 600; }
+
+        #map-container { position: relative; max-width: 1100px; margin: 0 auto; }
+        #map { height: 600px; width: 100%; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+
+        #insta-overlay-btn {
+            position: absolute; top: 20px; right: 20px; z-index: 1000;
+            background: white; color: var(--insta-pink); border: 2px solid var(--insta-pink);
+            padding: 12px 18px; border-radius: 50px; font-weight: bold;
+            display: none; text-decoration: none; box-shadow: 0 4px 15px rgba(225, 48, 108, 0.3);
+            align-items: center; gap: 8px; font-size: 14px;
+        }
+        #insta-overlay-btn:hover { background: var(--insta-pink); color: white; }
+
+        #last-updated { margin-top: 20px; font-size: 12px; color: #94a3b8; }
+        .leaflet-interactive { cursor: pointer !important; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Toppturer rundt Tromsø</h1>
+        <p class="subtitle">Gå inn på den enkelte topp for å se video</p>
+    </header>
+
+    <div id="buttons">
+        <button id="resetBtn">Tilbake til oversikt</button>
+    </div>
+
+    <div id="map-container">
+        <div id="map"></div>
+        <a id="insta-overlay-btn" href="#" target="_blank">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.366.062 2.633.332 3.608 1.308.975.975 1.245 2.242 1.308 3.608.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.063 1.366-.333 2.633-1.308 3.608-.975.975-2.242 1.245-3.608 1.308-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.366-.063-2.633-.333-3.608-1.308-.975-.975-1.245-2.242-1.308-3.608-.058-1.266-.07-1.646-.07-4.85s.012-3.584.07-4.85c.062-1.366.332-2.633 1.308-3.608.975-.975 2.242-1.245 3.608-1.308 1.266-.058-1.646-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-4.717 4.634-4.915 6.44-.058 1.281-.072 1.689-.072 4.948s.014 3.667.072 4.947c.2 4.337 4.626 4.71 6.44 4.915 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.354-.2 4.717-4.634 4.915-6.44.058-1.281.072-1.689.072-4.948s-.014-3.667-.072-4.947c-.2-4.347-4.63-4.706-6.44-4.915-1.281-.058-1.689-.072-4.948-.072zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.791-4-4s1.791-4 4-4 4 1.791 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+            <span id="insta-text">Se video</span>
+        </a>
+    </div>
+
+    <div id="last-updated"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
+
+    <script>
+        document.getElementById('last-updated').innerHTML = "Sist oppdatert: " + new Date(document.lastModified).toLocaleString('no-NO');
+
+        const map = L.map('map').setView([69.68, 18.75], 9);
+        const instaBtn = document.getElementById('insta-overlay-btn');
+        const instaText = document.getElementById('insta-text');
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+
+        // --- DIN TOPP-LISTE ---
+        const topper = [
+            {
+                navn: "Gråtinden 871",
+                fil: "2026_04_06.gpx",
+                video: "https://www.instagram.com/reel/DW1xhPniK_l/?utm_source=ig_web_copy_link&igsh=NTc4MTIwNjQ2YQ=="
+            },
+            {
+                navn: "Bentsjordtinden (halvveis opp)",
+                fil: "2026_04_03.gpx",
+                video: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/"
+            },
+            {
+                navn: "Rema (800) 1000",
+                fil: "2026_03_28.gpx",
+                video: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/"
+            }
+        ];
+
+        function activatePeak(trackLayer, videoUrl, peakName) {
+            map.flyToBounds(trackLayer.getBounds(), { padding: [50, 50], duration: 1.5 });
+            instaBtn.href = videoUrl;
+            
+            // Rens navnet: Ta det før parentes, men hvis det er Rema (800) 1000, behold mer av det.
+            let cleanName = peakName.split('(')[0].trim();
+            if(cleanName === "Rema") cleanName = "Rema 1000"; 
+            
+            instaText.innerText = "Se video fra " + cleanName;
+            instaBtn.style.display = 'flex';
+        }
+
+        topper.forEach(topp => {
+            const btn = document.createElement('button');
+            btn.className = 'top-btn';
+            btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M14,6l-3.75,5l2.85,3.8c0.09,0.13,0.01,0.3-0.15,0.3H4.35c-0.16,0-0.24-0.18-0.15-0.3L9,8l3.15,4.2L14,6z M22,18H2v2h20V18z M7,11l1.25,1.67L7,14.33L5.75,12.67L7,11z M18,7l-5,7h10L18,7z"/></svg> ${topp.navn}`;
+            document.getElementById('buttons').appendChild(btn);
+
+            const track = new L.GPX(topp.fil, {
+                async: true,
+                marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
+                polyline_options: { color: 'var(--strava-orange)', opacity: 0.7, weight: 5 }
+            }).on('loaded', function(e) {
+                const layer = e.target;
+                layer.on('click', () => activatePeak(layer, topp.video, topp.navn));
+                btn.onclick = () => activatePeak(layer, topp.video, topp.navn);
+                layer.on('mouseover', () => layer.setStyle({ weight: 9, opacity: 1 }));
+                layer.on('mouseout', () => layer.setStyle({ weight: 5, opacity: 0.7 }));
+            }).addTo(map);
+        });
+
+        document.getElementById('resetBtn').onclick = () => {
+            map.flyTo([69.68, 18.75], 9, { duration: 1.5 });
+            instaBtn.style.display = 'none';
+        };
+
+        map.on('zoomend', () => { if (map.getZoom() < 10) instaBtn.style.display = 'none'; });
+    </script>
+</body>
+</html>
