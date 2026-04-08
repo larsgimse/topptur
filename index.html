@@ -10,45 +10,21 @@
             --strava-orange: #fc4c02;
             --insta-pink: #e1306c;
             --dark-grey: #2c3e50;
-            --slate-grey: #64748b;
         }
 
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            text-align: center; margin: 0; padding: 20px 10px; 
-            background: #f1f5f9; color: var(--dark-grey);
-        }
-
-        #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; align-items: center; }
+        body { font-family: sans-serif; text-align: center; margin: 0; padding: 20px; background: #f1f5f9; }
+        #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
         
-        .map-selector { padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; border: 2px solid var(--dark-grey); background: white; }
-
-        .top-btn { 
-            background: var(--strava-orange); color: white; border: none; 
-            padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold;
-        }
-
-        #resetBtn { background: var(--slate-grey); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
+        .map-selector { padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; border: 2px solid var(--dark-grey); }
+        .top-btn { background: var(--strava-orange); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        #resetBtn { background: var(--dark-grey); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
 
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; }
-        #map { height: 650px; width: 100%; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); background-color: #ddd; }
+        #map { height: 600px; width: 100%; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); background: #eee; }
 
-        #legend {
-            margin-top: 15px; display: inline-flex; gap: 15px; font-size: 12px;
-            background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            justify-content: center; flex-wrap: wrap;
-        }
-        .legend-item { display: flex; align-items: center; gap: 5px; }
-        .box { width: 15px; height: 15px; border: 1px solid #000; }
-
-        #insta-overlay-btn {
-            position: absolute; top: 20px; right: 20px; z-index: 1000;
-            background: white; color: var(--insta-pink); border: 2px solid var(--insta-pink);
-            padding: 12px 18px; border-radius: 50px; font-weight: bold; display: none; text-decoration: none;
-        }
-
+        #legend { margin-top: 15px; display: inline-flex; gap: 15px; font-size: 12px; background: white; padding: 10px; border-radius: 8px; }
+        .box { width: 15px; height: 15px; border: 1px solid #000; display: inline-block; vertical-align: middle; margin-right: 5px; }
         #last-updated { margin-top: 20px; font-size: 12px; color: #94a3b8; }
-        .custom-tooltip { background-color: var(--dark-grey); color: white; border: none; border-radius: 4px; padding: 5px 10px; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -57,7 +33,7 @@
 
     <div id="buttons">
         <select id="mapSelect" class="map-selector">
-            <option value="bratthet">Bratthetskart (Kartverket)</option>
+            <option value="bratthet">Bratthetskart (Vinter)</option>
             <option value="norge">Vanlig Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
         </select>
@@ -66,15 +42,14 @@
 
     <div id="map-container">
         <div id="map"></div>
-        <a id="insta-overlay-btn" href="#" target="_blank">Se video</a>
     </div>
 
     <div id="legend">
         <strong>Bratthet:</strong>
-        <div class="legend-item"><div class="box" style="background: #ffff00; opacity: 0.7;"></div> 30-35°</div>
-        <div class="legend-item"><div class="box" style="background: #ffaa00; opacity: 0.7;"></div> 35-40°</div>
-        <div class="legend-item"><div class="box" style="background: #ff0000; opacity: 0.7;"></div> 40-45°</div>
-        <div class="legend-item"><div class="box" style="background: #aa0000; opacity: 0.7;"></div> 45-90°</div>
+        <span><div class="box" style="background: #ffff00;"></div> 30-35°</span>
+        <span><div class="box" style="background: #ffaa00;"></div> 35-40°</span>
+        <span><div class="box" style="background: #ff0000;"></div> 40-45°</span>
+        <span><div class="box" style="background: #aa0000;"></div> 45-90°</span>
     </div>
 
     <div id="last-updated"></div>
@@ -88,43 +63,45 @@
         const map = L.map('map').setView([69.65, 18.95], 11);
         const allTracksGroup = L.featureGroup().addTo(map);
 
-        // KARTLAG FRA KARTVERKET
-        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
+        // LAG 1: Norgeskart (Bunn)
+        const topo = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
             attribution: '&copy; Kartverket'
         });
 
-        // Alternativt lag: Kartverkets bratthetslag (slopes) som overlegg
-        const bratthetLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/slope/default/webmercator/{z}/{y}/{x}.png', {
+        // LAG 2: Bratthet (Overlegg)
+        const slope = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/slope/default/webmercator/{z}/{y}/{x}.png', {
             attribution: '&copy; Kartverket',
-            opacity: 0.6,
-            zIndex: 1000
+            opacity: 0.5,
+            zIndex: 500
         });
 
-        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
+        // LAG 3: OpenStreetMap
+        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
 
-        // Standard visning
-        norgeLayer.addTo(map);
-        bratthetLayer.addTo(map);
+        // Start med begge aktive
+        topo.addTo(map);
+        slope.addTo(map);
 
+        // Veksle mellom lagene
         document.getElementById('mapSelect').onchange = function() {
-            map.removeLayer(osmLayer);
-            map.removeLayer(norgeLayer);
-            map.removeLayer(bratthetLayer);
+            map.removeLayer(topo);
+            map.removeLayer(slope);
+            map.removeLayer(osm);
 
-            if (this.value === "osm") {
-                osmLayer.addTo(map);
+            if (this.value === "bratthet") {
+                topo.addTo(map);
+                slope.addTo(map);
             } else if (this.value === "norge") {
-                norgeLayer.addTo(map);
-            } else if (this.value === "bratthet") {
-                norgeLayer.addTo(map);
-                bratthetLayer.addTo(map);
+                topo.addTo(map);
+            } else {
+                osm.addTo(map);
             }
         };
 
         const topper = [
-            { navn: "Gråtinden 871", fil: "2026_04_06.gpx", video: "https://www.instagram.com/reel/DW1xhPniK_l/" },
-            { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/" },
-            { navn: "Rema (800) 1000", fil: "2026_03_28.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/" }
+            { navn: "Gråtinden 871", fil: "2026_04_06.gpx" },
+            { navn: "Bentsjordtinden", fil: "2026_04_03.gpx" },
+            { navn: "Rema (800) 1000", fil: "2026_03_28.gpx" }
         ];
 
         topper.forEach(topp => {
@@ -136,27 +113,16 @@
             new L.GPX(topp.fil, {
                 async: true,
                 marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                polyline_options: { color: 'var(--strava-orange)', weight: 5, opacity: 0.9 }
+                polyline_options: { color: 'var(--strava-orange)', weight: 5, zIndex: 1000 }
             }).on('loaded', function(e) {
                 const layer = e.target;
                 allTracksGroup.addLayer(layer);
-                layer.bindTooltip(topp.navn, { sticky: true, className: 'custom-tooltip' });
-                
-                const activate = () => {
-                    map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
-                    document.getElementById('insta-overlay-btn').href = topp.video;
-                    document.getElementById('insta-overlay-btn').style.display = 'block';
-                };
-                layer.on('click', activate);
-                btn.onclick = activate;
-            });
+                btn.onclick = () => map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
+            }).addTo(map);
         });
 
         document.getElementById('resetBtn').onclick = () => {
-            if (allTracksGroup.getLayers().length > 0) {
-                map.flyToBounds(allTracksGroup.getBounds(), { padding: [40, 40] });
-            }
-            document.getElementById('insta-overlay-btn').style.display = 'none';
+            if (allTracksGroup.getLayers().length > 0) map.flyToBounds(allTracksGroup.getBounds());
         };
     </script>
 </body>
