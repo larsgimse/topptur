@@ -16,7 +16,7 @@
             font-family: sans-serif;
             background-color: var(--bg-color);
             text-align: center;
-            padding: 20px;
+            padding: 20px 10px;
             margin: 0;
         }
 
@@ -26,6 +26,9 @@
             flex-wrap: wrap;
             justify-content: center;
             gap: 10px;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         button {
@@ -33,20 +36,29 @@
             color: white;
             border: none;
             border-radius: 6px;
-            padding: 12px 20px;
+            padding: 10px 16px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
             display: flex;
             align-items: center;
             gap: 8px;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
         }
 
         #gpxBtn {
             background-color: var(--strava-orange);
         }
 
+        #resetBtn {
+            background-color: #333; /* Mørk grå for reset-knapp */
+        }
+
         #map {
-            height: 600px;
+            height: 550px;
             width: 100%;
             max-width: 1000px;
             margin: 0 auto;
@@ -60,9 +72,14 @@
     <h1>Top Rope Solo - Tromsø</h1>
 
     <div id="buttons">
+        <button id="resetBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+            Tilbake til oversikt
+        </button>
+
         <button id="gpxBtn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2c-4.41 0-8 3.59-8 8 0 5.25 8 13 8 13s8-7.75 8-13c0-4.41-3.59-8-8-8zm0 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>
-            Vis siste tur (GPX)
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L2 20h20L12 2zM12 6.5l5.5 11H6.5L12 6.5z"/></svg>
+            Gråtinden 871
         </button>
     </div>
 
@@ -72,43 +89,64 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        const map = L.map('map').setView([69.65, 18.9], 10);
+        const map = L.map('map');
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap'
         }).addTo(map);
 
-        // URL til GPX-filen på GitHub (VIKTIG: Bruk "raw" URL)
-        // Bytt ut 'BRUKERNAVN' og 'REPO' med dine faktiske detaljer
-        const gpxUrl = '2026_04_06.gpx'; 
+        // Klatrefelt-data
+        const locations = [
+            { name: 'Korteidet', lat: 69.69472, lng: 18.63642 },
+            { name: 'Ersfjorden', lat: 69.70587, lng: 18.59339 },
+            { name: 'Lyfjorddalen', lat: 69.78386, lng: 18.78913 },
+            { name: 'Valhall', lat: 69.65974, lng: 18.95441 },
+            { name: 'Sjurfjellet', lat: 69.67684, lng: 18.71341 }
+        ];
 
-        // Opprett GPX-laget
+        const markersGroup = new L.featureGroup();
+
+        // Legg til klatrefelt på kartet
+        locations.forEach(loc => {
+            const marker = L.marker([loc.lat, loc.lng]).addTo(markersGroup);
+            marker.bindPopup(`<b>${loc.name}</b>`);
+        });
+        markersGroup.addTo(map);
+
+        // Last inn GPX-sporet
+        const gpxUrl = '2026_04_06.gpx'; 
         const track = new L.GPX(gpxUrl, {
             async: true,
-            marker_options: {
-                startIconUrl: null,
-                endIconUrl: null,
-                shadowUrl: null
-            },
-            polyline_options: {
-                color: '#fc4c02',
-                opacity: 0.8,
-                weight: 5,
-                lineCap: 'round'
-            }
+            marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
+            polyline_options: { color: '#fc4c02', weight: 5 }
         }).addTo(map);
 
-        // Når sporet er ferdig lastet, kan vi zoome til det
-        track.on('loaded', function(e) {
-            console.log("GPX lastet inn");
+        // Funksjon for å zoome til ALT (både klatrefelt og spor)
+        function zoomToAll() {
+            const bounds = markersGroup.getBounds();
+            if (track.getBounds().isValid()) {
+                bounds.extend(track.getBounds());
+            }
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }
+
+        // Sett start-utsnitt når GPX er lastet
+        track.on('loaded', function() {
+            zoomToAll();
         });
 
-        // Knapp-funksjonalitet for å zoome til sporet
+        // Knapp: Gråtinden 871
         document.getElementById('gpxBtn').addEventListener('click', () => {
-            if (track) {
-                map.fitBounds(track.getBounds(), { padding: [50, 50] });
+            if (track.getBounds().isValid()) {
+                map.fitBounds(track.getBounds(), { padding: [40, 40] });
             }
         });
+
+        // Knapp: Tilbake til oversikt
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            zoomToAll();
+        });
+
     </script>
 </body>
 </html>
