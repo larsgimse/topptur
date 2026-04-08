@@ -25,7 +25,6 @@
 
         #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
         
-        /* Felles stil for alle topp-knapper */
         .top-btn { 
             color: white; border: none; border-radius: 8px; padding: 12px 20px; 
             cursor: pointer; font-size: 16px; font-weight: 600; 
@@ -63,7 +62,7 @@
 
     <div id="buttons">
         <button id="resetBtn">Tilbake til oversikt</button>
-        </div>
+    </div>
 
     <div id="map-container">
         <div id="map"></div>
@@ -87,7 +86,6 @@
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
 
-        // --- HER LEGGES NYE TOPPER INN ---
         const topper = [
             {
                 navn: "Gråtinden 871",
@@ -95,43 +93,36 @@
                 video: "https://www.instagram.com/reel/DW1xhPniK_l/?utm_source=ig_web_copy_link&igsh=NTc4MTIwNjQ2YQ=="
             },
             {
-                navn: "Svartnestinden 1214",
+                navn: "Bentsjordtinden (halvveis opp)",
                 fil: "2026_04_03.gpx",
                 video: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/"
             }
         ];
 
-        // Funksjon for å aktivere visning av en topp
         function activatePeak(trackLayer, videoUrl, peakName) {
             map.flyToBounds(trackLayer.getBounds(), { padding: [50, 50], duration: 1.5 });
             instaBtn.href = videoUrl;
-            instaText.innerText = "Se video fra " + peakName.split(' ')[0]; // Tar kun første ordet av navnet
+            
+            // Fjerner eventuell tekst i parentes for knappen
+            const cleanName = peakName.split('(')[0].trim();
+            instaText.innerText = "Se video fra " + cleanName;
             instaBtn.style.display = 'flex';
         }
 
-        // Gå gjennom alle topper og legg dem til i kartet og som knapper
         topper.forEach(topp => {
-            // 1. Lag knappen øverst
             const btn = document.createElement('button');
             btn.className = 'top-btn';
             btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M14,6l-3.75,5l2.85,3.8c0.09,0.13,0.01,0.3-0.15,0.3H4.35c-0.16,0-0.24-0.18-0.15-0.3L9,8l3.15,4.2L14,6z M22,18H2v2h20V18z M7,11l1.25,1.67L7,14.33L5.75,12.67L7,11z M18,7l-5,7h10L18,7z"/></svg> ${topp.navn}`;
             document.getElementById('buttons').appendChild(btn);
 
-            // 2. Last GPX-sporet
             const track = new L.GPX(topp.fil, {
                 async: true,
                 marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
                 polyline_options: { color: 'var(--strava-orange)', opacity: 0.7, weight: 5 }
             }).on('loaded', function(e) {
                 const layer = e.target;
-                
-                // Klikk på spor i kartet
                 layer.on('click', () => activatePeak(layer, topp.video, topp.navn));
-
-                // Klikk på knappen øverst
                 btn.onclick = () => activatePeak(layer, topp.video, topp.navn);
-
-                // Hover-effekt
                 layer.on('mouseover', () => layer.setStyle({ weight: 9, opacity: 1 }));
                 layer.on('mouseout', () => layer.setStyle({ weight: 5, opacity: 0.7 }));
             }).addTo(map);
