@@ -11,6 +11,7 @@
             --insta-pink: #e1306c;
             --dark-grey: #2c3e50;
             --slate-grey: #64748b;
+            --nve-red: #d32f2f;
         }
 
         body { 
@@ -29,13 +30,8 @@
         }
         
         .map-selector {
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: 2px solid var(--dark-grey);
-            font-weight: 600;
-            cursor: pointer;
-            background: white;
-            font-size: 15px;
+            padding: 10px 15px; border-radius: 8px; border: 2px solid var(--dark-grey);
+            font-weight: 600; cursor: pointer; background: white; font-size: 15px;
         }
 
         .top-btn { 
@@ -45,12 +41,20 @@
             background-color: var(--strava-orange);
         }
         
-        .top-btn:hover { opacity: 0.9; transform: translateY(-1px); }
-        
+        /* Spesialknapp for Bratthet (UT.no stil) */
+        #bratthetBtn {
+            background-color: white; color: var(--dark-grey);
+            border: 2px solid var(--nve-red); padding: 12px 20px;
+            border-radius: 8px; cursor: pointer; font-weight: 800;
+            transition: all 0.2s;
+        }
+        #bratthetBtn.active {
+            background-color: var(--nve-red); color: white;
+        }
+
         #resetBtn { 
-            background-color: var(--dark-grey); 
-            color: white; border: none; border-radius: 8px; 
-            padding: 12px 20px; cursor: pointer; font-weight: 600; 
+            background-color: var(--dark-grey); color: white; border: none; 
+            border-radius: 8px; padding: 12px 20px; cursor: pointer; font-weight: 600; 
         }
 
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; }
@@ -65,17 +69,10 @@
             background: white; color: var(--insta-pink); border: 2px solid var(--insta-pink);
             padding: 12px 18px; border-radius: 50px; font-weight: bold;
             display: none; text-decoration: none; box-shadow: 0 4px 15px rgba(225, 48, 108, 0.3);
-            font-size: 14px; align-items: center; gap: 8px;
-        }
-
-        .custom-tooltip {
-            background-color: var(--dark-grey);
-            color: white; border: none; border-radius: 4px; padding: 5px 10px;
-            font-weight: 600;
         }
 
         #legend {
-            margin-top: 15px; display: inline-flex; gap: 12px; font-size: 11px;
+            margin-top: 15px; display: none; gap: 12px; font-size: 11px;
             background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             justify-content: center; flex-wrap: wrap;
         }
@@ -93,10 +90,10 @@
 
     <div id="buttons">
         <select id="mapSelect" class="map-selector">
-            <option value="norge">Kun Norgeskart</option>
-            <option value="varsom">Bratthetskart (NVE)</option>
+            <option value="norge">Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
         </select>
+        <button id="bratthetBtn">Bratthet AV</button>
         <button id="resetBtn">Tilbake til oversikt</button>
     </div>
 
@@ -124,12 +121,17 @@
         const map = L.map('map').setView([69.65, 18.95], 10);
         const allTracksGroup = L.featureGroup().addTo(map);
         const instaBtn = document.getElementById('insta-overlay-btn');
+        const legend = document.getElementById('legend');
+        const bratthetBtn = document.getElementById('bratthetBtn');
 
-        // LAG
+        // Bakgrunnslag
         const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
             attribution: '&copy; Kartverket'
         }).addTo(map);
 
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
+
+        // Bratthetslag (WMS)
         const varsomBratthet = L.tileLayer.wms('https://gis3.nve.no/map/services/Bratthet/MapServer/WmsServer', {
             layers: 'Bratthet_snoskred',
             format: 'image/png',
@@ -140,22 +142,31 @@
             crs: L.CRS.EPSG3857
         });
 
-        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
-
-        // KARTVELGER
+        // Håndtering av bakgrunnskart
         document.getElementById('mapSelect').onchange = function() {
-            map.removeLayer(osmLayer);
-            map.removeLayer(norgeLayer);
-            map.removeLayer(varsomBratthet);
-
             if (this.value === "osm") {
-                osmLayer.addTo(map);
-            } else if (this.value === "norge") {
-                norgeLayer.addTo(map);
-            } else if (this.value === "varsom") {
-                norgeLayer.addTo(map);
-                varsomBratthet.addTo(map);
-                if (map.getZoom() < 11) map.setZoom(12);
+                map.addLayer(osmLayer);
+                map.removeLayer(norgeLayer);
+            } else {
+                map.addLayer(norgeLayer);
+                map.removeLayer(osmLayer);
+            }
+        };
+
+        // Bratthet-knapp funksjonalitet (Toggle)
+        bratthetBtn.onclick = function() {
+            if (map.hasLayer(varsomBratthet)) {
+                map.removeLayer(varsomBratthet);
+                this.classList.remove('active');
+                this.innerText = "Bratthet AV";
+                legend.style.display = "none";
+            } else {
+                map.addLayer(varsomBratthet);
+                this.classList.add('active');
+                this.innerText = "Bratthet PÅ";
+                legend.style.display = "inline-flex";
+                // Zoom inn litt hvis brukeren er for langt ute til å se bratthet
+                if (map.getZoom() < 11) map.setZoom(11);
             }
         };
 
@@ -178,7 +189,6 @@
             }).on('loaded', function(e) {
                 const layer = e.target;
                 allTracksGroup.addLayer(layer);
-                layer.bindTooltip(topp.navn, { sticky: true, className: 'custom-tooltip' });
                 
                 const activate = () => {
                     map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
@@ -188,7 +198,6 @@
                 layer.on('click', activate);
                 btn.onclick = activate;
 
-                // Start med oversikt over alle spor
                 map.fitBounds(allTracksGroup.getBounds(), { padding: [40, 40] });
             });
         });
