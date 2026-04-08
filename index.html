@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Toppturer Tromsø</title>
+    <title>Toppturer Tromsø - NVE Bratthet</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root {
@@ -13,7 +13,7 @@
         }
 
         body { 
-            font-family: -apple-system, sans-serif; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             text-align: center; margin: 0; padding: 20px 10px; 
             background: #f1f5f9; color: var(--dark-grey);
         }
@@ -57,7 +57,7 @@
     <div id="buttons">
         <select id="mapSelect" class="map-selector">
             <option value="norge">Kun Norgeskart</option>
-            <option value="varsom">Bratthetskart (Varsom.no)</option>
+            <option value="bratthet">Bratthetskart (NVE Temakart)</option>
             <option value="osm">OpenStreetMap</option>
         </select>
         <button id="resetBtn">Tilbake til oversikt</button>
@@ -84,44 +84,41 @@
     <script>
         document.getElementById('last-updated').innerHTML = "Sist oppdatert: " + new Date(document.lastModified).toLocaleString('no-NO');
 
+        // Oppsett av kartet
         const map = L.map('map').setView([69.65, 18.95], 10);
         const allTracksGroup = L.featureGroup().addTo(map);
 
-        // 1. Grunnlag: Norgeskart
+        // 1. Bakgrunn: Norgeskart Topografisk
         const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
             attribution: '&copy; Kartverket'
         });
 
-        // 2. Bratthetslag (NVE WMS - mest robust)
-        const varsomBratthet = L.tileLayer.wms('https://gis3.nve.no/map/services/Bratthet/MapServer/WmsServer', {
-            layers: 'Bratthet_snoskred',
-            format: 'image/png',
-            transparent: true,
-            version: '1.3.0',
-            opacity: 0.6,
+        // 2. Bratthetslag: NVE Temakart (WMTS-tjeneste)
+        const bratthetLayer = L.tileLayer('https://gis3.nve.no/map/rest/services/wmts/Bratthet/MapServer/tile/10/Bratthet/{z}/{y}/{x}', {
             attribution: '&copy; NVE',
-            crs: L.CRS.EPSG3857
+            transparent: true,
+            opacity: 0.6,
+            zIndex: 1000
         });
 
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
 
-        // START-TILSTAND: Kun norgeskart (uten bratthet)
+        // Standard: Start med kun norgeskart
         norgeLayer.addTo(map);
 
+        // Håndtering av kartvalg
         document.getElementById('mapSelect').onchange = function() {
             map.removeLayer(osmLayer);
             map.removeLayer(norgeLayer);
-            map.removeLayer(varsomBratthet);
+            map.removeLayer(bratthetLayer);
 
             if (this.value === "osm") {
                 osmLayer.addTo(map);
             } else if (this.value === "norge") {
                 norgeLayer.addTo(map);
-            } else if (this.value === "varsom") {
+            } else if (this.value === "bratthet") {
                 norgeLayer.addTo(map);
-                varsomBratthet.addTo(map);
-                // Bratthet krever ofte et visst zoom-nivå for å vises tydelig
-                if (map.getZoom() < 11) map.setZoom(12);
+                bratthetLayer.addTo(map);
             }
         };
 
@@ -154,7 +151,7 @@
                 layer.on('click', activate);
                 btn.onclick = activate;
 
-                // AUTO-ZOOM TIL OVERSIKT når sporene er lastet
+                // Tilpasser visningen slik at alle spor vises når de er lastet
                 map.fitBounds(allTracksGroup.getBounds(), { padding: [40, 40] });
             });
         });
