@@ -54,7 +54,6 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.15);
         }
 
-        /* Styling for video-ikonet på kartet */
         .video-marker {
             background: white;
             border: 2px solid #e1306c;
@@ -69,7 +68,7 @@
 </head>
 <body>
 
-    <h1>Top Rope Solo - Gråtinden</h1>
+    <h1>Top Rope Solo - Tromsø</h1>
 
     <div id="buttons">
         <button id="resetBtn">Tilbake til oversikt</button>
@@ -82,7 +81,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        const map = L.map('map').setView([69.65, 18.7], 11);
+        // Definerer standardutsnitt for oversikten (Sentrert over Tromsø/Kvaløya)
+        const defaultView = {
+            lat: 69.68, 
+            lng: 18.75,
+            zoom: 10
+        };
+
+        const map = L.map('map').setView([defaultView.lat, defaultView.lng], defaultView.zoom);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap'
@@ -106,47 +112,33 @@
 
         track.on('loaded', function(e) {
             const gpx = e.target;
-            map.fitBounds(gpx.getBounds(), { padding: [40, 40] });
-
-            // Finn høyeste punkt
-            // get_elevation_max_loc() returnerer [lat, lng] for toppunktet
+            
+            // Finn og legg til video-ikon på høyeste punkt
             const maxElevationLoc = gpx.get_elevation_max_loc();
-
             if (maxElevationLoc) {
-                // Lag et egendefinert video-ikon (Instagram-farger)
                 const videoIcon = L.divIcon({
-                    html: `
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#e1306c">
-                            <path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418 c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,11,2,11s0,3.254,0.418,4.814c0.23,0.86,0.908,1.538,1.768,1.768 C5.746,18,12,18,12,18s6.254,0,7.814-0.418c0.861-0.23,1.538-0.908,1.768-1.768C22,14.254,22,11,22,11S22,7.746,21.582,6.186z M10,14.5v-7l6,3.5L10,14.5z"/>
-                        </svg>`,
+                    html: `<svg width="20" height="20" viewBox="0 0 24 24" fill="#e1306c"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418 c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,11,2,11s0,3.254,0.418,4.814c0.23,0.86,0.908,1.538,1.768,1.768 C5.746,18,12,18,12,18s6.254,0,7.814-0.418c0.861-0.23,1.538-0.908,1.768-1.768C22,14.254,22,11,22,11S22,7.746,21.582,6.186z M10,14.5v-7l6,3.5L10,14.5z"/></svg>`,
                     className: 'video-marker',
                     iconSize: [30, 30],
                     iconAnchor: [15, 15]
                 });
 
-                // Legg markøren på kartet
                 const videoMarker = L.marker(maxElevationLoc, { icon: videoIcon }).addTo(map);
-                
-                // Gjør den klikkbar
-                videoMarker.on('click', function() {
-                    window.open('https://www.instagram.com/p/DW1xhPniK_l/', '_blank');
-                });
-
-                // Valgfritt: Legg til en liten merkelapp som dukker opp når man holder over
+                videoMarker.on('click', () => window.open('https://www.instagram.com/p/DW1xhPniK_l/', '_blank'));
                 videoMarker.bindTooltip("Se video fra toppen");
             }
         });
 
+        // Knapp: Zoom inn på Gråtinden-sporet
         document.getElementById('gpxBtn').addEventListener('click', () => {
             if (track.getBounds().isValid()) {
                 map.fitBounds(track.getBounds(), { padding: [50, 50] });
             }
         });
 
+        // Knapp: Tilbake til oversikt (bruker det faste utsnittet)
         document.getElementById('resetBtn').addEventListener('click', () => {
-            if (track.getBounds().isValid()) {
-                map.fitBounds(track.getBounds(), { padding: [80, 80] });
-            }
+            map.setView([defaultView.lat, defaultView.lng], defaultView.zoom);
         });
     </script>
 </body>
