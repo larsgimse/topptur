@@ -40,6 +40,19 @@
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; }
         #map { height: 600px; width: 100%; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
 
+        /* Stil for Tooltip/Label */
+        .custom-tooltip {
+            background-color: var(--dark-grey);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        .leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before { display: none; } /* Fjerner den lille pilen */
+
         #insta-overlay-btn {
             position: absolute; top: 20px; right: 20px; z-index: 1000;
             background: white; color: var(--insta-pink); border: 2px solid var(--insta-pink);
@@ -57,7 +70,7 @@
 
     <header>
         <h1>Toppturer rundt Tromsø</h1>
-        <p class="subtitle">Gå inn på den enkelte topp for å se video</p>
+        <p class="subtitle">Klikk på fjellene i kartet eller bruk knappene for å se video</p>
     </header>
 
     <div id="buttons">
@@ -86,7 +99,6 @@
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
 
-        // --- DIN TOPP-LISTE ---
         const topper = [
             {
                 navn: "Gråtinden 871",
@@ -109,7 +121,6 @@
             map.flyToBounds(trackLayer.getBounds(), { padding: [50, 50], duration: 1.5 });
             instaBtn.href = videoUrl;
             
-            // Rens navnet: Ta det før parentes, men hvis det er Rema (800) 1000, behold mer av det.
             let cleanName = peakName.split('(')[0].trim();
             if(cleanName === "Rema") cleanName = "Rema 1000"; 
             
@@ -129,8 +140,18 @@
                 polyline_options: { color: 'var(--strava-orange)', opacity: 0.7, weight: 5 }
             }).on('loaded', function(e) {
                 const layer = e.target;
+                
+                // LEGG TIL LABEL (TOOLTIP)
+                layer.bindTooltip(topp.navn, {
+                    sticky: true, // Labelen følger musa
+                    className: 'custom-tooltip',
+                    direction: 'top',
+                    offset: [0, -10]
+                });
+
                 layer.on('click', () => activatePeak(layer, topp.video, topp.navn));
                 btn.onclick = () => activatePeak(layer, topp.video, topp.navn);
+                
                 layer.on('mouseover', () => layer.setStyle({ weight: 9, opacity: 1 }));
                 layer.on('mouseout', () => layer.setStyle({ weight: 5, opacity: 0.7 }));
             }).addTo(map);
