@@ -43,15 +43,9 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; 
         }
 
-        /* FJERNER BLÅ RAMME VED KLIKK */
-        path.leaflet-interactive:focus {
-            outline: none;
-        }
-        * {
-            -webkit-tap-highlight-color: transparent;
-        }
+        path.leaflet-interactive:focus { outline: none; }
+        * { -webkit-tap-highlight-color: transparent; }
 
-        /* Stil for Tooltip/Label */
         .custom-tooltip {
             background-color: var(--dark-grey);
             color: white;
@@ -108,7 +102,11 @@
         const instaBtn = document.getElementById('insta-overlay-btn');
         const instaText = document.getElementById('insta-text');
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+        // OPPDATERT KARTGRUNNLAG: Tracestrack Topo
+        L.tileLayer('https://{s}.tile.tracestrack.com/topo__/{z}/{x}/{y}.png?key=YOUR_API_KEY', {
+            attribution: '&copy; <a href="https://www.tracestrack.com/">Tracestrack</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
 
         const topper = [
             {
@@ -148,7 +146,7 @@
             const track = new L.GPX(topp.fil, {
                 async: true,
                 marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                polyline_options: { color: 'var(--strava-orange)', opacity: 0.7, weight: 5 }
+                polyline_options: { color: 'var(--strava-orange)', opacity: 0.9, weight: 5 }
             }).on('loaded', function(e) {
                 const layer = e.target;
                 
@@ -163,7 +161,7 @@
                 btn.onclick = () => activatePeak(layer, topp.video, topp.navn);
                 
                 layer.on('mouseover', () => layer.setStyle({ weight: 9, opacity: 1 }));
-                layer.on('mouseout', () => layer.setStyle({ weight: 5, opacity: 0.7 }));
+                layer.on('mouseout', () => layer.setStyle({ weight: 5, opacity: 0.9 }));
             }).addTo(map);
         });
 
