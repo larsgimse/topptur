@@ -8,61 +8,40 @@
     <style>
         :root {
             --strava-orange: #fc4c02;
+            --insta-pink: #e1306c;
             --dark-grey: #333;
-            --bg-color: #f0f4f8;
         }
 
-        body {
-            font-family: sans-serif;
-            background-color: var(--bg-color);
-            text-align: center;
-            padding: 20px 10px;
-            margin: 0;
+        body { font-family: sans-serif; text-align: center; padding: 20px 10px; margin: 0; background: #f0f4f8; }
+        #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 12px; }
+        
+        button { 
+            color: white; border: none; border-radius: 8px; padding: 12px 24px; 
+            cursor: pointer; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; 
         }
-
-        #buttons {
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 12px;
-        }
-
-        button {
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 12px 24px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
+        
         #gpxBtn { background-color: var(--strava-orange); }
         #resetBtn { background-color: var(--dark-grey); }
 
-        #map {
-            height: 600px;
-            width: 100%;
-            max-width: 1100px;
-            margin: 0 auto;
-            border-radius: 15px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-        }
+        #map { height: 600px; width: 100%; max-width: 1100px; margin: 0 auto; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
 
-        .video-marker {
+        /* Dette gjør ikonet veldig synlig */
+        .video-marker-css {
             background: white;
-            border: 2px solid #e1306c;
+            border: 3px solid var(--insta-pink);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            box-shadow: 0 0 15px rgba(225, 48, 108, 0.6);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 48, 108, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(225, 48, 108, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 48, 108, 0); }
         }
     </style>
 </head>
@@ -81,14 +60,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        // Definerer standardutsnitt for oversikten (Sentrert over Tromsø/Kvaløya)
-        const defaultView = {
-            lat: 69.68, 
-            lng: 18.75,
-            zoom: 10
-        };
-
-        const map = L.map('map').setView([defaultView.lat, defaultView.lng], defaultView.zoom);
+        const map = L.map('map').setView([69.68, 18.75], 10);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap'
@@ -96,49 +68,48 @@
 
         const gpxUrl = '2026_04_06.gpx'; 
 
+        // Funksjon for å lage video-ikonet
+        function addVideoMarker(latlng) {
+            const videoIcon = L.divIcon({
+                html: `<svg width="24" height="24" viewBox="0 0 24 24" fill="#e1306c"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418 c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,11,2,11s0,3.254,0.418,4.814c0.23,0.86,0.908,1.538,1.768,1.768 C5.746,18,12,18,12,18s6.254,0,7.814-0.418c0.861-0.23,1.538-0.908,1.768-1.768C22,14.254,22,11,22,11S22,7.746,21.582,6.186z M10,14.5v-7l6,3.5L10,14.5z"/></svg>`,
+                className: 'video-marker-css',
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
+            });
+
+            L.marker(latlng, { icon: videoIcon })
+                .addTo(map)
+                .bindPopup('<b>Toppen av Gråtinden</b><br><a href="https://www.instagram.com/p/DW1xhPniK_l/" target="_blank">Se video på Instagram</a>')
+                .on('click', () => window.open('https://www.instagram.com/p/DW1xhPniK_l/', '_blank'));
+        }
+
         const track = new L.GPX(gpxUrl, {
             async: true,
-            marker_options: {
-                startIconUrl: null,
-                endIconUrl: null,
-                shadowUrl: null
-            },
-            polyline_options: {
-                color: '#fc4c02',
-                opacity: 0.85,
-                weight: 6
-            }
+            marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
+            polyline_options: { color: '#fc4c02', opacity: 0.85, weight: 6 }
         }).addTo(map);
 
         track.on('loaded', function(e) {
-            const gpx = e.target;
+            map.fitBounds(e.target.getBounds(), { padding: [40, 40] });
             
-            // Finn og legg til video-ikon på høyeste punkt
-            const maxElevationLoc = gpx.get_elevation_max_loc();
-            if (maxElevationLoc) {
-                const videoIcon = L.divIcon({
-                    html: `<svg width="20" height="20" viewBox="0 0 24 24" fill="#e1306c"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418 c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,11,2,11s0,3.254,0.418,4.814c0.23,0.86,0.908,1.538,1.768,1.768 C5.746,18,12,18,12,18s6.254,0,7.814-0.418c0.861-0.23,1.538-0.908,1.768-1.768C22,14.254,22,11,22,11S22,7.746,21.582,6.186z M10,14.5v-7l6,3.5L10,14.5z"/></svg>`,
-                    className: 'video-marker',
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 15]
-                });
-
-                const videoMarker = L.marker(maxElevationLoc, { icon: videoIcon }).addTo(map);
-                videoMarker.on('click', () => window.open('https://www.instagram.com/p/DW1xhPniK_l/', '_blank'));
-                videoMarker.bindTooltip("Se video fra toppen");
+            // Forsøk 1: Finn høyeste punkt automatisk
+            let maxLoc = e.target.get_elevation_max_loc();
+            
+            // Forsøk 2: Hvis Forsøk 1 feiler, bruk faste koordinater for Gråtinden
+            if (!maxLoc) {
+                console.log("Fant ikke høydedata, bruker fast punkt.");
+                maxLoc = [69.723, 18.577]; 
             }
+            
+            addVideoMarker(maxLoc);
         });
 
-        // Knapp: Zoom inn på Gråtinden-sporet
         document.getElementById('gpxBtn').addEventListener('click', () => {
-            if (track.getBounds().isValid()) {
-                map.fitBounds(track.getBounds(), { padding: [50, 50] });
-            }
+            map.fitBounds(track.getBounds(), { padding: [50, 50] });
         });
 
-        // Knapp: Tilbake til oversikt (bruker det faste utsnittet)
         document.getElementById('resetBtn').addEventListener('click', () => {
-            map.setView([defaultView.lat, defaultView.lng], defaultView.zoom);
+            map.setView([69.68, 18.75], 10);
         });
     </script>
 </body>
