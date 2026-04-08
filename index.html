@@ -3,38 +3,41 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Toppturer rundt Tromsø</title>
+    <title>Toppturer Tromsø</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root {
             --strava-orange: #fc4c02;
             --insta-pink: #e1306c;
             --dark-grey: #2c3e50;
-            --nve-red: #d32f2f;
         }
 
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            font-family: -apple-system, sans-serif; 
             text-align: center; margin: 0; padding: 20px 10px; 
-            background: #f1f5f9; color: var(--dark-grey);
+            background: #f1f5f9; 
         }
 
-        #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; align-items: center; }
+        #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
         
-        .map-selector { padding: 10px 15px; border-radius: 8px; border: 2px solid var(--dark-grey); font-weight: 600; cursor: pointer; background: white; }
-
-        .top-btn { background-color: var(--strava-orange); color: white; border: none; border-radius: 8px; padding: 12px 20px; cursor: pointer; font-weight: 600; }
-        
-        #bratthetBtn {
-            background-color: white; color: var(--dark-grey); border: 2px solid var(--nve-red); 
-            padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 800;
+        .map-selector, #resetBtn, #bratthetBtn { 
+            padding: 12px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none;
         }
-        #bratthetBtn.active { background-color: var(--nve-red); color: white; }
 
-        #resetBtn { background-color: var(--dark-grey); color: white; border: none; border-radius: 8px; padding: 12px 20px; cursor: pointer; }
+        .map-selector { border: 2px solid var(--dark-grey); background: white; }
+
+        .top-btn { 
+            background: var(--strava-orange); color: white; border: none; 
+            padding: 12px 18px; border-radius: 8px; cursor: pointer; font-weight: bold;
+        }
+
+        #bratthetBtn { background: white; border: 2px solid #d32f2f; color: #d32f2f; }
+        #bratthetBtn.active { background: #d32f2f; color: white; }
+
+        #resetBtn { background: var(--dark-grey); color: white; }
 
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; }
-        #map { height: 600px; width: 100%; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); background-color: #ddd; }
+        #map { height: 600px; width: 100%; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); background: #eee; }
 
         #insta-overlay-btn {
             position: absolute; top: 20px; right: 20px; z-index: 1000;
@@ -44,13 +47,12 @@
 
         #legend {
             margin-top: 15px; display: none; gap: 12px; font-size: 11px;
-            background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            justify-content: center; flex-wrap: wrap;
+            background: white; padding: 12px; border-radius: 8px; justify-content: center;
         }
-        .legend-item { display: flex; align-items: center; gap: 4px; font-weight: 600; }
-        .box { width: 14px; height: 14px; border: 1px solid rgba(0,0,0,0.2); }
+        .legend-item { display: flex; align-items: center; gap: 4px; }
+        .box { width: 14px; height: 14px; border: 1px solid #ccc; }
 
-        #last-updated { margin-top: 20px; font-size: 12px; color: #94a3b8; }
+        #last-updated { margin-top: 20px; font-size: 11px; color: #94a3b8; }
     </style>
 </head>
 <body>
@@ -62,7 +64,7 @@
             <option value="norge">Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
         </select>
-        <button id="bratthetBtn">Bratthet AV</button>
+        <button id="bratthetBtn">Bratthet: AV</button>
         <button id="resetBtn">Tilbake til oversikt</button>
     </div>
 
@@ -88,56 +90,50 @@
         document.getElementById('last-updated').innerHTML = "Sist oppdatert: " + new Date(document.lastModified).toLocaleString('no-NO');
 
         const map = L.map('map').setView([69.65, 18.95], 11);
-        const allTracksGroup = L.featureGroup().addTo(map);
+        const tracks = L.featureGroup().addTo(map);
 
-        // 1. Grunnkart
-        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
+        // 1. Kartverket Topo (Bunn)
+        const topoLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
             attribution: '&copy; Kartverket'
         }).addTo(map);
 
+        // 2. Kartverket Bratthet (Dette er det mest stabile alternativet til NVE)
+        const slopeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/slope/default/webmercator/{z}/{y}/{x}.png', {
+            attribution: '&copy; Kartverket',
+            opacity: 0.6,
+            zIndex: 100
+        });
+
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
 
-        // 2. Bratthetslag (Alternativ URL-struktur fra NVE)
-        const varsomBratthet = L.tileLayer('https://gis3.nve.no/map/rest/services/Bratthet/MapServer/export?bbox={bbox}&bboxSR=3857&layers=show%3A0&layerDefs=&size={width}%2C{height}&imageSR=3857&format=png32&transparent=true&f=image', {
-            attribution: '&copy; NVE',
-            opacity: 0.7,
-            zIndex: 1000
-        });
-
-        // Eller hvis den over ikke virker, prøver vi denne faste flis-tjenesten:
-        const varsomTiles = L.tileLayer('https://gis3.nve.no/map/rest/services/wmts/Bratthet/MapServer/tile/10/Bratthet/{z}/{y}/{x}', {
-            attribution: '&copy; NVE',
-            opacity: 0.7,
-            zIndex: 1000
-        });
-
-        // Kontroll av bakgrunn
-        document.getElementById('mapSelect').onchange = function() {
-            if (this.value === "osm") { map.addLayer(osmLayer); map.removeLayer(norgeLayer); }
-            else { map.addLayer(norgeLayer); map.removeLayer(osmLayer); }
-        };
-
-        // Bratthet-knapp
+        // Bratthet Toggle
         const bratthetBtn = document.getElementById('bratthetBtn');
-        const legend = document.getElementById('legend');
-
         bratthetBtn.onclick = function() {
-            // Vi bruker varsomTiles her da den er mest stabil for flis-visning
-            if (map.hasLayer(varsomTiles)) {
-                map.removeLayer(varsomTiles);
+            if (map.hasLayer(slopeLayer)) {
+                map.removeLayer(slopeLayer);
                 this.classList.remove('active');
-                this.innerText = "Bratthet AV";
-                legend.style.display = "none";
+                this.innerText = "Bratthet: AV";
+                document.getElementById('legend').style.display = "none";
             } else {
-                map.addLayer(varsomTiles);
+                slopeLayer.addTo(map);
                 this.classList.add('active');
-                this.innerText = "Bratthet PÅ";
-                legend.style.display = "inline-flex";
-                // NVE krever zoom 11+
-                if (map.getZoom() < 11) map.setZoom(11);
+                this.innerText = "Bratthet: PÅ";
+                document.getElementById('legend').style.display = "flex";
             }
         };
 
+        // Bytte bakgrunn
+        document.getElementById('mapSelect').onchange = function() {
+            if (this.value === "osm") {
+                osmLayer.addTo(map);
+                map.removeLayer(topoLayer);
+            } else {
+                topoLayer.addTo(map);
+                map.removeLayer(osmLayer);
+            }
+        };
+
+        // GPX-filer
         const topper = [
             { navn: "Gråtinden 871", fil: "2026_04_06.gpx", video: "https://www.instagram.com/reel/DW1xhPniK_l/" },
             { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/" },
@@ -153,29 +149,26 @@
             new L.GPX(topp.fil, {
                 async: true,
                 marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                polyline_options: { color: 'var(--strava-orange)', weight: 5, opacity: 0.9 }
+                polyline_options: { color: '#fc4c02', weight: 5 }
             }).on('loaded', function(e) {
-                const layer = e.target;
-                allTracksGroup.addLayer(layer);
-                layer.bindTooltip(topp.navn, { sticky: true });
+                tracks.addLayer(e.target);
                 
-                btn.onclick = () => {
-                    map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
+                const activate = () => {
+                    map.flyToBounds(e.target.getBounds(), { padding: [50, 50] });
                     document.getElementById('insta-overlay-btn').href = topp.video;
-                    document.getElementById('insta-overlay-btn').style.display = 'flex';
+                    document.getElementById('insta-overlay-btn').style.display = 'block';
                 };
-                layer.on('click', () => {
-                    map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
-                    document.getElementById('insta-overlay-btn').href = topp.video;
-                    document.getElementById('insta-overlay-btn').style.display = 'flex';
-                });
+
+                btn.onclick = activate;
+                e.target.on('click', activate);
                 
-                map.fitBounds(allTracksGroup.getBounds());
+                // Start med oversikt
+                map.fitBounds(tracks.getBounds(), { padding: [40, 40] });
             });
         });
 
         document.getElementById('resetBtn').onclick = () => {
-            map.flyToBounds(allTracksGroup.getBounds(), { padding: [40, 40] });
+            map.flyToBounds(tracks.getBounds(), { padding: [40, 40] });
             document.getElementById('insta-overlay-btn').style.display = 'none';
         };
     </script>
