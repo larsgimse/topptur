@@ -21,7 +21,7 @@
 
         #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; align-items: center; }
         
-        .map-selector { padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; border: 2px solid var(--dark-grey); }
+        .map-selector { padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; border: 2px solid var(--dark-grey); background: white; }
 
         .top-btn { 
             background: var(--strava-orange); color: white; border: none; 
@@ -33,7 +33,6 @@
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; }
         #map { height: 650px; width: 100%; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); background-color: #ddd; }
 
-        /* Tegnforklaring for bratthet */
         #legend {
             margin-top: 15px; display: inline-flex; gap: 15px; font-size: 12px;
             background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -58,8 +57,8 @@
 
     <div id="buttons">
         <select id="mapSelect" class="map-selector">
-            <option value="bratthet">Bratthetskart (NVE + Norgeskart)</option>
-            <option value="norge">Kun Norgeskart</option>
+            <option value="bratthet">Bratthetskart (Kartverket)</option>
+            <option value="norge">Vanlig Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
         </select>
         <button id="resetBtn">Tilbake til oversikt</button>
@@ -72,10 +71,10 @@
 
     <div id="legend">
         <strong>Bratthet:</strong>
-        <div class="legend-item"><div class="box" style="background: #ffff00;"></div> 30-35°</div>
-        <div class="legend-item"><div class="box" style="background: #ffaa00;"></div> 35-40°</div>
-        <div class="legend-item"><div class="box" style="background: #ff0000;"></div> 40-45°</div>
-        <div class="legend-item"><div class="box" style="background: #aa0000;"></div> 45-90°</div>
+        <div class="legend-item"><div class="box" style="background: #ffff00; opacity: 0.7;"></div> 30-35°</div>
+        <div class="legend-item"><div class="box" style="background: #ffaa00; opacity: 0.7;"></div> 35-40°</div>
+        <div class="legend-item"><div class="box" style="background: #ff0000; opacity: 0.7;"></div> 40-45°</div>
+        <div class="legend-item"><div class="box" style="background: #aa0000; opacity: 0.7;"></div> 45-90°</div>
     </div>
 
     <div id="last-updated"></div>
@@ -84,41 +83,33 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        // Fyller inn dato for siste oppdatering
         document.getElementById('last-updated').innerHTML = "Sist oppdatert: " + new Date(document.lastModified).toLocaleString('no-NO');
 
-        // Start-zoom satt til 12 for å trigger NVE-lag
-        const map = L.map('map').setView([69.65, 18.95], 12);
+        const map = L.map('map').setView([69.65, 18.95], 11);
         const allTracksGroup = L.featureGroup().addTo(map);
 
-        // 1. Grunlag: Norgeskart
+        // KARTLAG FRA KARTVERKET
         const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
             attribution: '&copy; Kartverket'
         });
 
-        // 2. Overlegg: NVE Bratthet (KORRIGERT WMS SOM FUNGERER)
-        const bratthetWMS = L.tileLayer.wms('https://gis3.nve.no/map/services/Bratthet/MapServer/WmsServer', {
-            layers: 'Bratthet_snoskred',
-            format: 'image/png',
-            transparent: true,
-            version: '1.3.0',
-            opacity: 0.7,
-            attribution: '&copy; NVE',
-            crs: L.CRS.EPSG3857 // Kritisk parameter for Leaflet/NVE kompatibilitet
+        // Alternativt lag: Kartverkets bratthetslag (slopes) som overlegg
+        const bratthetLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/slope/default/webmercator/{z}/{y}/{x}.png', {
+            attribution: '&copy; Kartverket',
+            opacity: 0.6,
+            zIndex: 1000
         });
 
-        // 3. Grunlag: OSM
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
 
-        // Kombinasjon som standard ved oppstart
+        // Standard visning
         norgeLayer.addTo(map);
-        bratthetWMS.addTo(map);
+        bratthetLayer.addTo(map);
 
-        // Kartvelger-logikk
         document.getElementById('mapSelect').onchange = function() {
             map.removeLayer(osmLayer);
             map.removeLayer(norgeLayer);
-            map.removeLayer(bratthetWMS);
+            map.removeLayer(bratthetLayer);
 
             if (this.value === "osm") {
                 osmLayer.addTo(map);
@@ -126,9 +117,7 @@
                 norgeLayer.addTo(map);
             } else if (this.value === "bratthet") {
                 norgeLayer.addTo(map);
-                bratthetWMS.addTo(map);
-                // Hjelp brukeren inn hvis de er zoomet for langt ut for NVE
-                if (map.getZoom() < 11) map.setZoom(12);
+                bratthetLayer.addTo(map);
             }
         };
 
@@ -147,11 +136,10 @@
             new L.GPX(topp.fil, {
                 async: true,
                 marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                polyline_options: { color: 'var(--strava-orange)', weight: 5, opacity: 0.8 }
+                polyline_options: { color: 'var(--strava-orange)', weight: 5, opacity: 0.9 }
             }).on('loaded', function(e) {
                 const layer = e.target;
                 allTracksGroup.addLayer(layer);
-                
                 layer.bindTooltip(topp.navn, { sticky: true, className: 'custom-tooltip' });
                 
                 const activate = () => {
@@ -159,16 +147,11 @@
                     document.getElementById('insta-overlay-btn').href = topp.video;
                     document.getElementById('insta-overlay-btn').style.display = 'block';
                 };
-                
                 layer.on('click', activate);
                 btn.onclick = activate;
-                
-                layer.on('mouseover', () => layer.setStyle({ weight: 8, opacity: 1 }));
-                layer.on('mouseout', () => layer.setStyle({ weight: 5, opacity: 0.8 }));
             });
         });
 
-        // Oppdatert reset-knapp som zoomer til ALLE spor
         document.getElementById('resetBtn').onclick = () => {
             if (allTracksGroup.getLayers().length > 0) {
                 map.flyToBounds(allTracksGroup.getBounds(), { padding: [40, 40] });
