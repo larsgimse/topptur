@@ -38,11 +38,11 @@
         
         #resetBtn { background-color: var(--slate-grey); color: white; border: none; border-radius: 8px; padding: 12px 20px; cursor: pointer; font-weight: 600; }
 
-        /* Stil for den nye Norgeskart-knappen */
-        #norgesBtn { 
+        /* Stil for Toggle-knappen */
+        #layerToggleBtn { 
             background-color: var(--norgeskart-blue); color: white; border: none; 
             border-radius: 8px; padding: 12px 20px; cursor: pointer; 
-            font-weight: 600; text-decoration: none; display: inline-flex; align-items: center;
+            font-weight: 600; min-width: 140px; transition: background 0.3s;
         }
 
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; }
@@ -56,13 +56,8 @@
 
         .custom-tooltip {
             background-color: var(--dark-grey);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 5px 10px;
-            font-weight: 600;
-            font-size: 14px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            color: white; border: none; border-radius: 4px; padding: 5px 10px;
+            font-weight: 600; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
         .leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before { display: none; }
 
@@ -87,7 +82,7 @@
     </header>
 
     <div id="buttons">
-        <a id="norgesBtn" href="https://www.norgeskart.no/#!?zoom=10&lon=654060.00&lat=7739500.00" target="_blank">Norgeskart</a>
+        <button id="layerToggleBtn">Norgeskart</button>
         <button id="resetBtn">Tilbake til oversikt</button>
     </div>
 
@@ -110,11 +105,37 @@
         const map = L.map('map').setView([69.68, 18.75], 9);
         const instaBtn = document.getElementById('insta-overlay-btn');
         const instaText = document.getElementById('insta-text');
+        const layerToggleBtn = document.getElementById('layerToggleBtn');
 
-        // KARTGRUNNLAG: Kartverkets Topografiske kart
-        L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
-            attribution: '&copy; <a href="http://www.kartverket.no/">Kartverket</a>'
-        }).addTo(map);
+        // Definer de to kartlagene
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+        });
+
+        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
+            attribution: '&copy; Kartverket'
+        });
+
+        // Start med OSM som standard (siden knappen sier "Norgeskart")
+        osmLayer.addTo(map);
+        let currentLayer = "osm";
+
+        // Funksjon for å bytte lag
+        layerToggleBtn.onclick = () => {
+            if (currentLayer === "osm") {
+                map.removeLayer(osmLayer);
+                norgeLayer.addTo(map);
+                layerToggleBtn.innerText = "OpenStreetMap";
+                layerToggleBtn.style.backgroundColor = "var(--dark-grey)";
+                currentLayer = "norge";
+            } else {
+                map.removeLayer(norgeLayer);
+                osmLayer.addTo(map);
+                layerToggleBtn.innerText = "Norgeskart";
+                layerToggleBtn.style.backgroundColor = "var(--norgeskart-blue)";
+                currentLayer = "osm";
+            }
+        };
 
         const topper = [
             {
@@ -137,10 +158,8 @@
         function activatePeak(trackLayer, videoUrl, peakName) {
             map.flyToBounds(trackLayer.getBounds(), { padding: [50, 50], duration: 1.5 });
             instaBtn.href = videoUrl;
-            
             let cleanName = peakName.split('(')[0].trim();
             if(cleanName === "Rema") cleanName = "Rema 1000"; 
-            
             instaText.innerText = "Se video fra " + cleanName;
             instaBtn.style.display = 'flex';
         }
@@ -157,17 +176,9 @@
                 polyline_options: { color: 'var(--strava-orange)', opacity: 0.8, weight: 5 }
             }).on('loaded', function(e) {
                 const layer = e.target;
-                
-                layer.bindTooltip(topp.navn, {
-                    sticky: true,
-                    className: 'custom-tooltip',
-                    direction: 'top',
-                    offset: [0, -10]
-                });
-
+                layer.bindTooltip(topp.navn, { sticky: true, className: 'custom-tooltip', direction: 'top', offset: [0, -10] });
                 layer.on('click', () => activatePeak(layer, topp.video, topp.navn));
                 btn.onclick = () => activatePeak(layer, topp.video, topp.navn);
-                
                 layer.on('mouseover', () => layer.setStyle({ weight: 9, opacity: 1 }));
                 layer.on('mouseout', () => layer.setStyle({ weight: 5, opacity: 0.8 }));
             }).addTo(map);
