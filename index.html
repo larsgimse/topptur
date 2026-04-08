@@ -13,19 +13,29 @@
         }
 
         body { font-family: sans-serif; text-align: center; padding: 20px 10px; margin: 0; background: #f0f4f8; }
-        #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 12px; }
+        #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
         
         button { 
-            color: white; border: none; border-radius: 8px; padding: 12px 24px; 
-            cursor: pointer; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; 
+            color: white; border: none; border-radius: 8px; padding: 12px 20px; 
+            cursor: pointer; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.1s;
         }
+        
+        button:active { transform: scale(0.96); }
         
         #gpxBtn { background-color: var(--strava-orange); }
         #resetBtn { background-color: var(--dark-grey); }
 
         #map { height: 600px; width: 100%; max-width: 1100px; margin: 0 auto; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
 
-        /* Dette gjør ikonet veldig synlig */
+        /* Stil for oppdatert-tekst */
+        #last-updated {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+        }
+
         .video-marker-css {
             background: white;
             border: 3px solid var(--insta-pink);
@@ -51,15 +61,28 @@
 
     <div id="buttons">
         <button id="resetBtn">Tilbake til oversikt</button>
-        <button id="gpxBtn">Gråtinden 871</button>
+        
+        <button id="gpxBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                <path d="M14,6l-3.75,5l2.85,3.8c0.09,0.13,0.01,0.3-0.15,0.3H4.35c-0.16,0-0.24-0.18-0.15-0.3L9,8l3.15,4.2L14,6z M22,18H2v2h20V18z M7,11l1.25,1.67L7,14.33L5.75,12.67L7,11z M18,7l-5,7h10L18,7z"/>
+            </svg>
+            Gråtinden 871
+        </button>
     </div>
 
     <div id="map"></div>
+
+    <div id="last-updated"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
+        // Script for å vise når filen ble sist endret
+        const lastMod = new Date(document.lastModified);
+        const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+        document.getElementById('last-updated').innerHTML = "Oppdatert: " + lastMod.toLocaleString('no-NO', options);
+
         const map = L.map('map').setView([69.68, 18.75], 10);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -68,8 +91,22 @@
 
         const gpxUrl = '2026_04_06.gpx'; 
 
-        // Funksjon for å lage video-ikonet
-        function addVideoMarker(latlng) {
+        const track = new L.GPX(gpxUrl, {
+            async: true,
+            marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
+            polyline_options: { 
+                color: '#fc4c02', 
+                opacity: 0.85, 
+                weight: 3 
+            }
+        }).addTo(map);
+
+        track.on('loaded', function(e) {
+            map.fitBounds(e.target.getBounds(), { padding: [40, 40] });
+            
+            let maxLoc = e.target.get_elevation_max_loc();
+            if (!maxLoc) { maxLoc = [69.723, 18.577]; }
+            
             const videoIcon = L.divIcon({
                 html: `<svg width="24" height="24" viewBox="0 0 24 24" fill="#e1306c"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418 c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,11,2,11s0,3.254,0.418,4.814c0.23,0.86,0.908,1.538,1.768,1.768 C5.746,18,12,18,12,18s6.254,0,7.814-0.418c0.861-0.23,1.538-0.908,1.768-1.768C22,14.254,22,11,22,11S22,7.746,21.582,6.186z M10,14.5v-7l6,3.5L10,14.5z"/></svg>`,
                 className: 'video-marker-css',
@@ -77,31 +114,9 @@
                 iconAnchor: [20, 20]
             });
 
-            L.marker(latlng, { icon: videoIcon })
+            L.marker(maxLoc, { icon: videoIcon })
                 .addTo(map)
-                .bindPopup('<b>Toppen av Gråtinden</b><br><a href="https://www.instagram.com/p/DW1xhPniK_l/" target="_blank">Se video på Instagram</a>')
                 .on('click', () => window.open('https://www.instagram.com/p/DW1xhPniK_l/', '_blank'));
-        }
-
-        const track = new L.GPX(gpxUrl, {
-            async: true,
-            marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-            polyline_options: { color: '#fc4c02', opacity: 0.85, weight: 6 }
-        }).addTo(map);
-
-        track.on('loaded', function(e) {
-            map.fitBounds(e.target.getBounds(), { padding: [40, 40] });
-            
-            // Forsøk 1: Finn høyeste punkt automatisk
-            let maxLoc = e.target.get_elevation_max_loc();
-            
-            // Forsøk 2: Hvis Forsøk 1 feiler, bruk faste koordinater for Gråtinden
-            if (!maxLoc) {
-                console.log("Fant ikke høydedata, bruker fast punkt.");
-                maxLoc = [69.723, 18.577]; 
-            }
-            
-            addVideoMarker(maxLoc);
         });
 
         document.getElementById('gpxBtn').addEventListener('click', () => {
