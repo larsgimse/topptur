@@ -26,32 +26,27 @@
         #gpxBtn { background-color: var(--strava-orange); }
         #resetBtn { background-color: var(--dark-grey); }
 
-        #map { height: 600px; width: 100%; max-width: 1100px; margin: 0 auto; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+        #map { height: 600px; width: 100%; max-width: 1100px; margin: 0 auto; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 1; }
 
-        /* Stil for oppdatert-tekst */
-        #last-updated {
-            margin-top: 15px;
-            font-size: 12px;
-            color: #666;
-            font-style: italic;
-        }
+        #last-updated { margin-top: 15px; font-size: 12px; color: #666; font-style: italic; }
 
+        /* Stil for video-ikonet på kortet */
         .video-marker-css {
-            background: white;
-            border: 3px solid var(--insta-pink);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(225, 48, 108, 0.6);
+            background: white !important;
+            border: 3px solid var(--insta-pink) !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            box-shadow: 0 0 15px rgba(225, 48, 108, 0.8) !important;
             animation: pulse 2s infinite;
         }
 
         @keyframes pulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 48, 108, 0.7); }
-            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(225, 48, 108, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 48, 108, 0); }
+            0% { transform: scale(1); }
+            70% { transform: scale(1.2); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
@@ -71,17 +66,17 @@
     </div>
 
     <div id="map"></div>
-
     <div id="last-updated"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        // Script for å vise når filen ble sist endret
+        const instaUrl = "https://www.instagram.com/reel/DW1xhPniK_l/?utm_source=ig_web_copy_link&igsh=NTc4MTIwNjQ2YQ==";
+        
+        // Dato-oppdatering
         const lastMod = new Date(document.lastModified);
-        const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' };
-        document.getElementById('last-updated').innerHTML = "Oppdatert: " + lastMod.toLocaleString('no-NO', options);
+        document.getElementById('last-updated').innerHTML = "Oppdatert: " + lastMod.toLocaleString('no-NO');
 
         const map = L.map('map').setView([69.68, 18.75], 10);
 
@@ -89,40 +84,42 @@
             attribution: '&copy; OpenStreetMap'
         }).addTo(map);
 
-        const gpxUrl = '2026_04_06.gpx'; 
+        // Video-ikon (Instagram-stil)
+        const videoIcon = L.divIcon({
+            html: `<svg width="26" height="26" viewBox="0 0 24 24" fill="#e1306c"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418 c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,11,2,11s0,3.254,0.418,4.814c0.23,0.86,0.908,1.538,1.768,1.768 C5.746,18,12,18,12,18s6.254,0,7.814-0.418c0.861-0.23,1.538-0.908,1.768-1.768C22,14.254,22,11,22,11S22,7.746,21.582,6.186z M10,14.5v-7l6,3.5L10,14.5z"/></svg>`,
+            className: 'video-marker-css',
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
+        });
 
-        const track = new L.GPX(gpxUrl, {
+        // Plasserer ikonet (standard på toppen af Gråtinden)
+        const vMarker = L.marker([69.723, 18.577], { icon: videoIcon }).addTo(map);
+        vMarker.on('click', () => window.open(instaUrl, '_blank'));
+        vMarker.bindTooltip("Se video på Instagram");
+
+        // Henter GPX-sporet
+        const track = new L.GPX('2026_04_06.gpx', {
             async: true,
             marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-            polyline_options: { 
-                color: '#fc4c02', 
-                opacity: 0.85, 
-                weight: 3 
-            }
+            polyline_options: { color: '#fc4c02', opacity: 0.85, weight: 3 }
         }).addTo(map);
 
         track.on('loaded', function(e) {
-            map.fitBounds(e.target.getBounds(), { padding: [40, 40] });
-            
-            let maxLoc = e.target.get_elevation_max_loc();
-            if (!maxLoc) { maxLoc = [69.723, 18.577]; }
-            
-            const videoIcon = L.divIcon({
-                html: `<svg width="24" height="24" viewBox="0 0 24 24" fill="#e1306c"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418 c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,11,2,11s0,3.254,0.418,4.814c0.23,0.86,0.908,1.538,1.768,1.768 C5.746,18,12,18,12,18s6.254,0,7.814-0.418c0.861-0.23,1.538-0.908,1.768-1.768C22,14.254,22,11,22,11S22,7.746,21.582,6.186z M10,14.5v-7l6,3.5L10,14.5z"/></svg>`,
-                className: 'video-marker-css',
-                iconSize: [40, 40],
-                iconAnchor: [20, 20]
-            });
-
-            L.marker(maxLoc, { icon: videoIcon })
-                .addTo(map)
-                .on('click', () => window.open('https://www.instagram.com/p/DW1xhPniK_l/', '_blank'));
+            // Finder det faktiske højeste punkt i filen og flytter ikonet dertil
+            const maxLoc = e.target.get_elevation_max_loc();
+            if (maxLoc) { 
+                vMarker.setLatLng(maxLoc); 
+            }
         });
 
+        // Knap: Gråtinden 871 - Zoomer nu kun ind til sporet
         document.getElementById('gpxBtn').addEventListener('click', () => {
-            map.fitBounds(track.getBounds(), { padding: [50, 50] });
+            if (track.getBounds().isValid()) {
+                map.fitBounds(track.getBounds(), { padding: [50, 50] });
+            }
         });
 
+        // Knap: Tilbake til oversikt
         document.getElementById('resetBtn').addEventListener('click', () => {
             map.setView([69.68, 18.75], 10);
         });
