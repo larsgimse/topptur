@@ -3,38 +3,69 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Toppturer Tromsø - Skredkart</title>
+    <title>Toppturer Tromsø - Varsom Bratthet</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root {
             --strava-orange: #fc4c02;
             --insta-pink: #e1306c;
             --dark-grey: #2c3e50;
+            --slate-grey: #64748b;
         }
 
-        body { font-family: sans-serif; text-align: center; margin: 0; padding: 20px; background: #f1f5f9; }
-        #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            text-align: center; margin: 0; padding: 20px 10px; 
+            background: #f1f5f9; color: var(--dark-grey);
+        }
+
+        header { margin-bottom: 20px; }
+        h1 { margin: 0; font-size: 1.8rem; }
+
+        #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; align-items: center; }
         
-        .map-selector { padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; border: 2px solid var(--dark-grey); }
-        .top-btn { background: var(--strava-orange); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .map-selector { padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; border: 2px solid var(--dark-grey); background: white; }
+
+        .top-btn { 
+            background: var(--strava-orange); color: white; border: none; 
+            padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold;
+        }
+
         #resetBtn { background: var(--dark-grey); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
 
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; }
-        #map { height: 600px; width: 100%; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); background: #eee; }
+        #map { height: 600px; width: 100%; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); background-color: #ddd; }
 
-        #legend { margin-top: 15px; display: inline-flex; gap: 15px; font-size: 12px; background: white; padding: 10px; border-radius: 8px; }
-        .box { width: 15px; height: 15px; border: 1px solid #000; display: inline-block; vertical-align: middle; margin-right: 5px; }
+        /* Oppdatert fargeskala for bratthet */
+        #legend {
+            margin-top: 15px; display: inline-flex; gap: 12px; font-size: 11px;
+            background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            justify-content: center; flex-wrap: wrap; line-height: 1.5;
+        }
+        .legend-item { display: flex; align-items: center; gap: 4px; font-weight: 600; }
+        .box { width: 14px; height: 14px; border: 1px solid rgba(0,0,0,0.2); border-radius: 2px; }
+
+        #insta-overlay-btn {
+            position: absolute; top: 20px; right: 20px; z-index: 1000;
+            background: white; color: var(--insta-pink); border: 2px solid var(--insta-pink);
+            padding: 12px 18px; border-radius: 50px; font-weight: bold; display: none; text-decoration: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
         #last-updated { margin-top: 20px; font-size: 12px; color: #94a3b8; }
+        .custom-tooltip { background-color: var(--dark-grey); color: white; border: none; border-radius: 4px; padding: 5px 10px; font-weight: 600; }
     </style>
 </head>
 <body>
 
-    <h1>Toppturer rundt Tromsø</h1>
+    <header>
+        <h1>Toppturer rundt Tromsø</h1>
+    </header>
 
     <div id="buttons">
         <select id="mapSelect" class="map-selector">
-            <option value="bratthet">Bratthetskart (Vinter)</option>
-            <option value="norge">Vanlig Norgeskart</option>
+            <option value="varsom">Bratthetskart (Varsom.no)</option>
+            <option value="norge">Kun Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
         </select>
         <button id="resetBtn">Tilbake til oversikt</button>
@@ -42,14 +73,16 @@
 
     <div id="map-container">
         <div id="map"></div>
+        <a id="insta-overlay-btn" href="#" target="_blank">Se video</a>
     </div>
 
     <div id="legend">
-        <strong>Bratthet:</strong>
-        <span><div class="box" style="background: #ffff00;"></div> 30-35°</span>
-        <span><div class="box" style="background: #ffaa00;"></div> 35-40°</span>
-        <span><div class="box" style="background: #ff0000;"></div> 40-45°</span>
-        <span><div class="box" style="background: #aa0000;"></div> 45-90°</span>
+        <span style="width: 100%; margin-bottom: 5px; font-weight: bold; border-bottom: 1px solid #eee;">Bratthetsgrader (Varsom.no)</span>
+        <div class="legend-item"><div class="box" style="background: #ffff00;"></div> 30-35°</div>
+        <div class="legend-item"><div class="box" style="background: #ffaa00;"></div> 35-40°</div>
+        <div class="legend-item"><div class="box" style="background: #ff0000;"></div> 40-45°</div>
+        <div class="legend-item"><div class="box" style="background: #aa0000;"></div> 45-50°</div>
+        <div class="legend-item"><div class="box" style="background: #000000;"></div> >50°</div>
     </div>
 
     <div id="last-updated"></div>
@@ -58,50 +91,50 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
+        // Oppdaterer "Sist oppdatert" automatisk
         document.getElementById('last-updated').innerHTML = "Sist oppdatert: " + new Date(document.lastModified).toLocaleString('no-NO');
 
         const map = L.map('map').setView([69.65, 18.95], 11);
         const allTracksGroup = L.featureGroup().addTo(map);
 
-        // LAG 1: Norgeskart (Bunn)
-        const topo = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
+        // 1. Grunnlag: Norgeskart
+        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
             attribution: '&copy; Kartverket'
         });
 
-        // LAG 2: Bratthet (Overlegg)
-        const slope = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/slope/default/webmercator/{z}/{y}/{x}.png', {
-            attribution: '&copy; Kartverket',
-            opacity: 0.5,
-            zIndex: 500
+        // 2. Overlegg: Varsom.no Bratthet (NVE)
+        // Bruker den mest stabile WMTS-stien fra NVE
+        const varsomBratthet = L.tileLayer('https://gis3.nve.no/map/rest/services/wmts/Bratthet/MapServer/tile/10/Bratthet/{z}/{y}/{x}', {
+            attribution: '&copy; NVE / Varsom.no',
+            opacity: 0.6,
+            zIndex: 1000
         });
 
-        // LAG 3: OpenStreetMap
-        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
 
-        // Start med begge aktive
-        topo.addTo(map);
-        slope.addTo(map);
+        // Standard visning ved oppstart
+        norgeLayer.addTo(map);
+        varsomBratthet.addTo(map);
 
-        // Veksle mellom lagene
         document.getElementById('mapSelect').onchange = function() {
-            map.removeLayer(topo);
-            map.removeLayer(slope);
-            map.removeLayer(osm);
+            map.removeLayer(osmLayer);
+            map.removeLayer(norgeLayer);
+            map.removeLayer(varsomBratthet);
 
-            if (this.value === "bratthet") {
-                topo.addTo(map);
-                slope.addTo(map);
+            if (this.value === "osm") {
+                osmLayer.addTo(map);
             } else if (this.value === "norge") {
-                topo.addTo(map);
-            } else {
-                osm.addTo(map);
+                norgeLayer.addTo(map);
+            } else if (this.value === "varsom") {
+                norgeLayer.addTo(map);
+                varsomBratthet.addTo(map);
             }
         };
 
         const topper = [
-            { navn: "Gråtinden 871", fil: "2026_04_06.gpx" },
-            { navn: "Bentsjordtinden", fil: "2026_04_03.gpx" },
-            { navn: "Rema (800) 1000", fil: "2026_03_28.gpx" }
+            { navn: "Gråtinden 871", fil: "2026_04_06.gpx", video: "https://www.instagram.com/reel/DW1xhPniK_l/" },
+            { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/" },
+            { navn: "Rema (800) 1000", fil: "2026_03_28.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/" }
         ];
 
         topper.forEach(topp => {
@@ -113,16 +146,28 @@
             new L.GPX(topp.fil, {
                 async: true,
                 marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                polyline_options: { color: 'var(--strava-orange)', weight: 5, zIndex: 1000 }
+                polyline_options: { color: 'var(--strava-orange)', weight: 5, opacity: 0.9 }
             }).on('loaded', function(e) {
                 const layer = e.target;
                 allTracksGroup.addLayer(layer);
-                btn.onclick = () => map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
-            }).addTo(map);
+                layer.bindTooltip(topp.navn, { sticky: true, className: 'custom-tooltip' });
+                
+                const activate = () => {
+                    map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
+                    document.getElementById('insta-overlay-btn').href = topp.video;
+                    document.getElementById('insta-overlay-btn').style.display = 'block';
+                };
+                layer.on('click', activate);
+                btn.onclick = activate;
+            });
         });
 
+        // Reset-knapp som flytter kartet til alle lastede spor
         document.getElementById('resetBtn').onclick = () => {
-            if (allTracksGroup.getLayers().length > 0) map.flyToBounds(allTracksGroup.getBounds());
+            if (allTracksGroup.getLayers().length > 0) {
+                map.flyToBounds(allTracksGroup.getBounds(), { padding: [40, 40], duration: 1.5 });
+            }
+            document.getElementById('insta-overlay-btn').style.display = 'none';
         };
     </script>
 </body>
