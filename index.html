@@ -51,6 +51,9 @@
             background-color: #ddd;
         }
 
+        /* Fjerner den grå firkanten ved klikk */
+        .leaflet-interactive:focus { outline: none; }
+
         #insta-overlay-btn {
             position: absolute; top: 20px; right: 20px; z-index: 1000;
             background: white; color: var(--insta-pink); border: 2px solid var(--insta-pink);
@@ -64,9 +67,8 @@
             border-radius: 4px; padding: 5px 10px; font-weight: 600;
         }
 
-        /* Stil for høydeprofil-popup */
-        .elevation-popup .leaflet-popup-content { width: 220px !important; }
-        .elevation-info { font-size: 12px; margin-top: 5px; font-weight: bold; }
+        .elevation-popup .leaflet-popup-content { width: 240px !important; }
+        .elevation-info { font-size: 11px; margin-top: 5px; font-weight: bold; color: #475569; }
 
         #last-updated { margin-top: 25px; font-size: 12px; color: #94a3b8; }
     </style>
@@ -120,36 +122,52 @@
             { navn: "Rema (800) 1000", fil: "2026_03_28.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/" }
         ];
 
-        // Funksjon for å tegne en enkel høydeprofil i popup
         function createElevationContent(layer, navn) {
             const elevations = layer.get_elevation_data();
             const maxEle = Math.round(layer.get_elevation_max());
             const gain = Math.round(layer.get_elevation_gain());
             const dist = (layer.get_distance() / 1000).toFixed(1);
+            
+            // Tidsberegning
+            const startTime = layer.get_start_time();
+            const endTime = layer.get_end_time();
+            let durationStr = "N/A";
+            
+            if (startTime && endTime) {
+                const diffMs = endTime - startTime;
+                const hours = Math.floor(diffMs / 3600000);
+                const minutes = Math.round((diffMs % 3600000) / 60000);
+                durationStr = hours > 0 ? `${hours}t ${minutes}m` : `${minutes}m`;
+            }
 
             const container = document.createElement('div');
-            container.innerHTML = `<div style="font-weight:bold; margin-bottom:5px;">${navn}</div>
-                                   <canvas width="200" height="80" style="background:#eee; border-radius:4px;"></canvas>
-                                   <div class="elevation-info">Topp: ${maxEle}m | Stigning: ${gain}m | Lengde: ${dist}km</div>`;
+            container.innerHTML = `
+                <div style="font-weight:bold; margin-bottom:5px; font-size:14px; color:var(--dark-grey);">${navn}</div>
+                <canvas width="220" height="80" style="background:#f8fafc; border: 1px solid #e2e8f0; border-radius:4px;"></canvas>
+                <div class="elevation-info">
+                    Høyde: ${maxEle}m | Stigning: ${gain}m<br>
+                    Lengde: ${dist}km | Tid: ${durationStr}
+                </div>`;
             
             const canvas = container.querySelector('canvas');
             const ctx = canvas.getContext('2d');
             
-            // Tegn graf
+            const points = elevations.map(e => e[1]);
+            const min = Math.min(...points);
+            const max = Math.max(...points);
+            const range = max - min || 1;
+            const step = canvas.width / points.length;
+
             ctx.beginPath();
-            ctx.moveTo(0, 80);
             ctx.strokeStyle = '#fc4c02';
             ctx.lineWidth = 2;
+            ctx.lineJoin = 'round';
 
-            const step = canvas.width / elevations.length;
-            const min = Math.min(...elevations.map(e => e[1]));
-            const max = Math.max(...elevations.map(e => e[1]));
-            const range = max - min;
-
-            elevations.forEach((data, i) => {
+            points.forEach((ele, i) => {
                 const x = i * step;
-                const y = 80 - ((data[1] - min) / range) * 70 - 5; // Skalering
-                ctx.lineTo(x, y);
+                const y = 75 - ((ele - min) / range) * 65; 
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
             });
 
             ctx.stroke();
@@ -187,9 +205,8 @@
                     instaBtn.href = topp.video;
                     instaBtn.style.display = 'block';
 
-                    // Vis popup med høydeprofil hvis det er et kart-klikk (ikke knapp)
                     if (clickPos) {
-                        L.popup({ className: 'elevation-popup' })
+                        L.popup({ className: 'elevation-popup', offset: [0, -10] })
                             .setLatLng(clickPos)
                             .setContent(createElevationContent(layer, topp.navn))
                             .openOn(map);
