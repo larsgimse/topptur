@@ -107,7 +107,7 @@
         const allTracksGroup = L.featureGroup().addTo(map);
         const instaBtn = document.getElementById('insta-overlay-btn');
         
-        let valgtTopp = null; // Holder styr på hvilken topp som er klikket på
+        let valgtTopp = null; // Holder styr på om en topp er aktiv
 
         const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
             attribution: '&copy; Kartverket'
@@ -201,7 +201,11 @@
                 } catch (err) {}
                 
                 const activate = (clickPos) => {
-                    valgtTopp = topp.navn; // Setter denne som valgt
+                    valgtTopp = topp.navn;
+                    
+                    // Sett sporet tilbake til oransje med en gang det trykkes (før musea flyttes)
+                    layer.setStyle({ color: 'var(--strava-orange)', weight: 5, opacity: 0.9 });
+                    
                     map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
                     instaBtn.href = topp.video;
                     instaBtn.style.display = 'block';
@@ -215,18 +219,20 @@
                 };
 
                 btn.onmouseenter = () => {
+                    // Alltid vis blå hover-effekt, uavhengig av om den er valgt
                     layer.setStyle({ color: 'var(--strava-blue)', weight: 10, opacity: 1 });
                     layer.bringToFront();
-                    // Kun panorer hvis ingen topp er valgt fra før
+                    // Sentrer kun hvis ingen er valgt fra før
                     if (!valgtTopp) map.panTo(layer.getBounds().getCenter());
                 };
 
                 btn.onmouseleave = () => {
-                    // Hvis dette er den valgte toppen, beholder vi blåfargen og tykkelsen
-                    if (valgtTopp !== topp.navn) {
-                        layer.setStyle({ color: 'var(--strava-orange)', weight: 5, opacity: 0.9 });
-                        // Kun gå tilbake til oversikt hvis ingen topp er valgt
-                        if (!valgtTopp) map.panTo(allTracksGroup.getBounds().getCenter());
+                    // Alltid sett tilbake til oransje når musa fjernes
+                    layer.setStyle({ color: 'var(--strava-orange)', weight: 5, opacity: 0.9 });
+                    
+                    // Kun gå tilbake til oversikt hvis ingen topp er valgt
+                    if (!valgtTopp) {
+                        map.panTo(allTracksGroup.getBounds().getCenter());
                     }
                 };
 
@@ -241,9 +247,9 @@
         });
 
         document.getElementById('resetBtn').onclick = () => {
-            valgtTopp = null; // Nullstiller valget
+            valgtTopp = null;
             map.closePopup();
-            // Tilbakestill alle spor til original farge
+            // Tilbakestill alle spor (sikkerhet)
             allTracksGroup.eachLayer(layer => {
                 if(layer.setStyle) layer.setStyle({ color: 'var(--strava-orange)', weight: 5, opacity: 0.9 });
             });
