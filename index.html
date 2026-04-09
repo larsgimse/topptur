@@ -22,7 +22,11 @@
         h1 { margin-bottom: 5px; font-size: 1.8rem; }
         
         .subtitle { 
-            margin-bottom: 25px; font-size: 1rem; color: #64748b; font-weight: 400;
+            margin-bottom: 5px; font-size: 1rem; color: #64748b; font-weight: 400;
+        }
+
+        .subtitle-mini {
+            margin-bottom: 25px; font-size: 0.85rem; color: #94a3b8; font-weight: 400; font-style: italic;
         }
 
         #buttons { 
@@ -54,6 +58,10 @@
             height: 650px; width: 100%; border-radius: 15px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
             background-color: #ddd;
+        }
+
+        .leaflet-interactive:focus {
+            outline: none;
         }
 
         #video-buttons-container {
@@ -94,6 +102,7 @@
 
     <h1>Toppturer rundt Tromsø</h1>
     <div class="subtitle">Klikk på sporet eller knapp for å se detaljer og video fra toppene</div>
+    <div class="subtitle-mini">Klikk på sporene for å få høydeprofil</div>
 
     <div id="buttons">
         <select id="mapSelect" class="map-selector">
