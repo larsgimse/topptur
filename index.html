@@ -18,7 +18,15 @@
             background: #f1f5f9; color: var(--dark-grey);
         }
 
-        h1 { margin-bottom: 20px; font-size: 1.8rem; }
+        h1 { margin-bottom: 5px; font-size: 1.8rem; }
+        
+        /* Styling for den nye underteksten */
+        .subtitle { 
+            margin-bottom: 25px; 
+            font-size: 1rem; 
+            color: #64748b; 
+            font-weight: 400;
+        }
 
         #buttons { 
             margin-bottom: 20px; display: flex; justify-content: center; 
@@ -75,6 +83,7 @@
 <body>
 
     <h1>Toppturer rundt Tromsø</h1>
+    <div class="subtitle">Klikk på sporet eller knapp for å se detaljer og video fra toppene</div>
 
     <div id="buttons">
         <select id="mapSelect" class="map-selector">
@@ -212,10 +221,9 @@
                     }
                 };
 
-                // Knapp-hover: Utvid sporet på kartet
                 btn.onmouseenter = () => {
                     layer.setStyle({ weight: 10, opacity: 1 });
-                    layer.bringToFront(); // Legg det øverst så det synes godt
+                    layer.bringToFront();
                 };
                 btn.onmouseleave = () => {
                     layer.setStyle({ weight: 5, opacity: 0.9 });
