@@ -97,6 +97,7 @@
 
         const map = L.map('map');
         const allTracksGroup = L.featureGroup().addTo(map);
+        const topMarkersGroup = L.featureGroup().addTo(map);
         const instaBtn = document.getElementById('insta-overlay-btn');
 
         const layers = {
@@ -115,9 +116,8 @@
             layers[this.value].addTo(map);
         };
 
-        // Her er den oppdaterte listen med Langfjellaksla inkludert
         const topper = [
-            { navn: "Langfjellaksla 765", fil: "2026_04_08.gpx", video: "https://www.instagram.com/reel/DW4gus-iLa9/" },
+            { navn: "Langfjellaksla 765", fil: "2026_05_08.gpx", video: "https://www.instagram.com/reel/DW4gus-iLa9/" },
             { navn: "Gråtinden 871", fil: "2026_04_06.gpx", video: "https://www.instagram.com/reel/DW1xhPniK_l/" },
             { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/" },
             { navn: "Rema (800) 1000", fil: "2026_03_28.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/" }
@@ -140,11 +140,32 @@
                 allTracksGroup.addLayer(layer);
                 layer.bindTooltip(topp.navn, { sticky: true, className: 'custom-tooltip' });
                 
+                // Legg til rød sirkelmarkør på toppen
+                const endPos = layer.get_elevation_max_point(); // Finn høyeste punkt
+                if (endPos) {
+                    const topMarker = L.circleMarker(endPos, {
+                        radius: 7,
+                        color: 'white',
+                        weight: 2,
+                        fillColor: 'red',
+                        fillOpacity: 1,
+                        pane: 'markerPane' // Legg i markør-panelet for å ligge over sporet
+                    }).addTo(topMarkersGroup);
+                    
+                    // Knytt verktøytips til markøren også
+                    topMarker.bindTooltip(topp.navn + " (Topp)", { sticky: true, className: 'custom-tooltip' });
+                    
+                    // Gjør markøren klikkbar
+                    topMarker.on('click', () => activate());
+                }
+
                 const activate = () => {
                     document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     
-                    map.flyToBounds(layer.getBounds(), { padding: [50, 50], duration: 1.2 });
+                    // Forbedret zoom: Zoom til sporet, men ikke for nært (maxZoom), og med mindre padding
+                    map.flyToBounds(layer.getBounds(), { padding: [30, 30], maxZoom: 14, duration: 1.2 });
+                    
                     instaBtn.href = topp.video;
                     instaBtn.style.display = 'block';
                 };
@@ -156,7 +177,9 @@
 
                 loadedCount++;
                 if (loadedCount === topper.length) {
-                    map.fitBounds(allTracksGroup.getBounds(), { padding: [40, 40] });
+                    // Zoom til alle spor OG alle markører
+                    const combinedBounds = allTracksGroup.getBounds().extend(topMarkersGroup.getBounds());
+                    map.fitBounds(combinedBounds, { padding: [40, 40] });
                 }
             });
         });
@@ -164,7 +187,9 @@
         document.getElementById('resetBtn').onclick = () => {
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
             if (allTracksGroup.getLayers().length > 0) {
-                map.flyToBounds(allTracksGroup.getBounds(), { padding: [40, 40], duration: 1.5 });
+                // Zoom til alle spor OG alle markører
+                const combinedBounds = allTracksGroup.getBounds().extend(topMarkersGroup.getBounds());
+                map.flyToBounds(combinedBounds, { padding: [40, 40], duration: 1.5 });
             }
             instaBtn.style.display = 'none';
         };
