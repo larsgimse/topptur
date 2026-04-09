@@ -181,7 +181,7 @@
             btn.innerText = topp.navn;
             document.getElementById('buttons').appendChild(btn);
 
-            new L.GPX(topp.fil, {
+            const gpx = new L.GPX(topp.fil, {
                 async: true,
                 marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
                 polyline_options: { color: 'var(--strava-orange)', weight: 5, opacity: 0.9 }
@@ -210,6 +210,15 @@
                             .setContent(createElevationContent(layer, topp.navn))
                             .openOn(map);
                     }
+                };
+
+                // Knapp-hover: Utvid sporet på kartet
+                btn.onmouseenter = () => {
+                    layer.setStyle({ weight: 10, opacity: 1 });
+                    layer.bringToFront(); // Legg det øverst så det synes godt
+                };
+                btn.onmouseleave = () => {
+                    layer.setStyle({ weight: 5, opacity: 0.9 });
                 };
 
                 layer.on('click', (e) => activate(e.latlng));
