@@ -51,9 +51,13 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); background-color: #eee;
         }
 
+        /* Tilpasser popup-vinduet til innholdet uten scrollbar */
+        .leaflet-popup-content-wrapper { padding: 5px; }
+        .leaflet-popup-content { margin: 10px; line-height: 1.4; width: auto !important; }
+
         .chart-wrapper { 
-            width: 100%; overflow-x: auto; background: white; 
-            border: 1px solid #ddd; margin-top: 5px; border-radius: 4px;
+            width: 100%; overflow: hidden; background: white; 
+            border: 1px solid #e2e8f0; margin-top: 5px; border-radius: 4px;
         }
 
         #video-buttons-container {
@@ -64,9 +68,10 @@
         .insta-btn {
             background: white; color: var(--insta-pink); border: 2px solid var(--insta-pink);
             padding: 10px 15px; border-radius: 50px; font-weight: bold; text-decoration: none;
+            font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        .custom-tooltip { background: var(--dark-grey); color: white; padding: 5px 10px; border-radius: 4px; }
+        .custom-tooltip { background: var(--dark-grey); color: white; padding: 5px 10px; border-radius: 4px; border: none; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -121,14 +126,16 @@
             { navn: "Storstolpan", fil: "2025_05_08.gpx", video: [{ url: "https://www.instagram.com/p/DJjsfOesdWS/", tittel: "Se video" }] }
         ];
 
-        // Sortering
         topper.sort((a, b) => a.navn.localeCompare(b.navn, 'nb'));
 
         function createElevationContent(layer, navn) {
             const elevations = layer.get_elevation_data();
             const distKm = layer.get_distance() / 1000;
-            const pixelsPerKm = 30; 
-            const canvasWidth = Math.max(220, Math.round(distKm * pixelsPerKm));
+            
+            // Pixels per km styrer den "ekte" tiden. Vi setter den til 25 for å passe de fleste skjermer.
+            const pixelsPerKm = 25; 
+            // Grafen blir mellom 200 og 450 piksler bred avhengig av lengde.
+            const canvasWidth = Math.min(450, Math.max(200, Math.round(distKm * pixelsPerKm)));
             
             const points = elevations.map(e => e[1]);
             const min = Math.min(...points);
@@ -136,13 +143,17 @@
             const range = max - min || 1;
 
             const container = document.createElement('div');
-            container.style.width = "240px";
+            // Vi tvinger containeren til å bli like bred som grafen + litt padding
+            container.style.width = (canvasWidth) + "px";
+            
             container.innerHTML = `
-                <div style="font-weight:bold; font-size:14px;">${navn}</div>
+                <div style="font-weight:bold; font-size:14px; color:var(--dark-grey);">${navn}</div>
                 <div class="chart-wrapper">
-                    <canvas width="${canvasWidth}" height="60" style="display:block;"></canvas>
+                    <canvas width="${canvasWidth}" height="70" style="display:block;"></canvas>
                 </div>
-                <div style="font-size:11px; margin-top:5px;"><b>Høyde:</b> ${Math.round(max)}m | <b>Lengde:</b> ${distKm.toFixed(1)}km</div>
+                <div style="font-size:11px; margin-top:6px; color:#475569;">
+                    <b>Høyde:</b> ${Math.round(max)}m | <b>Lengde:</b> ${distKm.toFixed(1)}km
+                </div>
             `;
             
             const canvas = container.querySelector('canvas');
@@ -151,13 +162,16 @@
             
             ctx.beginPath();
             ctx.strokeStyle = '#fc4c02';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2.5;
+            ctx.lineJoin = 'round';
+            
             points.forEach((ele, i) => {
                 const x = i * step;
-                const y = 55 - ((ele - min) / range) * 50;
+                const y = 65 - ((ele - min) / range) * 60;
                 if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             });
             ctx.stroke();
+            
             return container;
         }
 
@@ -170,17 +184,17 @@
             const gpxLayer = new L.GPX(topp.fil, {
                 async: true,
                 marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                polyline_options: { color: 'var(--strava-orange)', weight: 4, opacity: 0.8 }
+                polyline_options: { color: 'var(--strava-orange)', weight: 4, opacity: 0.85 }
             }).on('loaded', function(e) {
                 allTracksGroup.addLayer(e.target);
                 e.target.bindTooltip(topp.navn, { sticky: true, className: 'custom-tooltip' });
                 if (allTracksGroup.getLayers().length === topper.length) {
-                    map.fitBounds(allTracksGroup.getBounds());
+                    map.fitBounds(allTracksGroup.getBounds(), { padding: [30, 30] });
                 }
             });
 
             const activate = (latlng) => {
-                map.flyToBounds(gpxLayer.getBounds(), { padding: [50, 50] });
+                map.flyToBounds(gpxLayer.getBounds(), { padding: [50, 50], duration: 1 });
                 videoContainer.innerHTML = '';
                 topp.video.forEach(v => {
                     const a = document.createElement('a');
@@ -188,21 +202,27 @@
                     videoContainer.appendChild(a);
                 });
                 if (latlng) {
-                    L.popup().setLatLng(latlng).setContent(createElevationContent(gpxLayer, topp.navn)).openOn(map);
+                    L.popup({ 
+                        minWidth: 100,
+                        maxWidth: 500,
+                        autoPan: true
+                    }).setLatLng(latlng)
+                      .setContent(createElevationContent(gpxLayer, topp.navn))
+                      .openOn(map);
                 }
             };
 
             btn.onclick = () => activate();
             gpxLayer.on('click', (e) => activate(e.latlng));
             
-            btn.onmouseenter = () => gpxLayer.setStyle({ weight: 8, color: 'var(--strava-blue)' });
-            btn.onmouseleave = () => gpxLayer.setStyle({ weight: 4, color: 'var(--strava-orange)' });
+            btn.onmouseenter = () => gpxLayer.setStyle({ weight: 8, color: 'var(--strava-blue)', opacity: 1 });
+            btn.onmouseleave = () => gpxLayer.setStyle({ weight: 4, color: 'var(--strava-orange)', opacity: 0.85 });
         });
 
         document.getElementById('resetBtn').onclick = () => {
             map.closePopup();
             videoContainer.innerHTML = '';
-            map.flyToBounds(allTracksGroup.getBounds());
+            map.flyToBounds(allTracksGroup.getBounds(), { padding: [30, 30] });
         };
     </script>
 </body>
