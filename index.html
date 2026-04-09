@@ -138,6 +138,11 @@
 
         const topper = [
             { 
+                navn: "Skittentinden", 
+                fil: "2026_03_15.gpx", 
+                video: [{ url: "https://www.instagram.com/reel/DWHz3RbCPlU/", tittel: "Se video" }] 
+            },
+            { 
                 navn: "Burshammeren", 
                 fil: "2026_03_26.gpx", 
                 video: [
@@ -201,8 +206,6 @@
                 
                 const activate = (clickPos) => {
                     valgtTopp = topp.navn;
-                    
-                    // Fjern eventuelt eksisterende ekstra spor fra forrige valg
                     if (extraTrackLayer) { map.removeLayer(extraTrackLayer); extraTrackLayer = null; }
                     
                     layer.setStyle({ color: 'var(--strava-orange)', weight: 5, opacity: 0.9 });
@@ -221,8 +224,7 @@
                         tBtn.innerText = "Vis spor fra video 2";
                         tBtn.onclick = function() {
                             if (extraTrackLayer) {
-                                map.removeLayer(extraTrackLayer);
-                                extraTrackLayer = null;
+                                map.removeLayer(extraTrackLayer); extraTrackLayer = null;
                                 this.classList.remove('active');
                             } else {
                                 extraTrackLayer = new L.GPX(topp.ekstraSpor, {
