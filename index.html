@@ -22,10 +22,7 @@
         h1 { margin-bottom: 5px; font-size: 1.8rem; }
         
         .subtitle { 
-            margin-bottom: 25px; 
-            font-size: 1rem; 
-            color: #64748b; 
-            font-weight: 400;
+            margin-bottom: 25px; font-size: 1rem; color: #64748b; font-weight: 400;
         }
 
         #buttons { 
@@ -109,6 +106,8 @@
         const map = L.map('map');
         const allTracksGroup = L.featureGroup().addTo(map);
         const instaBtn = document.getElementById('insta-overlay-btn');
+        
+        let valgtTopp = null; // Holder styr på hvilken topp som er klikket på
 
         const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
             attribution: '&copy; Kartverket'
@@ -166,18 +165,12 @@
             const range = max - min || 1;
             const step = canvas.width / points.length;
 
-            ctx.beginPath();
-            ctx.strokeStyle = '#fc4c02';
-            ctx.lineWidth = 2;
-            ctx.lineJoin = 'round';
-
+            ctx.beginPath(); ctx.strokeStyle = '#fc4c02'; ctx.lineWidth = 2; ctx.lineJoin = 'round';
             points.forEach((ele, i) => {
                 const x = i * step;
                 const y = 75 - ((ele - min) / range) * 65; 
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             });
-
             ctx.stroke();
             return container;
         }
@@ -202,13 +195,13 @@
                 try {
                     let topPos = layer.get_elevation_max_point();
                     if (!topPos) topPos = layer.getBounds().getCenter(); 
-
                     L.circleMarker(topPos, {
                         radius: 6, fillColor: "red", color: "white", weight: 2, opacity: 1, fillOpacity: 1, interactive: false
                     }).addTo(allTracksGroup);
                 } catch (err) {}
                 
                 const activate = (clickPos) => {
+                    valgtTopp = topp.navn; // Setter denne som valgt
                     map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
                     instaBtn.href = topp.video;
                     instaBtn.style.display = 'block';
@@ -224,13 +217,17 @@
                 btn.onmouseenter = () => {
                     layer.setStyle({ color: 'var(--strava-blue)', weight: 10, opacity: 1 });
                     layer.bringToFront();
-                    map.panTo(layer.getBounds().getCenter());
+                    // Kun panorer hvis ingen topp er valgt fra før
+                    if (!valgtTopp) map.panTo(layer.getBounds().getCenter());
                 };
 
                 btn.onmouseleave = () => {
-                    layer.setStyle({ color: 'var(--strava-orange)', weight: 5, opacity: 0.9 });
-                    // Går tilbake til sentrum av alle topper når musa fjernes
-                    map.panTo(allTracksGroup.getBounds().getCenter());
+                    // Hvis dette er den valgte toppen, beholder vi blåfargen og tykkelsen
+                    if (valgtTopp !== topp.navn) {
+                        layer.setStyle({ color: 'var(--strava-orange)', weight: 5, opacity: 0.9 });
+                        // Kun gå tilbake til oversikt hvis ingen topp er valgt
+                        if (!valgtTopp) map.panTo(allTracksGroup.getBounds().getCenter());
+                    }
                 };
 
                 layer.on('click', (e) => activate(e.latlng));
@@ -244,7 +241,12 @@
         });
 
         document.getElementById('resetBtn').onclick = () => {
+            valgtTopp = null; // Nullstiller valget
             map.closePopup();
+            // Tilbakestill alle spor til original farge
+            allTracksGroup.eachLayer(layer => {
+                if(layer.setStyle) layer.setStyle({ color: 'var(--strava-orange)', weight: 5, opacity: 0.9 });
+            });
             if (allTracksGroup.getLayers().length > 0) {
                 map.flyToBounds(allTracksGroup.getBounds(), { padding: [40, 40], duration: 1.5 });
             }
