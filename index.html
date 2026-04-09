@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Toppturer rundt Tromsø</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --strava-orange: #fc4c02;
+            --strava-blue: #0076ff;
+            --insta-pink: #e1306c;
+            --dark-grey: #2c3e50;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            text-align: center; margin: 0; padding: 20px 10px; 
+            background: #f1f5f9; color: var(--dark-grey);
+        }
+
+        h1 { margin-bottom: 5px; font-size: 1.8rem; }
+        .subtitle { margin-bottom: 5px; font-size: 1rem; color: #64748b; font-weight: 400; }
+        .subtitle-mini { margin-bottom: 25px; font-size: 0.85rem; color: #94a3b8; font-weight: 400; font-style: italic; }
+
+        /* Bedre tilgjengelighet enn outline: none */
+        :focus-visible { outline: 2px solid var(--strava-blue); outline-offset: 2px; }
+        .leaflet-container :focus { outline: none; }
+
+        #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; align-items: center; }
+        
+        .map-selector {
+            padding: 10px 15px; border-radius: 8px; border: 2px solid var(--dark-grey);
+            font-weight: 600; cursor: pointer; background: white; font-size: 15px;
+        }
+
+        .top-btn { 
+            background-color: var(--strava-orange);
+            color: white; border: none; border-radius: 8px; padding: 12px 20px; 
+            cursor: pointer; font-size: 14px; font-weight: 600; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s ease;
+        }
+        
+        .top-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+
+        #resetBtn { 
+            background-color: var(--dark-grey); color: white; border: none; 
+            border-radius: 8px; padding: 12px 20px; cursor: pointer; font-weight: 600; 
+        }
+
+        #map-container { position: relative; max-width: 1100px; margin: 0 auto; }
+        
+        #map { 
+            height: 70vh; /* Responsiv høyde */
+            min-height: 450px;
+            max-height: 650px;
+            width: 100%; border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+            background-color: #ddd;
+        }
+
+        #video-buttons-container {
+            position: absolute; top: 20px; right: 20px; z-index: 1000;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+
+        .insta-btn, .toggle-btn {
+            background: white; color: var(--insta-pink); border: 2px solid var(--insta-pink);
+            padding: 10px 15px; border-radius: 50px; font-weight: bold;
+            text-decoration: none; box-shadow: 0 4px 15px rgba(225, 48, 108, 0.3);
+            font-size: 13px; transition: all 0.2s; cursor: pointer;
+        }
+
+        .toggle-btn { background: #f8fafc; color: var(--strava-blue); border-color: var(--strava-blue); }
+        .toggle-btn.active { background: var(--strava-blue); color: white; }
+
+        .elevation-popup .leaflet-popup-content { width: 260px !important; }
+        .elevation-info { font-size: 11px; margin-top: 8px; font-weight: bold; color: #475569; text-align: left; line-height: 1.5; }
+
+        .custom-tooltip { font-weight: bold; border-radius: 4px; border: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        #last-updated { margin-top: 50px; margin-bottom: 20px; font-size: 0.75rem; color: #94a3b8; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <h1>Toppturer rundt Tromsø</h1>
+    <div class="subtitle">Klikk på sporet eller knapp for å se detaljer og video fra toppene</div>
+    <div class="subtitle-mini">Høydeprofil vises ved klikk på sporene</div>
+
+    <div id="buttons">
+        <select id="mapSelect" class="map-selector">
+            <option value="norge">Norgeskart</option>
+            <option value="osm">OpenStreetMap</option>
+        </select>
+        <button id="resetBtn">Tilbake til oversikt</button>
+    </div>
+
+    <div id="map-container">
+        <div id="map"></div>
+        <div id="video-buttons-container"></div>
+    </div>
+
+    <div id="last-updated"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
+
+    <script>
+        document.getElementById('last-updated').innerHTML = "Sist oppdatert: " + new Date(document.lastModified).toLocaleString('no-NO');
+
+        const map = L.map('map');
+        const allTracksGroup = L.featureGroup().addTo(map);
+        const videoContainer = document.getElementById('video-buttons-container');
+        
+        let valgtTopp = null;
+        let extraTrackLayer = null;
+
+        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { attribution: '&copy; Kartverket' }).addTo(map);
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+
+        document.getElementById('mapSelect').onchange = function() {
+            if (this.value === "osm") { map.addLayer(osmLayer); map.removeLayer(norgeLayer); }
+            else { map.addLayer(norgeLayer); map.removeLayer(osmLayer); }
+        };
+
+        const topper = [
+            { navn: "884", fil: "2026_03_27.gpx", video: [{ url: "https://www.instagram.com/reel/DWg1TaHiJRJ/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTnrjgliITD/", tittel: "Video 2" }], ekstraSpor: "2026_01_17.gpx" },
+            { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: [{ url: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/", tittel: "Se video" }] },
+            { navn: "Burshammeren", fil: "2026_03_26.gpx", video: [{ url: "https://www.instagram.com/reel/DWXPzaUiAO5/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTLiCcAiDMz/", tittel: "Video 2" }], ekstraSpor: "2025_12_31.gpx" },
+            { navn: "Gabrielfjellet", fil: "2025_05_25.gpx", video: [{ url: "https://www.instagram.com/p/DKKd9vQsRke/", tittel: "Se video" }] },
+            { navn: "Gorzelvtinden", fil: "2025_12_06.gpx", video: [{ url: "https://www.instagram.com/p/DR99FHAiF62/", tittel: "Se video" }] },
+            { navn: "Gråtinden", fil: "2026_04_06.gpx", video: [{ url: "https://www.instagram.com/reel/DW1xhPniK_l/", tittel: "Se video" }] },
+            { navn: "Langfjellaksla", fil: "2026_04_08.gpx", video: [{ url: "https://www.instagram.com/reel/DW4gus-iLa9/", tittel: "Se video" }] },
+            { navn: "Rema 1000", fil: "2026_03_28.gpx", video: [{ url: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/", tittel: "Se video" }] },
+            { navn: "Skittentinden", fil: "2026_03_15.gpx", video: [{ url: "https://www.instagram.com/reel/DWHz3RbCPlU/", tittel: "Se video" }] },
+            { navn: "Storstolpan", fil: "2025_05_08.gpx", video: [{ url: "https://www.instagram.com/p/DJjsfOesdWS/", tittel: "Se video" }] }
+        ];
+
+        topper.sort((a, b) => a.navn.localeCompare(b.navn, 'nb'));
+
+        function formatTime(ms) {
+            if (!ms || isNaN(ms)) return "N/A";
+            const totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            return hours > 0 ? `${hours}t ${minutes}m` : `${minutes}m`;
+        }
+
+        function createElevationContent(layer, navn) {
+            const elevations = layer.get_elevation_data();
+            const points = elevations.map(e => e[1]);
+            
+            const maxEle = Math.round(layer.get_elevation_max());
+            const startEle = Math.round(points[0]);
+            const dist = (layer.get_distance() / 1000).toFixed(1);
+            const ascent = Math.round(layer.get_elevation_gain());
+            const duration = formatTime(layer.get_total_time());
+
+            const min = Math.min(...points);
+            const max = Math.max(...points);
+            const range = max - min || 1;
+
+            const container = document.createElement('div');
+            container.innerHTML = `
+                <div style="font-weight:bold; margin-bottom:5px; font-size:14px;">${navn}</div>
+                <canvas width="220" height="80" style="background:#f8fafc; border: 1px solid #e2e8f0; border-radius:4px;"></canvas>
+                <div class="elevation-info">
+                    Høyde: ${maxEle}m | Lengde: ${dist}km | Tid: ${duration}<br>
+                    Stigning: +${ascent}m | Start over havet: ${startEle}m
+                </div>
+            `;
+            const ctx = container.querySelector('canvas').getContext('2d');
+            const step = 220 / points.length;
+            ctx.beginPath(); ctx.strokeStyle = '#fc4c02'; ctx.lineWidth = 2;
+            points.forEach((ele, i) => {
+                const x = i * step;
+                const y = 75 - ((ele - min) / range) * 65; 
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            return container;
+        }
+
+        topper.forEach(topp => {
+            const btn = document.createElement('button');
+            btn.className = 'top-btn';
+            btn.innerText = topp.navn;
+            document.getElementById('buttons').appendChild(btn);
+
+            const track = new L.GPX(topp.fil, {
+                async: true,
+                marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
+                polyline_options: { color: 'var(--strava-orange)', weight: 5, opacity: 0.9, lineCap: 'round' }
+            }).on('loaded', function(e) {
+                const layer = e.target;
+                allTracksGroup.addLayer(layer);
+                layer.bindTooltip(topp.navn, { sticky: true, className: 'custom-tooltip' });
+                
+                const activate = (clickPos) => {
+                    valgtTopp = topp.navn;
+                    
+                    // Reset alle farger først
+                    allTracksGroup.eachLayer(l => l.setStyle({ color: 'var(--strava-orange)', weight: 5 }));
+                    // Marker det valgte sporet
+                    layer.setStyle({ color: 'var(--strava-blue)', weight: 7 });
+                    layer.bringToFront();
+
+                    if (extraTrackLayer) { map.removeLayer(extraTrackLayer); extraTrackLayer = null; }
+                    map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
+                    
+                    videoContainer.innerHTML = '';
+                    topp.video.forEach(vid => {
+                        const vBtn = document.createElement('a');
+                        vBtn.href = vid.url; vBtn.target = "_blank"; vBtn.className = 'insta-btn'; vBtn.innerText = vid.tittel;
+                        videoContainer.appendChild(vBtn);
+                    });
+
+                    if (topp.ekstraSpor) {
+                        const tBtn = document.createElement('button');
+                        tBtn.className = 'toggle-btn';
+                        tBtn.innerText = "Vis spor fra video 2";
+                        tBtn.onclick = function() {
+                            if (extraTrackLayer) {
+                                map.removeLayer(extraTrackLayer); extraTrackLayer = null;
+                                this.classList.remove('active');
+                            } else {
+                                extraTrackLayer = new L.GPX(topp.ekstraSpor, {
+                                    async: true,
+                                    marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
+                                    polyline_options: { color: '#6366f1', weight: 3, opacity: 0.8, dashArray: '5, 10' }
+                                }).addTo(map);
+                                this.classList.add('active');
+                            }
+                        };
+                        videoContainer.appendChild(tBtn);
+                    }
+
+                    if (clickPos) {
+                        L.popup({ className: 'elevation-popup', offset: [0, -10] })
+                            .setLatLng(clickPos).setContent(createElevationContent(layer, topp.navn)).openOn(map);
+                    }
+                };
+
+                // Interaksjon fra knapp til kart
+                btn.onmouseenter = () => { if(valgtTopp !== topp.navn) { layer.setStyle({ color: 'var(--strava-blue)', weight: 8 }); layer.bringToFront(); } };
+                btn.onmouseleave = () => { if(valgtTopp !== topp.navn) { layer.setStyle({ color: 'var(--strava-orange)', weight: 5 }); } };
+                
+                // Interaksjon fra kart til knapper (og kartstyling)
+                layer.on('mouseover', () => { layer.setStyle({ weight: 8 }); layer.bringToFront(); });
+                layer.on('mouseout', () => { if(valgtTopp !== topp.navn) { layer.setStyle({ weight: 5 }); } });
+
+                layer.on('click', (e) => activate(e.latlng));
+                btn.onclick = () => activate();
+
+                if (allTracksGroup.getLayers().length === topper.length) {
+                    map.fitBounds(allTracksGroup.getBounds(), { padding: [40, 40] });
+                }
+            });
+        });
+
+        document.getElementById('resetBtn').onclick = () => {
+            valgtTopp = null;
+            if (extraTrackLayer) { map.removeLayer(extraTrackLayer); extraTrackLayer = null; }
+            // Nullstill alle spor-stiler
+            allTracksGroup.eachLayer(l => l.setStyle({ color: 'var(--strava-orange)', weight: 5 }));
+            map.closePopup();
+            videoContainer.innerHTML = '';
+            map.flyToBounds(allTracksGroup.getBounds(), { padding: [40, 40], duration: 1.5 });
+        };
+    </script>
+</body>
+</html>
