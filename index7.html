@@ -22,8 +22,17 @@
         h1 { margin-bottom: 5px; font-size: 1.8rem; }
         
         .subtitle { 
-            margin-bottom: 25px; font-size: 1rem; color: #64748b; font-weight: 400;
+            margin-bottom: 5px; font-size: 1rem; color: #64748b; font-weight: 400;
         }
+
+        .subtitle-mini {
+            margin-bottom: 25px; font-size: 0.85rem; color: #94a3b8; font-weight: 400; font-style: italic;
+        }
+
+        /* Fjerner blå firkant/ramme ved klikk på spor */
+        path.leaflet-interactive:focus { outline: none !important; }
+        .leaflet-container :focus { outline: none !important; }
+        svg { outline: none !important; }
 
         #buttons { 
             margin-bottom: 20px; display: flex; justify-content: center; 
@@ -73,10 +82,7 @@
             box-shadow: 0 4px 15px rgba(0, 118, 255, 0.2);
         }
 
-        .toggle-btn.active {
-            background: var(--strava-blue); color: white;
-        }
-
+        .toggle-btn.active { background: var(--strava-blue); color: white; }
         .insta-btn:hover, .toggle-btn:hover { transform: scale(1.05); }
 
         .custom-tooltip {
@@ -87,13 +93,21 @@
         .elevation-popup .leaflet-popup-content { width: 240px !important; }
         .elevation-info { font-size: 11px; margin-top: 5px; font-weight: bold; color: #475569; }
 
-        #last-updated { margin-top: 25px; font-size: 12px; color: #94a3b8; }
+        /* Stil for sist oppdatert */
+        #last-updated { 
+            margin-top: 50px; 
+            margin-bottom: 20px;
+            font-size: 0.75rem; 
+            color: #94a3b8; 
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
 
     <h1>Toppturer rundt Tromsø</h1>
     <div class="subtitle">Klikk på sporet eller knapp for å se detaljer og video fra toppene</div>
+    <div class="subtitle-mini">Høydeprofil vises ved klikk på sporene</div>
 
     <div id="buttons">
         <select id="mapSelect" class="map-selector">
@@ -137,34 +151,19 @@
         };
 
         const topper = [
-            { 
-                navn: "Skittentinden", 
-                fil: "2026_03_15.gpx", 
-                video: [{ url: "https://www.instagram.com/reel/DWHz3RbCPlU/", tittel: "Se video" }] 
-            },
-            { 
-                navn: "Burshammeren", 
-                fil: "2026_03_26.gpx", 
-                video: [
-                    { url: "https://www.instagram.com/reel/DWXPzaUiAO5/", tittel: "Video 1" },
-                    { url: "https://www.instagram.com/reel/DTLiCcAiDMz/", tittel: "Video 2" }
-                ],
-                ekstraSpor: "2025_12_31.gpx"
-            },
-            { 
-                navn: "884", 
-                fil: "2026_03_27.gpx", 
-                video: [
-                    { url: "https://www.instagram.com/reel/DWg1TaHiJRJ/", tittel: "Video 1" },
-                    { url: "https://www.instagram.com/reel/DTnrjgliITD/", tittel: "Video 2" }
-                ],
-                ekstraSpor: "2026_01_17.gpx"
-            },
-            { navn: "Langfjellaksla 765", fil: "2026_04_08.gpx", video: [{ url: "https://www.instagram.com/reel/DW4gus-iLa9/", tittel: "Se video" }] },
-            { navn: "Gråtinden 871", fil: "2026_04_06.gpx", video: [{ url: "https://www.instagram.com/reel/DW1xhPniK_l/", tittel: "Se video" }] },
+            { navn: "884", fil: "2026_03_27.gpx", video: [{ url: "https://www.instagram.com/reel/DWg1TaHiJRJ/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTnrjgliITD/", tittel: "Video 2" }], ekstraSpor: "2026_01_17.gpx" },
             { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: [{ url: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/", tittel: "Se video" }] },
-            { navn: "Rema (800) 1000", fil: "2026_03_28.gpx", video: [{ url: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/", tittel: "Se video" }] }
+            { navn: "Burshammeren", fil: "2026_03_26.gpx", video: [{ url: "https://www.instagram.com/reel/DWXPzaUiAO5/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTLiCcAiDMz/", tittel: "Video 2" }], ekstraSpor: "2025_12_31.gpx" },
+            { navn: "Gabrielfjellet", fil: "2025_05_25.gpx", video: [{ url: "https://www.instagram.com/p/DKKd9vQsRke/", tittel: "Se video" }] },
+            { navn: "Gorzelvtinden", fil: "2025_12_06.gpx", video: [{ url: "https://www.instagram.com/p/DR99FHAiF62/", tittel: "Se video" }] },
+            { navn: "Gråtinden", fil: "2026_04_06.gpx", video: [{ url: "https://www.instagram.com/reel/DW1xhPniK_l/", tittel: "Se video" }] },
+            { navn: "Langfjellaksla", fil: "2026_04_08.gpx", video: [{ url: "https://www.instagram.com/reel/DW4gus-iLa9/", tittel: "Se video" }] },
+            { navn: "Rema 1000", fil: "2026_03_28.gpx", video: [{ url: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/", tittel: "Se video" }] },
+            { navn: "Skittentinden", fil: "2026_03_15.gpx", video: [{ url: "https://www.instagram.com/reel/DWHz3RbCPlU/", tittel: "Se video" }] },
+            { navn: "Storstolpan", fil: "2025_05_08.gpx", video: [{ url: "https://www.instagram.com/p/DJjsfOesdWS/", tittel: "Se video" }] }
         ];
+
+        topper.sort((a, b) => a.navn.localeCompare(b.navn, 'nb'));
 
         function createElevationContent(layer, navn) {
             const elevations = layer.get_elevation_data();
@@ -176,7 +175,11 @@
             const range = max - min || 1;
 
             const container = document.createElement('div');
-            container.innerHTML = `<div style="font-weight:bold; margin-bottom:5px; font-size:14px;">${navn}</div><canvas width="220" height="80" style="background:#f8fafc; border: 1px solid #e2e8f0; border-radius:4px;"></canvas><div class="elevation-info">Høyde: ${maxEle}m | Lengde: ${dist}km</div>`;
+            container.innerHTML = `
+                <div style="font-weight:bold; margin-bottom:5px; font-size:14px;">${navn}</div>
+                <canvas width="220" height="80" style="background:#f8fafc; border: 1px solid #e2e8f0; border-radius:4px;"></canvas>
+                <div class="elevation-info">Høyde: ${maxEle}m | Lengde: ${dist}km</div>
+            `;
             const ctx = container.querySelector('canvas').getContext('2d');
             const step = 220 / points.length;
             ctx.beginPath(); ctx.strokeStyle = '#fc4c02'; ctx.lineWidth = 2;
@@ -207,17 +210,14 @@
                 const activate = (clickPos) => {
                     valgtTopp = topp.navn;
                     if (extraTrackLayer) { map.removeLayer(extraTrackLayer); extraTrackLayer = null; }
-                    
                     layer.setStyle({ color: 'var(--strava-orange)', weight: 5, opacity: 0.9 });
                     map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
-                    
                     videoContainer.innerHTML = '';
                     topp.video.forEach(vid => {
                         const vBtn = document.createElement('a');
                         vBtn.href = vid.url; vBtn.target = "_blank"; vBtn.className = 'insta-btn'; vBtn.innerText = vid.tittel;
                         videoContainer.appendChild(vBtn);
                     });
-
                     if (topp.ekstraSpor) {
                         const tBtn = document.createElement('button');
                         tBtn.className = 'toggle-btn';
@@ -237,7 +237,6 @@
                         };
                         videoContainer.appendChild(tBtn);
                     }
-
                     if (clickPos) {
                         L.popup({ className: 'elevation-popup', offset: [0, -10] })
                             .setLatLng(clickPos).setContent(createElevationContent(layer, topp.navn)).openOn(map);
@@ -247,14 +246,10 @@
                 btn.onmouseenter = () => {
                     layer.setStyle({ color: 'var(--strava-blue)', weight: 10, opacity: 1 });
                     layer.bringToFront();
-                    if (!valgtTopp) map.panTo(layer.getBounds().getCenter());
                 };
-
                 btn.onmouseleave = () => {
                     layer.setStyle({ color: 'var(--strava-orange)', weight: 5, opacity: 0.9 });
-                    if (!valgtTopp) map.panTo(allTracksGroup.getBounds().getCenter());
                 };
-
                 layer.on('click', (e) => activate(e.latlng));
                 btn.onclick = () => activate();
 
