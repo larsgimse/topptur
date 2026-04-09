@@ -10,32 +10,31 @@
             --strava-orange: #fc4c02;
             --insta-pink: #e1306c;
             --dark-grey: #2c3e50;
-            --light-blue: #f1f5f9;
         }
 
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             text-align: center; margin: 0; padding: 20px 10px; 
-            background: var(--light-blue); color: var(--dark-grey);
+            background: #f1f5f9; color: var(--dark-grey);
         }
 
-        h1 { margin-bottom: 20px; font-size: 1.8rem; letter-spacing: -0.5px; }
+        h1 { margin-bottom: 20px; font-size: 1.8rem; }
 
         #buttons { 
             margin-bottom: 20px; display: flex; justify-content: center; 
-            gap: 10px; flex-wrap: wrap; align-items: center; max-width: 1000px; margin-inline: auto;
+            gap: 12px; flex-wrap: wrap; align-items: center; 
         }
         
         .map-selector {
             padding: 10px 15px; border-radius: 8px; border: 2px solid var(--dark-grey);
-            font-weight: 600; cursor: pointer; background: white; font-size: 14px;
+            font-weight: 600; cursor: pointer; background: white; font-size: 15px;
         }
 
         .top-btn { 
             background-color: white; color: var(--dark-grey);
-            border: 2px solid #e2e8f0; border-radius: 8px; padding: 10px 18px; 
+            border: 2px solid #e2e8f0; border-radius: 8px; padding: 12px 20px; 
             cursor: pointer; font-size: 14px; font-weight: 600; 
-            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.2s ease;
         }
         
         .top-btn:hover { border-color: var(--strava-orange); }
@@ -43,7 +42,7 @@
         
         #resetBtn { 
             background-color: var(--dark-grey); color: white; border: none; 
-            border-radius: 8px; padding: 11px 20px; cursor: pointer; font-weight: 600; 
+            border-radius: 8px; padding: 12px 20px; cursor: pointer; font-weight: 600; 
         }
 
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; }
@@ -56,15 +55,14 @@
         #insta-overlay-btn {
             position: absolute; top: 20px; right: 20px; z-index: 1000;
             background: white; color: var(--insta-pink); border: 2px solid var(--insta-pink);
-            padding: 12px 20px; border-radius: 50px; font-weight: bold;
+            padding: 12px 18px; border-radius: 50px; font-weight: bold;
             display: none; text-decoration: none; box-shadow: 0 4px 15px rgba(225, 48, 108, 0.3);
-            font-size: 14px; transition: transform 0.2s;
+            font-size: 14px;
         }
-        #insta-overlay-btn:hover { transform: scale(1.05); }
 
         .custom-tooltip {
             background-color: var(--dark-grey); color: white; border: none; 
-            border-radius: 4px; padding: 5px 12px; font-weight: 600; font-size: 13px;
+            border-radius: 4px; padding: 5px 10px; font-weight: 600;
         }
 
         #last-updated { margin-top: 25px; font-size: 12px; color: #94a3b8; }
@@ -79,7 +77,7 @@
             <option value="norge">Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
         </select>
-        <button id="resetBtn">Vis alle</button>
+        <button id="resetBtn">Tilbake til oversikt</button>
     </div>
 
     <div id="map-container">
@@ -97,23 +95,19 @@
 
         const map = L.map('map');
         const allTracksGroup = L.featureGroup().addTo(map);
-        const topMarkersGroup = L.featureGroup().addTo(map);
         const instaBtn = document.getElementById('insta-overlay-btn');
 
-        const layers = {
-            norge: L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
-                attribution: '&copy; Kartverket'
-            }),
-            osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-                attribution: '&copy; OpenStreetMap' 
-            })
-        };
+        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
+            attribution: '&copy; Kartverket'
+        }).addTo(map);
 
-        layers.norge.addTo(map);
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+            attribution: '&copy; OpenStreetMap' 
+        });
 
         document.getElementById('mapSelect').onchange = function() {
-            Object.values(layers).forEach(layer => map.removeLayer(layer));
-            layers[this.value].addTo(map);
+            if (this.value === "osm") { map.addLayer(osmLayer); map.removeLayer(norgeLayer); }
+            else { map.addLayer(norgeLayer); map.removeLayer(osmLayer); }
         };
 
         const topper = [
@@ -129,57 +123,45 @@
             const btn = document.createElement('button');
             btn.className = 'top-btn';
             btn.innerText = topp.navn;
-            document.getElementById('buttons').insertBefore(btn, document.getElementById('resetBtn'));
+            document.getElementById('buttons').appendChild(btn);
 
-            const gpxTrack = new L.GPX(topp.fil, {
+            const gpx = new L.GPX(topp.fil, {
                 async: true,
                 marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                polyline_options: { color: 'var(--strava-orange)', weight: 4, opacity: 0.7 }
+                polyline_options: { color: 'var(--strava-orange)', weight: 5, opacity: 0.8 }
             }).on('loaded', function(e) {
                 const layer = e.target;
                 allTracksGroup.addLayer(layer);
                 layer.bindTooltip(topp.navn, { sticky: true, className: 'custom-tooltip' });
                 
-                // Legg til rød sirkelmarkør på toppen
-                const endPos = layer.get_elevation_max_point(); // Finn høyeste punkt
-                if (endPos) {
-                    const topMarker = L.circleMarker(endPos, {
-                        radius: 7,
-                        color: 'white',
+                // Rød markør på høyeste punkt
+                const maxPoint = layer.get_elevation_max_point();
+                if (maxPoint) {
+                    L.circleMarker(maxPoint, {
+                        radius: 6,
+                        fillColor: "#ff0000",
+                        color: "#fff",
                         weight: 2,
-                        fillColor: 'red',
+                        opacity: 1,
                         fillOpacity: 1,
-                        pane: 'markerPane' // Legg i markør-panelet for å ligge over sporet
-                    }).addTo(topMarkersGroup);
-                    
-                    // Knytt verktøytips til markøren også
-                    topMarker.bindTooltip(topp.navn + " (Topp)", { sticky: true, className: 'custom-tooltip' });
-                    
-                    // Gjør markøren klikkbar
-                    topMarker.on('click', () => activate());
+                        interactive: false
+                    }).addTo(allTracksGroup);
                 }
 
                 const activate = () => {
                     document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-                    
-                    // Forbedret zoom: Zoom til sporet, men ikke for nært (maxZoom), og med mindre padding
-                    map.flyToBounds(layer.getBounds(), { padding: [30, 30], maxZoom: 14, duration: 1.2 });
-                    
+                    map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
                     instaBtn.href = topp.video;
                     instaBtn.style.display = 'block';
                 };
 
-                layer.on('mouseover', function() { this.setStyle({ opacity: 1, weight: 6 }); });
-                layer.on('mouseout', function() { this.setStyle({ opacity: 0.7, weight: 4 }); });
                 layer.on('click', activate);
                 btn.onclick = activate;
 
                 loadedCount++;
                 if (loadedCount === topper.length) {
-                    // Zoom til alle spor OG alle markører
-                    const combinedBounds = allTracksGroup.getBounds().extend(topMarkersGroup.getBounds());
-                    map.fitBounds(combinedBounds, { padding: [40, 40] });
+                    map.fitBounds(allTracksGroup.getBounds(), { padding: [40, 40] });
                 }
             });
         });
@@ -187,9 +169,7 @@
         document.getElementById('resetBtn').onclick = () => {
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
             if (allTracksGroup.getLayers().length > 0) {
-                // Zoom til alle spor OG alle markører
-                const combinedBounds = allTracksGroup.getBounds().extend(topMarkersGroup.getBounds());
-                map.flyToBounds(combinedBounds, { padding: [40, 40], duration: 1.5 });
+                map.flyToBounds(allTracksGroup.getBounds(), { padding: [40, 40], duration: 1.5 });
             }
             instaBtn.style.display = 'none';
         };
