@@ -8,7 +8,7 @@
     <style>
         :root {
             --strava-orange: #fc4c02;
-            --strava-blue: #0076ff; /* Ny farge for hover-effekt */
+            --strava-blue: #0076ff;
             --insta-pink: #e1306c;
             --dark-grey: #2c3e50;
         }
@@ -221,21 +221,17 @@
                     }
                 };
 
-                // Knapp-hover: Endre farge til blå og utvid sporet
+                // Knapp-hover logikk
                 btn.onmouseenter = () => {
-                    layer.setStyle({ 
-                        color: 'var(--strava-blue)', // Skifter farge til blå
-                        weight: 10, 
-                        opacity: 1 
-                    });
+                    layer.setStyle({ color: 'var(--strava-blue)', weight: 10, opacity: 1 });
                     layer.bringToFront();
+                    
+                    // Sentrerer kartet på sporet uten å endre zoom
+                    map.panTo(layer.getBounds().getCenter());
                 };
+
                 btn.onmouseleave = () => {
-                    layer.setStyle({ 
-                        color: 'var(--strava-orange)', // Tilbake til original oransje
-                        weight: 5, 
-                        opacity: 0.9 
-                    });
+                    layer.setStyle({ color: 'var(--strava-orange)', weight: 5, opacity: 0.9 });
                 };
 
                 layer.on('click', (e) => activate(e.latlng));
