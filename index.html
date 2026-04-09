@@ -200,7 +200,7 @@
             new L.GPX(topp.fil, {
                 async: true,
                 marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                polyline_options: { color: 'var(--strava-orange)', weight: 5, opacity: 0.9, lineCap: 'round' }
+                polyline_options: { color: 'var(--strava-orange)', weight: 3, opacity: 0.9, lineCap: 'round' } // Endret til 3
             }).on('loaded', function(e) {
                 const layer = e.target;
                 allTracksGroup.addLayer(layer);
@@ -208,8 +208,8 @@
                 
                 const activate = (clickPos) => {
                     valgtTopp = topp.navn;
-                    allTracksGroup.eachLayer(l => l.setStyle({ color: 'var(--strava-orange)', weight: 5 }));
-                    layer.setStyle({ color: 'var(--strava-blue)', weight: 7 });
+                    allTracksGroup.eachLayer(l => l.setStyle({ color: 'var(--strava-orange)', weight: 3 })); // Endret til 3
+                    layer.setStyle({ color: 'var(--strava-blue)', weight: 4 }); // Endret til 4 for aktivt spor
                     layer.bringToFront();
 
                     if (extraTrackLayer) { map.removeLayer(extraTrackLayer); extraTrackLayer = null; }
@@ -238,7 +238,7 @@
                                 extraTrackLayer = new L.GPX(topp.ekstraSpor, {
                                     async: true,
                                     marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                                    polyline_options: { color: '#6366f1', weight: 3, opacity: 0.8, dashArray: '5, 10' }
+                                    polyline_options: { color: '#6366f1', weight: 2, opacity: 0.8, dashArray: '5, 10' } // Endret til 2
                                 }).addTo(map);
                                 this.classList.add('active');
                             }
@@ -252,10 +252,10 @@
                     }
                 };
 
-                btn.onmouseenter = () => { if(valgtTopp !== topp.navn) { layer.setStyle({ color: 'var(--strava-blue)', weight: 8 }); layer.bringToFront(); } };
-                btn.onmouseleave = () => { if(valgtTopp !== topp.navn) { layer.setStyle({ color: 'var(--strava-orange)', weight: 5 }); } };
-                layer.on('mouseover', () => { layer.setStyle({ weight: 8 }); layer.bringToFront(); });
-                layer.on('mouseout', () => { if(valgtTopp !== topp.navn) { layer.setStyle({ weight: 5 }); } });
+                btn.onmouseenter = () => { if(valgtTopp !== topp.navn) { layer.setStyle({ color: 'var(--strava-blue)', weight: 5 }); layer.bringToFront(); } }; // Endret til 5
+                btn.onmouseleave = () => { if(valgtTopp !== topp.navn) { layer.setStyle({ color: 'var(--strava-orange)', weight: 3 }); } }; // Endret til 3
+                layer.on('mouseover', () => { layer.setStyle({ weight: 5 }); layer.bringToFront(); }); // Endret til 5
+                layer.on('mouseout', () => { if(valgtTopp !== topp.navn) { layer.setStyle({ weight: 3 }); } }); // Endret til 3
                 layer.on('click', (e) => activate(e.latlng));
                 btn.onclick = () => activate();
 
@@ -268,7 +268,7 @@
         document.getElementById('resetBtn').onclick = () => {
             valgtTopp = null;
             if (extraTrackLayer) { map.removeLayer(extraTrackLayer); extraTrackLayer = null; }
-            allTracksGroup.eachLayer(l => l.setStyle({ color: 'var(--strava-orange)', weight: 5 }));
+            allTracksGroup.eachLayer(l => l.setStyle({ color: 'var(--strava-orange)', weight: 3 })); // Endret til 3
             map.closePopup();
             videoContainer.innerHTML = '';
             map.flyToBounds(allTracksGroup.getBounds(), { padding: [40, 40], duration: 1.5 });
