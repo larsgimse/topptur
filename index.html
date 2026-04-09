@@ -8,6 +8,7 @@
     <style>
         :root {
             --strava-orange: #fc4c02;
+            --strava-blue: #0076ff; /* Ny farge for hover-effekt */
             --insta-pink: #e1306c;
             --dark-grey: #2c3e50;
         }
@@ -20,7 +21,6 @@
 
         h1 { margin-bottom: 5px; font-size: 1.8rem; }
         
-        /* Styling for den nye underteksten */
         .subtitle { 
             margin-bottom: 25px; 
             font-size: 1rem; 
@@ -221,12 +221,21 @@
                     }
                 };
 
+                // Knapp-hover: Endre farge til blå og utvid sporet
                 btn.onmouseenter = () => {
-                    layer.setStyle({ weight: 10, opacity: 1 });
+                    layer.setStyle({ 
+                        color: 'var(--strava-blue)', // Skifter farge til blå
+                        weight: 10, 
+                        opacity: 1 
+                    });
                     layer.bringToFront();
                 };
                 btn.onmouseleave = () => {
-                    layer.setStyle({ weight: 5, opacity: 0.9 });
+                    layer.setStyle({ 
+                        color: 'var(--strava-orange)', // Tilbake til original oransje
+                        weight: 5, 
+                        opacity: 0.9 
+                    });
                 };
 
                 layer.on('click', (e) => activate(e.latlng));
