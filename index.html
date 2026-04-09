@@ -23,6 +23,11 @@
         .subtitle { margin-bottom: 5px; font-size: 1rem; color: #64748b; }
         .subtitle-mini { margin-bottom: 25px; font-size: 0.85rem; color: #94a3b8; font-style: italic; }
 
+        /* Fjerner blå firkant ved klikk */
+        path.leaflet-interactive:focus { outline: none !important; }
+        .leaflet-container :focus { outline: none !important; }
+        svg { outline: none !important; }
+
         #buttons { 
             margin-bottom: 20px; display: flex; justify-content: center; 
             gap: 12px; flex-wrap: wrap; align-items: center; min-height: 50px;
@@ -51,7 +56,6 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); background-color: #eee;
         }
 
-        /* Tilpasser popup-vinduet til innholdet uten scrollbar */
         .leaflet-popup-content-wrapper { padding: 5px; }
         .leaflet-popup-content { margin: 10px; line-height: 1.4; width: auto !important; }
 
@@ -72,6 +76,16 @@
         }
 
         .custom-tooltip { background: var(--dark-grey); color: white; padding: 5px 10px; border-radius: 4px; border: none; font-weight: 600; }
+
+        /* --- STIL FOR SIST OPPDATERT --- */
+        #last-updated { 
+            margin-top: 50px;      /* Mer luft mellom kart og tekst */
+            margin-bottom: 20px;
+            font-size: 0.75rem;    /* Mindre font */
+            color: #94a3b8;        /* Svakere farge (lys grå-blå) */
+            font-style: italic;    /* Kursiv */
+            font-weight: 400;
+        }
     </style>
 </head>
 <body>
@@ -131,10 +145,7 @@
         function createElevationContent(layer, navn) {
             const elevations = layer.get_elevation_data();
             const distKm = layer.get_distance() / 1000;
-            
-            // Pixels per km styrer den "ekte" tiden. Vi setter den til 25 for å passe de fleste skjermer.
             const pixelsPerKm = 25; 
-            // Grafen blir mellom 200 og 450 piksler bred avhengig av lengde.
             const canvasWidth = Math.min(450, Math.max(200, Math.round(distKm * pixelsPerKm)));
             
             const points = elevations.map(e => e[1]);
@@ -143,7 +154,6 @@
             const range = max - min || 1;
 
             const container = document.createElement('div');
-            // Vi tvinger containeren til å bli like bred som grafen + litt padding
             container.style.width = (canvasWidth) + "px";
             
             container.innerHTML = `
@@ -184,7 +194,7 @@
             const gpxLayer = new L.GPX(topp.fil, {
                 async: true,
                 marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                polyline_options: { color: 'var(--strava-orange)', weight: 4, opacity: 0.85 }
+                polyline_options: { color: 'var(--strava-orange)', weight: 4, opacity: 0.85, interactive: true }
             }).on('loaded', function(e) {
                 allTracksGroup.addLayer(e.target);
                 e.target.bindTooltip(topp.navn, { sticky: true, className: 'custom-tooltip' });
@@ -202,11 +212,8 @@
                     videoContainer.appendChild(a);
                 });
                 if (latlng) {
-                    L.popup({ 
-                        minWidth: 100,
-                        maxWidth: 500,
-                        autoPan: true
-                    }).setLatLng(latlng)
+                    L.popup({ minWidth: 100, maxWidth: 500, autoPan: true })
+                      .setLatLng(latlng)
                       .setContent(createElevationContent(gpxLayer, topp.navn))
                       .openOn(map);
                 }
