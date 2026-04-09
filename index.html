@@ -51,7 +51,6 @@
             background-color: #ddd;
         }
 
-        /* Fjerner den grå firkanten ved klikk */
         .leaflet-interactive:focus { outline: none; }
 
         #insta-overlay-btn {
@@ -116,6 +115,7 @@
         };
 
         const topper = [
+            { navn: "884", fil: "2026_03_27.gpx", video: "https://www.instagram.com/reel/DWg1TaHiJRJ/" },
             { navn: "Langfjellaksla 765", fil: "2026_04_08.gpx", video: "https://www.instagram.com/reel/DW4gus-iLa9/" },
             { navn: "Gråtinden 871", fil: "2026_04_06.gpx", video: "https://www.instagram.com/reel/DW1xhPniK_l/" },
             { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/" },
@@ -128,7 +128,6 @@
             const gain = Math.round(layer.get_elevation_gain());
             const dist = (layer.get_distance() / 1000).toFixed(1);
             
-            // Tidsberegning
             const startTime = layer.get_start_time();
             const endTime = layer.get_end_time();
             let durationStr = "N/A";
