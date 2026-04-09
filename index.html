@@ -31,14 +31,13 @@
         }
 
         .top-btn { 
-            background-color: white; color: var(--dark-grey);
-            border: 2px solid #e2e8f0; border-radius: 8px; padding: 12px 20px; 
+            background-color: var(--strava-orange);
+            color: white; border: none; border-radius: 8px; padding: 12px 20px; 
             cursor: pointer; font-size: 14px; font-weight: 600; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s ease;
         }
         
-        .top-btn:hover { border-color: var(--strava-orange); }
-        .top-btn.active { background-color: var(--strava-orange); color: white; border-color: var(--strava-orange); }
+        .top-btn:hover { opacity: 0.9; transform: translateY(-1px); }
         
         #resetBtn { 
             background-color: var(--dark-grey); color: white; border: none; 
@@ -111,7 +110,7 @@
         };
 
         const topper = [
-            { navn: "Langfjellaksla 765", fil: "2026_05_08.gpx", video: "https://www.instagram.com/reel/DW4gus-iLa9/" },
+            { navn: "Langfjellaksla 765", fil: "2026_04_08.gpx", video: "https://www.instagram.com/reel/DW4gus-iLa9/" },
             { navn: "Gråtinden 871", fil: "2026_04_06.gpx", video: "https://www.instagram.com/reel/DW1xhPniK_l/" },
             { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/" },
             { navn: "Rema (800) 1000", fil: "2026_03_28.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/" }
@@ -125,32 +124,33 @@
             btn.innerText = topp.navn;
             document.getElementById('buttons').appendChild(btn);
 
-            const gpx = new L.GPX(topp.fil, {
+            new L.GPX(topp.fil, {
                 async: true,
                 marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                polyline_options: { color: 'var(--strava-orange)', weight: 5, opacity: 0.8 }
+                polyline_options: { color: 'var(--strava-orange)', weight: 5, opacity: 0.9 }
             }).on('loaded', function(e) {
                 const layer = e.target;
                 allTracksGroup.addLayer(layer);
                 layer.bindTooltip(topp.navn, { sticky: true, className: 'custom-tooltip' });
                 
-                // Rød markør på høyeste punkt
-                const maxPoint = layer.get_elevation_max_point();
-                if (maxPoint) {
-                    L.circleMarker(maxPoint, {
+                try {
+                    let topPos = layer.get_elevation_max_point();
+                    if (!topPos) topPos = layer.getBounds().getCenter(); 
+
+                    L.circleMarker(topPos, {
                         radius: 6,
-                        fillColor: "#ff0000",
-                        color: "#fff",
+                        fillColor: "red",
+                        color: "white",
                         weight: 2,
                         opacity: 1,
                         fillOpacity: 1,
                         interactive: false
                     }).addTo(allTracksGroup);
+                } catch (err) {
+                    console.error("Kunne ikke lage markør for " + topp.navn);
                 }
-
+                
                 const activate = () => {
-                    document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
                     map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
                     instaBtn.href = topp.video;
                     instaBtn.style.display = 'block';
@@ -167,7 +167,6 @@
         });
 
         document.getElementById('resetBtn').onclick = () => {
-            document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
             if (allTracksGroup.getLayers().length > 0) {
                 map.flyToBounds(allTracksGroup.getBounds(), { padding: [40, 40], duration: 1.5 });
             }
