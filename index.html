@@ -10,38 +10,40 @@
             --strava-orange: #fc4c02;
             --insta-pink: #e1306c;
             --dark-grey: #2c3e50;
+            --light-blue: #f1f5f9;
         }
 
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             text-align: center; margin: 0; padding: 20px 10px; 
-            background: #f1f5f9; color: var(--dark-grey);
+            background: var(--light-blue); color: var(--dark-grey);
         }
 
-        h1 { margin-bottom: 20px; font-size: 1.8rem; }
+        h1 { margin-bottom: 20px; font-size: 1.8rem; letter-spacing: -0.5px; }
 
         #buttons { 
             margin-bottom: 20px; display: flex; justify-content: center; 
-            gap: 12px; flex-wrap: wrap; align-items: center; 
+            gap: 10px; flex-wrap: wrap; align-items: center; max-width: 1000px; margin-inline: auto;
         }
         
         .map-selector {
             padding: 10px 15px; border-radius: 8px; border: 2px solid var(--dark-grey);
-            font-weight: 600; cursor: pointer; background: white; font-size: 15px;
+            font-weight: 600; cursor: pointer; background: white; font-size: 14px;
         }
 
         .top-btn { 
-            background-color: var(--strava-orange);
-            color: white; border: none; border-radius: 8px; padding: 12px 20px; 
+            background-color: white; color: var(--dark-grey);
+            border: 2px solid #e2e8f0; border-radius: 8px; padding: 10px 18px; 
             cursor: pointer; font-size: 14px; font-weight: 600; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s ease;
+            transition: all 0.2s ease;
         }
         
-        .top-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .top-btn:hover { border-color: var(--strava-orange); }
+        .top-btn.active { background-color: var(--strava-orange); color: white; border-color: var(--strava-orange); }
         
         #resetBtn { 
             background-color: var(--dark-grey); color: white; border: none; 
-            border-radius: 8px; padding: 12px 20px; cursor: pointer; font-weight: 600; 
+            border-radius: 8px; padding: 11px 20px; cursor: pointer; font-weight: 600; 
         }
 
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; }
@@ -54,14 +56,15 @@
         #insta-overlay-btn {
             position: absolute; top: 20px; right: 20px; z-index: 1000;
             background: white; color: var(--insta-pink); border: 2px solid var(--insta-pink);
-            padding: 12px 18px; border-radius: 50px; font-weight: bold;
+            padding: 12px 20px; border-radius: 50px; font-weight: bold;
             display: none; text-decoration: none; box-shadow: 0 4px 15px rgba(225, 48, 108, 0.3);
-            font-size: 14px;
+            font-size: 14px; transition: transform 0.2s;
         }
+        #insta-overlay-btn:hover { transform: scale(1.05); }
 
         .custom-tooltip {
             background-color: var(--dark-grey); color: white; border: none; 
-            border-radius: 4px; padding: 5px 10px; font-weight: 600;
+            border-radius: 4px; padding: 5px 12px; font-weight: 600; font-size: 13px;
         }
 
         #last-updated { margin-top: 25px; font-size: 12px; color: #94a3b8; }
@@ -76,7 +79,7 @@
             <option value="norge">Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
         </select>
-        <button id="resetBtn">Tilbake til oversikt</button>
+        <button id="resetBtn">Vis alle</button>
     </div>
 
     <div id="map-container">
@@ -92,25 +95,29 @@
     <script>
         document.getElementById('last-updated').innerHTML = "Sist oppdatert: " + new Date(document.lastModified).toLocaleString('no-NO');
 
-        // Initialiserer kartet uten fast senter (fitBounds fikser dette under)
         const map = L.map('map');
         const allTracksGroup = L.featureGroup().addTo(map);
         const instaBtn = document.getElementById('insta-overlay-btn');
 
-        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
-            attribution: '&copy; Kartverket'
-        }).addTo(map);
-
-        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-            attribution: '&copy; OpenStreetMap' 
-        });
-
-        document.getElementById('mapSelect').onchange = function() {
-            if (this.value === "osm") { map.addLayer(osmLayer); map.removeLayer(norgeLayer); }
-            else { map.addLayer(norgeLayer); map.removeLayer(osmLayer); }
+        const layers = {
+            norge: L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', {
+                attribution: '&copy; Kartverket'
+            }),
+            osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+                attribution: '&copy; OpenStreetMap' 
+            })
         };
 
+        layers.norge.addTo(map);
+
+        document.getElementById('mapSelect').onchange = function() {
+            Object.values(layers).forEach(layer => map.removeLayer(layer));
+            layers[this.value].addTo(map);
+        };
+
+        // Her er den oppdaterte listen med Langfjellaksla inkludert
         const topper = [
+            { navn: "Langfjellaksla 765", fil: "2026_05_08.gpx", video: "https://www.instagram.com/reel/DW4gus-iLa9/" },
             { navn: "Gråtinden 871", fil: "2026_04_06.gpx", video: "https://www.instagram.com/reel/DW1xhPniK_l/" },
             { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/" },
             { navn: "Rema (800) 1000", fil: "2026_03_28.gpx", video: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/" }
@@ -122,27 +129,31 @@
             const btn = document.createElement('button');
             btn.className = 'top-btn';
             btn.innerText = topp.navn;
-            document.getElementById('buttons').appendChild(btn);
+            document.getElementById('buttons').insertBefore(btn, document.getElementById('resetBtn'));
 
-            new L.GPX(topp.fil, {
+            const gpxTrack = new L.GPX(topp.fil, {
                 async: true,
                 marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                polyline_options: { color: 'var(--strava-orange)', weight: 5, opacity: 0.9 }
+                polyline_options: { color: 'var(--strava-orange)', weight: 4, opacity: 0.7 }
             }).on('loaded', function(e) {
                 const layer = e.target;
                 allTracksGroup.addLayer(layer);
                 layer.bindTooltip(topp.navn, { sticky: true, className: 'custom-tooltip' });
                 
                 const activate = () => {
-                    map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
+                    document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    map.flyToBounds(layer.getBounds(), { padding: [50, 50], duration: 1.2 });
                     instaBtn.href = topp.video;
                     instaBtn.style.display = 'block';
                 };
 
+                layer.on('mouseover', function() { this.setStyle({ opacity: 1, weight: 6 }); });
+                layer.on('mouseout', function() { this.setStyle({ opacity: 0.7, weight: 4 }); });
                 layer.on('click', activate);
                 btn.onclick = activate;
 
-                // Full zoom over alle spor med en gang de er lastet
                 loadedCount++;
                 if (loadedCount === topper.length) {
                     map.fitBounds(allTracksGroup.getBounds(), { padding: [40, 40] });
@@ -151,6 +162,7 @@
         });
 
         document.getElementById('resetBtn').onclick = () => {
+            document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
             if (allTracksGroup.getLayers().length > 0) {
                 map.flyToBounds(allTracksGroup.getBounds(), { padding: [40, 40], duration: 1.5 });
             }
