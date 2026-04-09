@@ -221,17 +221,16 @@
                     }
                 };
 
-                // Knapp-hover logikk
                 btn.onmouseenter = () => {
                     layer.setStyle({ color: 'var(--strava-blue)', weight: 10, opacity: 1 });
                     layer.bringToFront();
-                    
-                    // Sentrerer kartet på sporet uten å endre zoom
                     map.panTo(layer.getBounds().getCenter());
                 };
 
                 btn.onmouseleave = () => {
                     layer.setStyle({ color: 'var(--strava-orange)', weight: 5, opacity: 0.9 });
+                    // Går tilbake til sentrum av alle topper når musa fjernes
+                    map.panTo(allTracksGroup.getBounds().getCenter());
                 };
 
                 layer.on('click', (e) => activate(e.latlng));
