@@ -205,11 +205,12 @@
                 
                 const activate = (clickPos) => {
                     valgtTopp = topp.navn;
-                    // Reset alle andre spor til orange og tynne
+                    
+                    // VIKTIG: Sett alle spor (inkludert dette) til orange og tynne ved klikk
                     allTracksGroup.eachLayer(l => l.setStyle({ color: 'var(--strava-orange)', weight: 2, opacity: 0.8 })); 
                     
-                    // Det valgte sporet blir blått
-                    layer.setStyle({ color: 'var(--strava-blue)', weight: 3, opacity: 1 }); 
+                    // Behold orange farge, men kanskje litt tydeligere tykkelse (3) når valgt
+                    layer.setStyle({ color: 'var(--strava-orange)', weight: 3, opacity: 1 });
                     layer.bringToFront();
 
                     if (extraTrackLayer) { map.removeLayer(extraTrackLayer); extraTrackLayer = null; }
@@ -250,18 +251,17 @@
                     }
                 };
 
-                // HOVER EFFEKTER (Blå ved hover, tilbake til Orange når musen går bort)
+                // HOVER: Blå farge
                 const onHover = () => {
-                    if(valgtTopp !== topp.navn) {
-                        layer.setStyle({ color: 'var(--strava-blue)', weight: 4, opacity: 1 });
-                        layer.bringToFront();
-                    }
+                    layer.setStyle({ color: 'var(--strava-blue)', weight: 4, opacity: 1 });
+                    layer.bringToFront();
                 };
 
+                // MOUSEOUT: Tilbake til orange
                 const offHover = () => {
-                    if(valgtTopp !== topp.navn) {
-                        layer.setStyle({ color: 'var(--strava-orange)', weight: 2, opacity: 0.8 });
-                    }
+                    // Hvis denne toppen er den aktive (valgte), bruker vi "valgt"-tykkelse (3), ellers standard (2)
+                    const w = (valgtTopp === topp.navn) ? 3 : 2;
+                    layer.setStyle({ color: 'var(--strava-orange)', weight: w, opacity: 0.8 });
                 };
 
                 btn.onmouseenter = onHover;
@@ -281,7 +281,6 @@
         document.getElementById('resetBtn').onclick = () => {
             valgtTopp = null;
             if (extraTrackLayer) { map.removeLayer(extraTrackLayer); extraTrackLayer = null; }
-            // Reset alle spor til orange ved reset
             allTracksGroup.eachLayer(l => l.setStyle({ color: 'var(--strava-orange)', weight: 2, opacity: 0.8 })); 
             map.closePopup();
             videoContainer.innerHTML = '';
