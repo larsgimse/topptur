@@ -120,7 +120,7 @@
         const videoContainer = document.getElementById('video-buttons-container');
         
         let valgtTopp = null;
-        let activeExtraLayers = []; // Liste for å holde styr på flere ekstra spor
+        let activeExtraLayers = [];
 
         const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { attribution: '&copy; Kartverket' }).addTo(map);
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
@@ -243,7 +243,6 @@
                         videoContainer.appendChild(vBtn);
                     });
 
-                    // Håndter flere ekstra spor
                     if (topp.ekstraSpor && Array.isArray(topp.ekstraSpor)) {
                         topp.ekstraSpor.forEach(sporInfo => {
                             const tBtn = document.createElement('button');
@@ -262,7 +261,12 @@
                                     trackLayer = new L.GPX(sporInfo.fil, {
                                         async: true,
                                         marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                                        polyline_options: { color: sporInfo.farge, weight: 2, opacity: 0.8, dashArray: '5, 10' }
+                                        polyline_options: { 
+                                            color: sporInfo.farge, 
+                                            weight: 2, 
+                                            opacity: 0.9, 
+                                            dashArray: '4, 4' 
+                                        }
                                     }).addTo(map);
                                     activeExtraLayers.push(trackLayer);
                                     this.classList.add('active');
