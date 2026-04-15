@@ -61,7 +61,6 @@
 
         #last-updated { margin-top: 15px; font-size: 12px; color: #64748b; font-style: italic; }
 
-        /* Stil for pop-up tekst */
         .elevation-info { text-align: left; min-width: 200px; color: #2c3e50; }
         .elevation-title { font-weight: bold; font-size: 16px; margin-bottom: 2px; }
         .elevation-date { font-size: 12px; color: #64748b; margin-bottom: 8px; }
@@ -93,6 +92,7 @@
         const map = L.map('map').setView([69.65, 18.95], 10);
         const allTracksGroup = L.featureGroup().addTo(map);
         const videoContainer = document.getElementById('video-buttons-container');
+        let selectionBounds = null; 
         
         const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { attribution: '&copy; Kartverket' }).addTo(map);
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
@@ -120,26 +120,17 @@
             { navn: "Straumsaksla", fil: "2025_05_24.gpx", video: [{ url: "https://www.instagram.com/p/DKDbUavsE9v/", tittel: "Se video" }] }
         ];
 
-        let gpxLister = [];
-        topper.forEach(t => { gpxLister.push(t.fil); if(t.ekstraSpor) t.ekstraSpor.forEach(e => gpxLister.push(e.fil)); });
-        const sorterteFiler = gpxLister.sort().reverse();
+        const sorterteFiler = topper.map(t => t.fil).sort().reverse();
         const nyesteGpx = sorterteFiler[0];
 
-        // Sett "Sist oppdatert" tekst
-        function mndNavn(mnd) {
-            return ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"][parseInt(mnd)-1];
+        function mndNavn(mnd) { return ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"][parseInt(mnd)-1]; }
+
+        function formaterDato(fil) {
+            const deler = fil.split('_'); if(deler.length < 3) return "";
+            return `${parseInt(deler[2])}. ${mndNavn(deler[1])} ${deler[0]}`;
         }
 
-        function formaterDato(fil, inkludertSporTekst = true) {
-            const deler = fil.split('_');
-            if(deler.length < 3) return "";
-            const dag = parseInt(deler[2]);
-            const mnd = mndNavn(deler[1]);
-            const år = deler[0];
-            return inkludertSporTekst ? `${dag}. ${mnd} ${år}` : `${dag}. ${mnd} ${år}`;
-        }
-
-        document.getElementById('last-updated').innerText = `Sist oppdatert: ${formaterDato(nyesteGpx, false)}`;
+        document.getElementById('last-updated').innerText = `Sist oppdatert: ${formaterDato(nyesteGpx)}`;
 
         function lagBadge(fil) {
             const s = document.createElement('span');
@@ -152,41 +143,21 @@
             const data = layer.get_elevation_data();
             const div = document.createElement('div');
             div.className = 'elevation-info';
-            
-            if(!data || data.length === 0) {
-                div.innerHTML = `<div class="elevation-title">${navn}</div><div>Høydedata ikke tilgjengelig</div>`;
-                return div;
-            }
+            if(!data || data.length === 0) return `<b>${navn}</b>`;
 
             const elevs = data.map(d => d[1]);
             const min = Math.min(...elevs), max = Math.max(...elevs), range = max - min || 1;
-            
-            // Hent data fra GPX-objektet
-            const gain = layer.get_elevation_gain();
-            const dist = layer.get_distance() / 1000; // km
-            const durationMs = layer.get_total_time();
+            const gain = layer.get_elevation_gain(), dist = layer.get_distance() / 1000, durationMs = layer.get_total_time();
             
             let tidTekst = "N/A";
             if(durationMs > 0) {
-                const timer = Math.floor(durationMs / 3600000);
-                const minutter = Math.floor((durationMs % 3600000) / 60000);
-                tidTekst = `${timer}t ${minutter}m`;
+                const h = Math.floor(durationMs / 3600000), m = Math.floor((durationMs % 3600000) / 60000);
+                tidTekst = `${h}t ${m}m`;
             }
 
-            div.innerHTML = `
-                <div class="elevation-title">${navn}</div>
-                <div class="elevation-date">${formaterDato(filnavn)}</div>
-                <canvas width="180" height="60" style="border-bottom:1px solid #ddd;"></canvas>
-                <div class="elevation-stats">
-                    <b>Høyde:</b> ${Math.round(max)}m | <b>Lengde:</b> ${dist.toFixed(1)}km<br>
-                    <b>Stigning:</b> +${Math.round(gain)}m | <b>Tid:</b> ${tidTekst}
-                </div>
-            `;
-
+            div.innerHTML = `<div class="elevation-title">${navn}</div><div class="elevation-date">${formaterDato(filnavn)}</div><canvas width="180" height="60" style="border-bottom:1px solid #ddd;"></canvas><div class="elevation-stats"><b>Høyde:</b> ${Math.round(max)}m | <b>Lengde:</b> ${dist.toFixed(1)}km<br><b>Stigning:</b> +${Math.round(gain)}m | <b>Tid:</b> ${tidTekst}</div>`;
             setTimeout(() => {
-                const canvas = div.querySelector('canvas');
-                if(!canvas) return;
-                const ctx = canvas.getContext('2d');
+                const ctx = div.querySelector('canvas').getContext('2d');
                 ctx.beginPath(); ctx.strokeStyle = '#fc4c02'; ctx.lineWidth = 2;
                 elevs.forEach((e, i) => {
                     const x = i * (180 / elevs.length);
@@ -200,10 +171,15 @@
 
         let aktivToppNavn = null;
 
+        // LUKK POPUP NÅR MAN KLIKKER PÅ KARTET
+        map.on('click', function() {
+            map.closePopup();
+        });
+
         topper.sort((a,b) => a.navn.localeCompare(b.navn)).forEach(topp => {
             const btn = document.createElement('button');
             btn.className = 'top-btn'; btn.innerText = topp.navn;
-            if(topp.fil === nyesteGpx || (topp.ekstraSpor && topp.ekstraSpor.some(e => e.fil === nyesteGpx))) btn.appendChild(lagBadge(nyesteGpx));
+            if(topp.fil === nyesteGpx) btn.appendChild(lagBadge(nyesteGpx));
             document.getElementById('buttons').appendChild(btn);
 
             const track = new L.GPX(topp.fil, {
@@ -215,38 +191,38 @@
                 l.bindTooltip(topp.navn, {sticky: true, className: 'custom-tooltip'});
 
                 const aktiver = (p) => {
+                    map.closePopup(); // LUKK EVENTUELL GAMMEL POPUP
                     aktivToppNavn = topp.navn;
-                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.35, weight: 2, color: 'var(--strava-orange)'}));
-                    l.setStyle({opacity: 1, weight: 4, color: 'var(--strava-orange)'}).bringToFront();
+                    if(selectionBounds) map.removeLayer(selectionBounds); 
                     
-                    videoContainer.innerHTML = '';
+                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.35, weight: 2, color: 'var(--strava-orange)'}));
+                    l.setStyle({opacity: 1, weight: 3, color: 'var(--strava-orange)'}).bringToFront(); 
+                    
+                    selectionBounds = L.rectangle(l.getBounds(), {color: "var(--strava-blue)", weight: 1, fill: false, dashArray: '5,5'}).addTo(map);
 
+                    videoContainer.innerHTML = '';
                     const mt = document.createElement('button');
                     mt.className = 'main-track-toggle'; mt.innerText = 'Skjul spor';
                     mt.onclick = () => map.hasLayer(l) ? map.removeLayer(l) : map.addLayer(l);
                     videoContainer.appendChild(mt);
 
-                    topp.video.forEach((v, i) => {
+                    topp.video?.forEach((v, i) => {
                         const a = document.createElement('a'); a.href = v.url; a.target = "_blank"; a.className = 'video-link-btn'; a.innerText = v.tittel;
-                        const tilhorer = (i > 0 && topp.ekstraSpor && topp.ekstraSpor[i-1]) ? topp.ekstraSpor[i-1].fil : topp.fil;
-                        a.appendChild(lagBadge(tilhorer));
                         videoContainer.appendChild(a);
                     });
 
                     if(topp.ekstraSpor) {
                         topp.ekstraSpor.forEach(es => {
                             const eb = document.createElement('button'); eb.className = 'toggle-btn'; eb.innerText = es.tittel;
-                            eb.appendChild(lagBadge(es.fil));
                             let esL = null;
                             eb.onclick = function() {
-                                if(esL) { 
-                                    map.removeLayer(esL); esL = null; 
-                                    this.classList.remove('active'); this.innerText = es.tittel; this.appendChild(lagBadge(es.fil));
-                                } else { 
+                                map.closePopup(); // LUKK POPUP VED BYTTE AV SPOR
+                                if(esL) { map.removeLayer(esL); esL = null; this.classList.remove('active'); this.innerText = es.tittel; }
+                                else { 
                                     esL = new L.GPX(es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null}, polyline_options: {color: es.farge, weight:3, dashArray:'5,5'}})
                                     .on('loaded', (ev) => ev.target.on('click', (c) => L.popup().setLatLng(c.latlng).setContent(tegnProfil(ev.target, es.tittel, es.fil)).openOn(map)))
                                     .addTo(map);
-                                    this.classList.add('active'); this.innerText = 'Skru av spor'; this.appendChild(lagBadge(es.fil));
+                                    this.classList.add('active'); this.innerText = 'Skru av spor';
                                 }
                             };
                             videoContainer.appendChild(eb);
@@ -256,29 +232,18 @@
                     if(p) L.popup().setLatLng(p).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map);
                 };
 
-                btn.onmouseover = () => {
-                    if(!aktivToppNavn) {
-                        l.setStyle({color: 'var(--strava-blue)', weight: 5, opacity: 1}).bringToFront();
-                        map.panTo(l.getBounds().getCenter());
-                    }
-                };
-                btn.onmouseout = () => {
-                    if(!aktivToppNavn) l.setStyle({color: 'var(--strava-orange)', weight: 3, opacity: 0.7});
-                };
-
+                btn.onmouseover = () => { if(!aktivToppNavn) { l.setStyle({color: 'var(--strava-blue)', weight: 5, opacity: 1}).bringToFront(); map.panTo(l.getBounds().getCenter()); } };
+                btn.onmouseout = () => { if(!aktivToppNavn) l.setStyle({color: 'var(--strava-orange)', weight: 3, opacity: 0.7}); };
                 l.on('click', (ev) => aktiver(ev.latlng));
                 btn.onclick = () => aktiver();
-                
-                if (allTracksGroup.getLayers().length === topper.length) map.fitBounds(allTracksGroup.getBounds());
             });
         });
 
         document.getElementById('resetBtn').onclick = () => {
+            map.closePopup(); // LUKK POPUP VED NULLSTILLING
             aktivToppNavn = null;
-            allTracksGroup.eachLayer(l => { 
-                if(!map.hasLayer(l)) map.addLayer(l); 
-                l.setStyle({opacity:0.7, weight:3, color: 'var(--strava-orange)'}); 
-            });
+            if(selectionBounds) { map.removeLayer(selectionBounds); selectionBounds = null; }
+            allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.7, weight:3, color: 'var(--strava-orange)'}); });
             videoContainer.innerHTML = '';
             map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]});
         };
