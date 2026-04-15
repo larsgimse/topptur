@@ -56,7 +56,7 @@
             background-color: #ddd;
         }
 
-        /* FJERNER SVART RAMME RUNDT SPOR VED KLIKK */
+        /* Fjerner svart ramme ved klikk */
         .leaflet-vml-shape, .leaflet-ant-path, path { outline: none !important; }
 
         #video-buttons-container {
@@ -186,7 +186,7 @@
             return hours > 0 ? `${hours}t ${minutes}m` : `${minutes}m`;
         }
 
-        function createElevationContent(layer, navn) {
+        function createElevationContent(layer, navn, farge = '#fc4c02') {
             const elevations = layer.get_elevation_data();
             const points = elevations.map(e => e[1]);
             const maxEle = Math.round(layer.get_elevation_max());
@@ -209,7 +209,7 @@
             `;
             const ctx = container.querySelector('canvas').getContext('2d');
             const step = 220 / points.length;
-            ctx.beginPath(); ctx.strokeStyle = '#fc4c02'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.strokeStyle = farge; ctx.lineWidth = 2;
             points.forEach((ele, i) => {
                 const x = i * step;
                 const y = 75 - ((ele - min) / range) * 65; 
@@ -281,6 +281,14 @@
                                             opacity: 0.9, 
                                             dashArray: '4, 4' 
                                         }
+                                    }).on('loaded', function(ev) {
+                                        const l = ev.target;
+                                        l.on('click', (evClick) => {
+                                            L.popup({ className: 'elevation-popup', offset: [0, -10] })
+                                                .setLatLng(evClick.latlng)
+                                                .setContent(createElevationContent(l, `${topp.navn} (Alt. spor)`, sporInfo.farge))
+                                                .openOn(map);
+                                        });
                                     }).addTo(map);
                                     activeExtraLayers.push(trackLayer);
                                     this.classList.add('active');
