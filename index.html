@@ -207,8 +207,14 @@
                     map.closePopup();
                     aktivToppNavn = topp.navn;
                     
-                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.35, weight: 2, color: 'var(--strava-orange)'}));
-                    l.setStyle({opacity: 1, weight: 3, color: 'var(--strava-orange)'}).bringToFront(); 
+                    // Behold alle spor på kartet, men demp de som ikke er valgt
+                    allTracksGroup.eachLayer(layer => {
+                        if (!map.hasLayer(layer)) map.addLayer(layer);
+                        layer.setStyle({opacity: 0.6, weight: 2.5, color: 'var(--strava-orange)'});
+                    });
+
+                    // Fremhev det valgte sporet
+                    l.setStyle({opacity: 1, weight: 4, color: 'var(--strava-orange)'}).bringToFront(); 
 
                     videoContainer.innerHTML = '';
                     const mt = document.createElement('button');
@@ -244,15 +250,15 @@
                     }
                     map.flyToBounds(l.getBounds(), {padding: [50, 50]});
                     
-                    // Sørger for at popup åpnes uansett om man trykker på knapp eller på selve sporet
-                    const popupLatLng = p ? p : l.getBounds().getCenter();
-                    L.popup().setLatLng(popupLatLng).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map);
+                    if(p) {
+                        L.popup().setLatLng(p).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map);
+                    }
                 };
 
                 btn.onmouseover = () => { if(!aktivToppNavn) { l.setStyle({color: 'var(--strava-blue)', weight: 5, opacity: 1}).bringToFront(); map.panTo(l.getBounds().getCenter()); } };
                 btn.onmouseout = () => { if(!aktivToppNavn) l.setStyle({color: 'var(--strava-orange)', weight: 3, opacity: 0.7}); };
                 l.on('click', (ev) => aktiver(ev.latlng));
-                btn.onclick = () => aktiver();
+                btn.onclick = () => aktiver(); 
                 if (allTracksGroup.getLayers().length === topper.length) map.fitBounds(allTracksGroup.getBounds());
             });
         });
@@ -260,7 +266,12 @@
         document.getElementById('resetBtn').onclick = () => {
             map.closePopup();
             aktivToppNavn = null;
-            allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.7, weight:3, color: 'var(--strava-orange)'}); });
+            allTracksGroup.eachLayer(l => { 
+                if(!map.hasLayer(l)) {
+                    map.addLayer(l); 
+                }
+                l.setStyle({opacity:0.7, weight:3, color: 'var(--strava-orange)'}); 
+            });
             videoContainer.innerHTML = '';
             map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]});
         };
