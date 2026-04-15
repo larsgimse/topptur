@@ -63,8 +63,8 @@
 
         .elevation-info { text-align: left; min-width: 200px; color: #2c3e50; }
         .elevation-title { font-weight: bold; font-size: 16px; margin-bottom: 2px; }
-        .elevation-date { font-size: 12px; color: #64748b; margin-bottom: 8px; }
-        .elevation-stats { font-size: 12px; margin-top: 8px; line-height: 1.4; border-top: 1px solid #eee; padding-top: 5px; }
+        .elevation-date { font-size: 13px; color: #64748b; margin-bottom: 8px; }
+        .elevation-stats { font-size: 12px; margin-top: 8px; line-height: 1.5; border-top: 1px solid #eee; padding-top: 8px; }
         .custom-tooltip { font-weight: bold; }
     </style>
 </head>
@@ -111,7 +111,7 @@
             { navn: "Gorzelvtinden", fil: "2025_12_06.gpx", video: [{ url: "https://www.instagram.com/p/DR99FHAiF62/", tittel: "Se video" }] },
             { navn: "Gråtinden", fil: "2026_04_06.gpx", video: [{ url: "https://www.instagram.com/reel/DW1xhPniK_l/", tittel: "Se video" }] },
             { navn: "Langfjellaksla", fil: "2026_04_08.gpx", video: [{ url: "https://www.instagram.com/reel/DW4gus-iLa9/", tittel: "Se video" }] },
-            { navn: "Middagstinden", fil: "2024_04_21.gpx", video: [{ url: "https://www.facebook.com/reel/398350683066500", tittel: "Se video" }] },
+            { navn: "Middagstinden", fil: "2024_04_21.gpx", video: [{ url: "https://www.facebook.com/reel/3983506830666500", tittel: "Se video" }] },
             { navn: "Rema 1000", fil: "2026_03_28.gpx", video: [{ url: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/", tittel: "Se video" }] },
             { navn: "Skittentinden", fil: "2026_03_15.gpx", video: [{ url: "https://www.instagram.com/reel/DWHz3RbCPlU/", tittel: "Se video" }] },
             { navn: "Steinskartinden", fil: "2026_03_08.gpx", video: [{ url: "https://www.instagram.com/p/DVodnhniPMj/", tittel: "Se video" }] },
@@ -120,8 +120,12 @@
             { navn: "Straumsaksla", fil: "2025_05_24.gpx", video: [{ url: "https://www.instagram.com/p/DKDbUavsE9v/", tittel: "Se video" }] }
         ];
 
-        const sorterteFiler = topper.map(t => t.fil).sort().reverse();
-        const nyesteGpx = sorterteFiler[0];
+        let gpxFiler = [];
+        topper.forEach(t => { 
+            gpxFiler.push(t.fil); 
+            if(t.ekstraSpor) t.ekstraSpor.forEach(e => gpxFiler.push(e.fil)); 
+        });
+        const nyesteGpx = gpxFiler.sort().reverse()[0];
 
         function mndNavn(mnd) { return ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"][parseInt(mnd)-1]; }
 
@@ -155,7 +159,15 @@
                 tidTekst = `${h}t ${m}m`;
             }
 
-            div.innerHTML = `<div class="elevation-title">${navn}</div><div class="elevation-date">${formaterDato(filnavn)}</div><canvas width="180" height="60" style="border-bottom:1px solid #ddd;"></canvas><div class="elevation-stats"><b>Høyde:</b> ${Math.round(max)}m | <b>Lengde:</b> ${dist.toFixed(1)}km<br><b>Stigning:</b> +${Math.round(gain)}m | <b>Tid:</b> ${tidTekst}</div>`;
+            div.innerHTML = `
+                <div class="elevation-title">${navn}</div>
+                <div class="elevation-date">${formaterDato(filnavn)}</div>
+                <canvas width="180" height="60" style="border-bottom:1px solid #ddd; margin-bottom:8px;"></canvas>
+                <div class="elevation-stats">
+                    Høyde: ${Math.round(max)}m | Lengde: ${dist.toFixed(1)}km<br>
+                    Stigning: +${Math.round(gain)}m | Tid: ${tidTekst}
+                </div>`;
+
             setTimeout(() => {
                 const ctx = div.querySelector('canvas').getContext('2d');
                 ctx.beginPath(); ctx.strokeStyle = '#fc4c02'; ctx.lineWidth = 2;
@@ -171,15 +183,15 @@
 
         let aktivToppNavn = null;
 
-        // LUKK POPUP NÅR MAN KLIKKER PÅ KARTET
-        map.on('click', function() {
-            map.closePopup();
-        });
+        map.on('click', () => map.closePopup());
 
         topper.sort((a,b) => a.navn.localeCompare(b.navn)).forEach(topp => {
             const btn = document.createElement('button');
             btn.className = 'top-btn'; btn.innerText = topp.navn;
-            if(topp.fil === nyesteGpx) btn.appendChild(lagBadge(nyesteGpx));
+            
+            const erNy = (topp.fil === nyesteGpx) || (topp.ekstraSpor && topp.ekstraSpor.some(e => e.fil === nyesteGpx));
+            if(erNy) btn.appendChild(lagBadge(nyesteGpx));
+            
             document.getElementById('buttons').appendChild(btn);
 
             const track = new L.GPX(topp.fil, {
@@ -191,7 +203,7 @@
                 l.bindTooltip(topp.navn, {sticky: true, className: 'custom-tooltip'});
 
                 const aktiver = (p) => {
-                    map.closePopup(); // LUKK EVENTUELL GAMMEL POPUP
+                    map.closePopup();
                     aktivToppNavn = topp.navn;
                     if(selectionBounds) map.removeLayer(selectionBounds); 
                     
@@ -208,21 +220,25 @@
 
                     topp.video?.forEach((v, i) => {
                         const a = document.createElement('a'); a.href = v.url; a.target = "_blank"; a.className = 'video-link-btn'; a.innerText = v.tittel;
+                        const filRef = (i === 0) ? topp.fil : (topp.ekstraSpor && topp.ekstraSpor[i-1] ? topp.ekstraSpor[i-1].fil : topp.fil);
+                        a.appendChild(lagBadge(filRef));
                         videoContainer.appendChild(a);
                     });
 
                     if(topp.ekstraSpor) {
                         topp.ekstraSpor.forEach(es => {
                             const eb = document.createElement('button'); eb.className = 'toggle-btn'; eb.innerText = es.tittel;
+                            eb.appendChild(lagBadge(es.fil));
                             let esL = null;
                             eb.onclick = function() {
-                                map.closePopup(); // LUKK POPUP VED BYTTE AV SPOR
-                                if(esL) { map.removeLayer(esL); esL = null; this.classList.remove('active'); this.innerText = es.tittel; }
-                                else { 
+                                map.closePopup();
+                                if(esL) { 
+                                    map.removeLayer(esL); esL = null; this.classList.remove('active'); this.innerText = es.tittel; this.appendChild(lagBadge(es.fil)); 
+                                } else { 
                                     esL = new L.GPX(es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null}, polyline_options: {color: es.farge, weight:3, dashArray:'5,5'}})
                                     .on('loaded', (ev) => ev.target.on('click', (c) => L.popup().setLatLng(c.latlng).setContent(tegnProfil(ev.target, es.tittel, es.fil)).openOn(map)))
                                     .addTo(map);
-                                    this.classList.add('active'); this.innerText = 'Skru av spor';
+                                    this.classList.add('active'); this.innerText = 'Skru av spor'; this.appendChild(lagBadge(es.fil));
                                 }
                             };
                             videoContainer.appendChild(eb);
@@ -236,11 +252,12 @@
                 btn.onmouseout = () => { if(!aktivToppNavn) l.setStyle({color: 'var(--strava-orange)', weight: 3, opacity: 0.7}); };
                 l.on('click', (ev) => aktiver(ev.latlng));
                 btn.onclick = () => aktiver();
+                if (allTracksGroup.getLayers().length === topper.length) map.fitBounds(allTracksGroup.getBounds());
             });
         });
 
         document.getElementById('resetBtn').onclick = () => {
-            map.closePopup(); // LUKK POPUP VED NULLSTILLING
+            map.closePopup();
             aktivToppNavn = null;
             if(selectionBounds) { map.removeLayer(selectionBounds); selectionBounds = null; }
             allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.7, weight:3, color: 'var(--strava-orange)'}); });
