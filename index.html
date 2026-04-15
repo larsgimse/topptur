@@ -10,7 +10,6 @@
             --strava-orange: #fc4c02;
             --strava-blue: #0076ff;
             --insta-pink: #e1306c;
-            --youtube-red: #ff0000;
             --dark-grey: #2c3e50;
             --new-green: #22c55e;
             --year-grey: #64748b;
@@ -21,9 +20,6 @@
             text-align: center; margin: 0; padding: 20px 10px; 
             background: #f1f5f9; color: var(--dark-grey);
         }
-
-        h1 { margin-bottom: 5px; font-size: 1.8rem; }
-        .subtitle { margin-bottom: 25px; font-size: 1rem; color: #64748b; }
 
         #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
         
@@ -60,12 +56,8 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer;
         }
         .video-link-btn { border-color: var(--insta-pink); color: var(--insta-pink); }
-        .toggle-btn { border-color: var(--strava-blue); color: var(--strava-blue); }
         .toggle-btn.active { background: var(--strava-blue); color: white; border-color: var(--strava-blue); }
         .main-track-toggle { background: var(--dark-grey); color: white; border: none; }
-        .main-track-toggle.off { background: white; color: var(--dark-grey); border: 2px solid var(--dark-grey); }
-
-        .elevation-popup .leaflet-popup-content { width: 220px !important; }
         .custom-tooltip { font-weight: bold; }
     </style>
 </head>
@@ -119,9 +111,9 @@
             { navn: "Straumsaksla", fil: "2025_05_24.gpx", video: [{ url: "https://www.instagram.com/p/DKDbUavsE9v/", tittel: "Se video" }] }
         ];
 
-        let gpxFiler = [];
-        topper.forEach(t => { gpxFiler.push(t.fil); if(t.ekstraSpor) t.ekstraSpor.forEach(e => gpxFiler.push(e.fil)); });
-        const nyesteGpx = gpxFiler.sort().reverse()[0];
+        let gpxLister = [];
+        topper.forEach(t => { gpxLister.push(t.fil); if(t.ekstraSpor) t.ekstraSpor.forEach(e => gpxLister.push(e.fil)); });
+        const nyesteGpx = gpxLister.sort().reverse()[0];
 
         function lagBadge(fil) {
             const s = document.createElement('span');
@@ -150,16 +142,15 @@
             return div;
         }
 
-        let valgtToppNavn = null;
+        let aktivTopp = null;
 
         topper.sort((a,b) => a.navn.localeCompare(b.navn)).forEach(topp => {
             const btn = document.createElement('button');
             btn.className = 'top-btn'; btn.innerText = topp.navn;
-            const harNy = (topp.fil === nyesteGpx) || (topp.ekstraSpor && topp.ekstraSpor.some(e => e.fil === nyesteGpx));
-            if(harNy) btn.appendChild(lagBadge(nyesteGpx));
+            if(topp.fil === nyesteGpx || (topp.ekstraSpor && topp.ekstraSpor.some(e => e.fil === nyesteGpx))) btn.appendChild(lagBadge(nyesteGpx));
             document.getElementById('buttons').appendChild(btn);
 
-            const mainTrack = new L.GPX(topp.fil, {
+            const track = new L.GPX(topp.fil, {
                 async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
                 polyline_options: { color: 'var(--strava-orange)', weight: 3, opacity: 0.7 }
             }).on('loaded', (e) => {
@@ -168,17 +159,14 @@
                 l.bindTooltip(topp.navn, {sticky: true, className: 'custom-tooltip'});
 
                 const aktiver = (p) => {
-                    valgtToppNavn = topp.navn;
-                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.15, weight: 2, color: 'var(--strava-orange)'}));
-                    l.setStyle({opacity: 1, weight: 5, color: 'var(--strava-orange)'}).bringToFront();
+                    aktivTopp = topp.navn;
+                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.15, weight: 2})); // Spor i nærheten
+                    l.setStyle({opacity: 1, weight: 5}).bringToFront();
                     videoContainer.innerHTML = '';
 
                     const mt = document.createElement('button');
-                    mt.className = 'main-track-toggle'; mt.innerText = 'Skjul hovedspor';
-                    mt.onclick = function() {
-                        if (map.hasLayer(l)) { map.removeLayer(l); this.innerText = 'Vis hovedspor'; this.classList.add('off'); }
-                        else { map.addLayer(l); this.innerText = 'Skjul hovedspor'; this.classList.remove('off'); }
-                    };
+                    mt.className = 'main-track-toggle'; mt.innerText = 'Skjul spor';
+                    mt.onclick = () => map.hasLayer(l) ? map.removeLayer(l) : map.addLayer(l);
                     videoContainer.appendChild(mt);
 
                     topp.video.forEach((v, i) => {
@@ -194,44 +182,47 @@
                             eb.appendChild(lagBadge(es.fil));
                             let esL = null;
                             eb.onclick = function() {
-                                if(esL) { map.removeLayer(esL); esL = null; this.classList.remove('active'); this.innerText = es.tittel; this.appendChild(lagBadge(es.fil)); }
+                                if(esL) { map.removeLayer(esL); esL = null; this.classList.remove('active'); }
                                 else { 
                                     esL = new L.GPX(es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null}, polyline_options: {color: es.farge, weight:3, dashArray:'5,5'}})
                                     .on('loaded', (ev) => ev.target.on('click', (c) => L.popup().setLatLng(c.latlng).setContent(tegnProfil(ev.target, es.tittel)).openOn(map)))
                                     .addTo(map);
-                                    this.classList.add('active'); this.innerText = 'Skjul ekstraspor'; this.appendChild(lagBadge(es.fil));
+                                    this.classList.add('active');
                                 }
                             };
                             videoContainer.appendChild(eb);
                         });
                     }
                     map.flyToBounds(l.getBounds(), {padding: [50, 50]});
-                    if(p) L.popup({className:'elevation-popup'}).setLatLng(p).setContent(tegnProfil(l, topp.navn)).openOn(map);
+                    if(p) L.popup().setLatLng(p).setContent(tegnProfil(l, topp.navn)).openOn(map);
                 };
 
-                // Hover-funksjonalitet på spor
-                l.on('mouseover', () => { if(!valgtToppNavn) l.setStyle({color: 'var(--strava-blue)', weight: 5, opacity: 1}); });
-                l.on('mouseout', () => { if(!valgtToppNavn) l.setStyle({color: 'var(--strava-orange)', weight: 3, opacity: 0.7}); });
+                // Hover på knapper: Sentrerer kartet og uthever sporet
+                btn.onmouseover = () => {
+                    if(!aktivTopp) {
+                        l.setStyle({color: 'var(--strava-blue)', weight: 6, opacity: 1}).bringToFront();
+                        map.panTo(l.getBounds().getCenter());
+                    }
+                };
+                btn.onmouseout = () => {
+                    if(!aktivTopp) l.setStyle({color: 'var(--strava-orange)', weight: 3, opacity: 0.7});
+                };
+
                 l.on('click', (ev) => aktiver(ev.latlng));
-
-                // Hover-funksjonalitet på knapper
-                btn.onmouseover = () => { if(!valgtToppNavn) l.setStyle({color: 'var(--strava-blue)', weight: 6, opacity: 1}).bringToFront(); };
-                btn.onmouseout = () => { if(!valgtToppNavn) l.setStyle({color: 'var(--strava-orange)', weight: 3, opacity: 0.7}); };
                 btn.onclick = () => aktiver();
-
-                // Automatisk ut-zooming når alt er lastet
-                if (allTracksGroup.getLayers().length === topper.length) map.fitBounds(allTracksGroup.getBounds(), {padding: [30, 30]});
+                
+                if (allTracksGroup.getLayers().length === topper.length) map.fitBounds(allTracksGroup.getBounds());
             });
         });
 
         document.getElementById('resetBtn').onclick = () => {
-            valgtToppNavn = null;
+            aktivTopp = null;
             allTracksGroup.eachLayer(l => { 
                 if(!map.hasLayer(l)) map.addLayer(l); 
                 l.setStyle({opacity:0.7, weight:3, color: 'var(--strava-orange)'}); 
             });
             videoContainer.innerHTML = '';
-            map.flyToBounds(allTracksGroup.getBounds(), {padding: [30, 30]});
+            map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]});
         };
     </script>
 </body>
