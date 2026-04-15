@@ -29,8 +29,12 @@
 
         #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
         
-        /* Fjerner blå ramme på alt */
-        button, select, a, .leaflet-interactive { outline: none !important; }
+        /* --- FIKS FOR BLÅ RAMME --- */
+        button, select, a, .leaflet-interactive, path { 
+            outline: none !important; 
+            box-shadow: none !important;
+            -webkit-tap-highlight-color: transparent;
+        }
 
         .top-btn { 
             position: relative; background-color: var(--strava-orange); color: white; border: none; 
@@ -82,7 +86,7 @@
     <p class="description">Høydeprofil vises ved klikk på sporene</p>
 
     <div id="buttons">
-        <select id="mapSelect" style="padding:10px; border-radius:8px; font-weight:600;">
+        <select id="mapSelect" style="padding:10px; border-radius:8px; font-weight:600; cursor:pointer;">
             <option value="norge">Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
         </select>
@@ -129,13 +133,12 @@
             { navn: "Straumsaksla", fil: "2025_05_24.gpx", video: [{ url: "https://www.instagram.com/p/DKDbUavsE9v/", tittel: "Se video" }] }
         ];
 
-        // LOGIKK FOR DATO OG BADGES
-        let gpxListe = [];
+        let gpxLister = [];
         topper.forEach(t => { 
-            gpxListe.push(t.fil); 
-            if(t.ekstraSpor) t.ekstraSpor.forEach(e => gpxListe.push(e.fil)); 
+            gpxLister.push(t.fil); 
+            if(t.ekstraSpor) t.ekstraSpor.forEach(e => gpxLister.push(e.fil)); 
         });
-        const nyesteGpx = gpxListe.sort().reverse()[0];
+        const nyesteGpx = gpxLister.sort().reverse()[0];
 
         function mndNavn(mnd) { return ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"][parseInt(mnd)-1]; }
         function formaterDato(fil) {
@@ -167,7 +170,9 @@
             const max = Math.max(...elevs), min = Math.min(...elevs), range = (max - min) || 1;
             div.innerHTML = `<div class="elevation-title">${navn}</div><div class="elevation-date">${formaterDato(filnavn)}</div><canvas width="180" height="60" style="border-bottom:1px solid #ddd; margin-bottom:8px;"></canvas><div class="elevation-stats">Høyde: ${Math.round(max)}m | Lengde: ${dist.toFixed(1)}km<br>Stigning: +${Math.round(gain)}m | Tid: ${tidTekst}</div>`;
             setTimeout(() => {
-                const ctx = div.querySelector('canvas').getContext('2d');
+                const canvas = div.querySelector('canvas');
+                if(!canvas) return;
+                const ctx = canvas.getContext('2d');
                 ctx.beginPath(); ctx.strokeStyle = '#fc4c02'; ctx.lineWidth = 2;
                 elevs.forEach((e, i) => {
                     const x = i * (180 / (elevs.length - 1)), y = 55 - ((e - min) / range) * 45;
@@ -228,7 +233,7 @@
                     else map.flyToBounds(l.getBounds(), {padding: [50, 50]});
                 };
 
-                l.on('click', ev => aktiver(true, ev));
+                l.on('click', ev => { L.DomEvent.stopPropagation(ev); aktiver(true, ev); });
                 btn.onclick = () => aktiver(false);
             });
         });
