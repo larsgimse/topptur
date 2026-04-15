@@ -13,6 +13,8 @@
             --dark-grey: #2c3e50;
             --new-green: #22c55e;
             --year-grey: #64748b;
+            --diffuse-indigo: #7986cb;
+            --diffuse-teal: #4db6ac;
         }
 
         body { 
@@ -27,6 +29,7 @@
 
         #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
         
+        /* Fjerner blå ramme på alt */
         button, select, a, .leaflet-interactive { outline: none !important; }
 
         .top-btn { 
@@ -109,10 +112,10 @@
         };
 
         const topper = [
-            { navn: "884", fil: "2026_03_27.gpx", video: [{ url: "https://www.instagram.com/reel/DWg1TaHiJRJ/", tittel: "Video 1" }] },
+            { navn: "884", fil: "2026_03_27.gpx", video: [{ url: "https://www.instagram.com/reel/DWg1TaHiJRJ/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTnrjgliITD/", tittel: "Video 2" }, { url: "https://www.instagram.com/p/DXFlkrDCLz1/", tittel: "Video 3" }], ekstraSpor: [{ fil: "2026_01_17.gpx", tittel: "Vis spor fra video 2", farge: "var(--diffuse-indigo)" }, { fil: "2026_04_13.gpx", tittel: "Vis spor fra video 3", farge: "var(--diffuse-teal)" }] },
             { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: [{ url: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/", tittel: "Se video" }] },
-            { navn: "Buren", fil: "2026_01_10.gpx", video: [{ url: "https://www.instagram.com/p/DTVY5yfCDfU/", tittel: "Se video" }] },
-            { navn: "Burshammeren", fil: "2026_03_26.gpx", video: [{ url: "https://www.instagram.com/reel/DWXPzaUiAO5/", tittel: "Se video" }] },
+            { navn: "Buren", fil: "2026_01_10.gpx", video: [{ url: "https://www.instagram.com/p/DTVY5yfCDfU/", tittel: "Video 1" }, { url: "https://www.instagram.com/p/DXCQalhiPgX/", tittel: "Video 2" }], ekstraSpor: [{ fil: "2026_04_12.gpx", tittel: "Vis spor fra video 2", farge: "var(--diffuse-indigo)" }] },
+            { navn: "Burshammeren", fil: "2026_03_26.gpx", video: [{ url: "https://www.instagram.com/reel/DWXPzaUiAO5/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTLiCcAiDMz/", tittel: "Video 2" }], ekstraSpor: [{ fil: "2025_12_31.gpx", tittel: "Vis spor fra video 2", farge: "var(--diffuse-indigo)" }] },
             { navn: "Gabrielfjellet", fil: "2025_05_25.gpx", video: [{ url: "https://www.instagram.com/p/DKKd9vQsRke/", tittel: "Se video" }] },
             { navn: "Gorzelvtinden", fil: "2025_12_06.gpx", video: [{ url: "https://www.instagram.com/p/DR99FHAiF62/", tittel: "Se video" }] },
             { navn: "Gråtinden", fil: "2026_04_06.gpx", video: [{ url: "https://www.instagram.com/reel/DW1xhPniK_l/", tittel: "Se video" }] },
@@ -127,15 +130,18 @@
         ];
 
         // LOGIKK FOR DATO OG BADGES
-        const allGpxFiles = topper.map(t => t.fil).sort().reverse();
-        const nyesteGpx = allGpxFiles[0];
+        let gpxListe = [];
+        topper.forEach(t => { 
+            gpxListe.push(t.fil); 
+            if(t.ekstraSpor) t.ekstraSpor.forEach(e => gpxListe.push(e.fil)); 
+        });
+        const nyesteGpx = gpxListe.sort().reverse()[0];
 
         function mndNavn(mnd) { return ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"][parseInt(mnd)-1]; }
         function formaterDato(fil) {
             const deler = fil.split('_'); 
             return deler.length < 3 ? "" : `${parseInt(deler[2])}. ${mndNavn(deler[1])} ${deler[0]}`;
         }
-
         document.getElementById('last-updated').innerText = `Sist oppdatert: ${formaterDato(nyesteGpx)}`;
 
         function lagBadge(fil) {
@@ -150,36 +156,21 @@
             const gain = layer.get_elevation_gain();
             const dist = layer.get_distance() / 1000;
             const durationMs = layer.get_total_time();
-            
             let tidTekst = "N/A";
             if(durationMs > 0) {
-                const h = Math.floor(durationMs / 3600000);
-                const m = Math.floor((durationMs % 3600000) / 60000);
+                const h = Math.floor(durationMs / 3600000), m = Math.floor((durationMs % 3600000) / 60000);
                 tidTekst = `${h}t ${m}m`;
             }
-
             const div = document.createElement('div');
             div.className = 'elevation-info';
             const elevs = data.map(d => d[1]);
             const max = Math.max(...elevs), min = Math.min(...elevs), range = (max - min) || 1;
-
-            div.innerHTML = `
-                <div class="elevation-title">${navn}</div>
-                <div class="elevation-date">${formaterDato(filnavn)}</div>
-                <canvas width="180" height="60" style="border-bottom:1px solid #ddd; margin-bottom:8px;"></canvas>
-                <div class="elevation-stats">
-                    Høyde: ${Math.round(max)}m | Lengde: ${dist.toFixed(1)}km<br>
-                    Stigning: +${Math.round(gain)}m | Tid: ${tidTekst}
-                </div>`;
-
+            div.innerHTML = `<div class="elevation-title">${navn}</div><div class="elevation-date">${formaterDato(filnavn)}</div><canvas width="180" height="60" style="border-bottom:1px solid #ddd; margin-bottom:8px;"></canvas><div class="elevation-stats">Høyde: ${Math.round(max)}m | Lengde: ${dist.toFixed(1)}km<br>Stigning: +${Math.round(gain)}m | Tid: ${tidTekst}</div>`;
             setTimeout(() => {
-                const canvas = div.querySelector('canvas');
-                if(!canvas) return;
-                const ctx = canvas.getContext('2d');
+                const ctx = div.querySelector('canvas').getContext('2d');
                 ctx.beginPath(); ctx.strokeStyle = '#fc4c02'; ctx.lineWidth = 2;
                 elevs.forEach((e, i) => {
-                    const x = i * (180 / (elevs.length - 1));
-                    const y = 55 - ((e - min) / range) * 45;
+                    const x = i * (180 / (elevs.length - 1)), y = 55 - ((e - min) / range) * 45;
                     if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
                 });
                 ctx.stroke();
@@ -194,37 +185,51 @@
             document.getElementById('buttons').appendChild(btn);
 
             const track = new L.GPX(topp.fil, {
-                async: true, 
-                marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
+                async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
                 polyline_options: { color: 'var(--strava-orange)', weight: 3, opacity: 0.6 }
             }).on('loaded', (e) => {
                 const l = e.target;
                 allTracksGroup.addLayer(l);
 
-                l.on('click', (ev) => {
-                    L.DomEvent.stopPropagation(ev);
+                const aktiver = (viaKlikk, ev) => {
                     allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.2, weight: 2}));
                     l.setStyle({opacity: 1, weight: 5}).bringToFront();
                     
                     videoContainer.innerHTML = '';
-                    topp.video?.forEach(v => {
+                    const mt = document.createElement('button');
+                    mt.className = 'main-track-toggle'; mt.innerText = 'Skjul spor';
+                    mt.onclick = () => map.hasLayer(l) ? map.removeLayer(l) : map.addLayer(l);
+                    videoContainer.appendChild(mt);
+
+                    topp.video?.forEach((v, i) => {
                         const a = document.createElement('a'); a.href = v.url; a.target = "_blank"; a.className = 'video-link-btn'; a.innerText = v.tittel;
+                        const f = (i === 0) ? topp.fil : (topp.ekstraSpor?.[i-1]?.fil || topp.fil);
+                        a.appendChild(lagBadge(f));
                         videoContainer.appendChild(a);
                     });
 
-                    L.popup().setLatLng(ev.latlng).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map);
-                });
-
-                btn.onclick = () => {
-                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.2, weight: 2}));
-                    l.setStyle({opacity: 1, weight: 5}).bringToFront();
-                    videoContainer.innerHTML = '';
-                    topp.video?.forEach(v => {
-                        const a = document.createElement('a'); a.href = v.url; a.target = "_blank"; a.className = 'video-link-btn'; a.innerText = v.tittel;
-                        videoContainer.appendChild(a);
-                    });
-                    map.flyToBounds(l.getBounds(), {padding: [50, 50]});
+                    if(topp.ekstraSpor) {
+                        topp.ekstraSpor.forEach(es => {
+                            const eb = document.createElement('button'); eb.className = 'toggle-btn'; eb.innerText = es.tittel;
+                            eb.appendChild(lagBadge(es.fil));
+                            let esL = null;
+                            eb.onclick = function() {
+                                if(esL) { map.removeLayer(esL); esL = null; this.classList.remove('active'); }
+                                else { 
+                                    esL = new L.GPX(es.fil, { async:true, marker_options:{startIconUrl:null, endIconUrl:null, shadowUrl:null}, polyline_options:{color:es.farge, weight:3, dashArray:'5,5'} })
+                                    .on('loaded', ev2 => ev2.target.on('click', c => L.popup().setLatLng(c.latlng).setContent(tegnProfil(ev2.target, es.tittel, es.fil)).openOn(map))).addTo(map);
+                                    this.classList.add('active');
+                                }
+                            };
+                            videoContainer.appendChild(eb);
+                        });
+                    }
+                    if(viaKlikk) L.popup().setLatLng(ev.latlng).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map);
+                    else map.flyToBounds(l.getBounds(), {padding: [50, 50]});
                 };
+
+                l.on('click', ev => aktiver(true, ev));
+                btn.onclick = () => aktiver(false);
             });
         });
 
