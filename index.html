@@ -19,97 +19,69 @@
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             text-align: center; margin: 0; padding: 20px 10px; 
-            background: #f1f5f9; color: var(--dark-grey);
+            background: #f8fafc; color: var(--dark-grey);
         }
 
         h1 { margin-bottom: 5px; font-size: 1.8rem; }
-        .subtitle { margin-bottom: 5px; font-size: 1rem; color: #64748b; font-weight: 400; }
-        .subtitle-mini { margin-bottom: 25px; font-size: 0.85rem; color: #94a3b8; font-weight: 400; font-style: italic; }
+        .subtitle { margin-bottom: 25px; font-size: 1rem; color: #64748b; }
 
-        #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; align-items: center; }
+        #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
         
-        .map-selector {
-            padding: 10px 15px; border-radius: 8px; border: 2px solid var(--dark-grey);
-            font-weight: 600; cursor: pointer; background: white; font-size: 15px;
-        }
+        .map-selector { padding: 10px; border-radius: 8px; border: 2px solid var(--dark-grey); font-weight: 600; cursor: pointer; }
 
         .top-btn { 
-            position: relative;
-            background-color: var(--strava-orange);
-            color: white; border: none; border-radius: 8px; padding: 12px 20px; 
-            cursor: pointer; font-size: 14px; font-weight: 600; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s ease;
+            position: relative; background: var(--strava-orange); color: white; border: none; 
+            border-radius: 8px; padding: 12px 18px; cursor: pointer; font-weight: 600; font-size: 14px;
+            transition: transform 0.1s;
         }
-        
-        .top-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .top-btn:active { transform: scale(0.95); }
 
-        /* NY og Årstall Label */
-        .badge-label {
-            position: absolute; top: -8px; right: -8px;
-            color: white; font-size: 10px;
-            padding: 2px 6px; border-radius: 10px; border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            z-index: 10; font-weight: bold;
+        /* Badges */
+        .badge {
+            position: absolute; top: -8px; right: -8px; color: white; font-size: 10px;
+            padding: 2px 6px; border-radius: 10px; border: 2px solid white; font-weight: bold; z-index: 10;
         }
         .badge-new { background: var(--new-green); animation: pulse 2s infinite; }
         .badge-year { background: var(--year-grey); }
 
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
-        #resetBtn { 
-            background-color: var(--dark-grey); color: white; border: none; 
-            border-radius: 8px; padding: 12px 20px; cursor: pointer; font-weight: 600; 
-        }
+        #resetBtn { background: var(--dark-grey); color: white; border: none; border-radius: 8px; padding: 12px 18px; cursor: pointer; font-weight: 600; }
 
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; }
         #map { 
-            height: 70vh; min-height: 450px; max-height: 650px; width: 100%; 
-            border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
-            border: 1px solid #e2e8f0; background-color: #ddd;
+            height: 70vh; width: 100%; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            background: #e5e7eb; /* Vises mens kartet laster */
         }
 
-        path { outline: none !important; }
-
         #video-buttons-container {
-            position: absolute; top: 20px; right: 20px; z-index: 1000;
-            display: flex; flex-direction: column; gap: 10px;
+            position: absolute; top: 15px; right: 15px; z-index: 1000;
+            display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
         }
 
         .video-link-btn, .toggle-btn, .main-track-toggle {
-            position: relative;
-            background: white; padding: 10px 15px; border-radius: 50px; font-weight: bold;
-            text-decoration: none; font-size: 13px; transition: all 0.2s; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid #ccc;
-            display: inline-block;
+            position: relative; background: white; padding: 8px 15px; border-radius: 50px; 
+            font-weight: bold; text-decoration: none; font-size: 12px; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 2px solid #ddd;
         }
-
         .video-link-btn { border-color: var(--insta-pink); color: var(--insta-pink); }
-        .video-link-btn.youtube { border-color: var(--youtube-red); color: var(--youtube-red); }
         .toggle-btn { border-color: var(--strava-blue); color: var(--strava-blue); }
-        .toggle-btn.active { background: var(--strava-blue); color: white; }
-        .main-track-toggle { background: var(--dark-grey); color: white; border-color: var(--dark-grey); font-size: 12px; margin-bottom:5px; }
-        .main-track-toggle.off { background: white; color: var(--dark-grey); opacity: 0.7; }
+        .main-track-toggle { background: var(--dark-grey); color: white; border: none; }
 
-        .elevation-popup .leaflet-popup-content { width: 260px !important; }
-        .elevation-date { font-size: 11px; color: #64748b; margin-bottom: 5px; text-align: left; }
-        .elevation-info { font-size: 11px; margin-top: 8px; font-weight: bold; color: #475569; text-align: left; line-height: 1.5; }
-        .custom-tooltip { font-weight: bold; border-radius: 4px; border: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-
-        #last-updated { margin-top: 50px; margin-bottom: 20px; font-size: 0.75rem; color: #94a3b8; font-style: italic; }
+        .elevation-popup { font-size: 12px; }
     </style>
 </head>
 <body>
 
     <h1>Toppturer rundt Tromsø</h1>
-    <div class="subtitle">Klikk på sporet eller knapp for å se detaljer og video fra toppene</div>
-    <div class="subtitle-mini">Høydeprofil vises ved klikk på sporene</div>
+    <div class="subtitle">Klikk på en topp eller et spor for detaljer</div>
 
     <div id="buttons">
         <select id="mapSelect" class="map-selector">
             <option value="norge">Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
         </select>
-        <button id="resetBtn">Tilbake til oversikt</button>
+        <button id="resetBtn">Nullstill kart</button>
     </div>
 
     <div id="map-container">
@@ -117,61 +89,27 @@
         <div id="video-buttons-container"></div>
     </div>
 
-    <div id="last-updated"></div>
-
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        document.getElementById('last-updated').innerHTML = "Sist oppdatert: " + new Date(document.lastModified).toLocaleString('no-NO');
-
-        const map = L.map('map');
+        const map = L.map('map', { zoomSnap: 0.5 });
         const allTracksGroup = L.featureGroup().addTo(map);
         const videoContainer = document.getElementById('video-buttons-container');
         
-        let valgtTopp = null;
-        let activeExtraLayers = [];
-
         const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { attribution: '&copy; Kartverket' }).addTo(map);
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
 
-        document.getElementById('mapSelect').onchange = function() {
-            if (this.value === "osm") { map.addLayer(osmLayer); map.removeLayer(norgeLayer); }
+        document.getElementById('mapSelect').onchange = (e) => {
+            if (e.target.value === "osm") { map.addLayer(osmLayer); map.removeLayer(norgeLayer); }
             else { map.addLayer(norgeLayer); map.removeLayer(osmLayer); }
         };
 
         const topper = [
-            { 
-                navn: "884", 
-                fil: "2026_03_27.gpx", 
-                video: [
-                    { url: "https://www.instagram.com/reel/DWg1TaHiJRJ/", tittel: "Video 1" }, 
-                    { url: "https://www.instagram.com/reel/DTnrjgliITD/", tittel: "Video 2" },
-                    { url: "https://www.instagram.com/p/DXFlkrDCLz1/", tittel: "Video 3" }
-                ], 
-                ekstraSpor: [
-                    { fil: "2026_01_17.gpx", tittel: "Vis spor fra video 2", farge: "#6366f1" },
-                    { fil: "2026_04_13.gpx", tittel: "Vis spor fra video 3", farge: "#00ced1" }
-                ]
-            },
+            { navn: "884", fil: "2026_03_27.gpx", video: [{ url: "https://www.instagram.com/reel/DWg1TaHiJRJ/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTnrjgliITD/", tittel: "Video 2" }, { url: "https://www.instagram.com/p/DXFlkrDCLz1/", tittel: "Video 3" }], ekstraSpor: [{ fil: "2026_01_17.gpx", tittel: "Vis spor video 2", farge: "#6366f1" }, { fil: "2026_04_13.gpx", tittel: "Vis spor video 3", farge: "#00ced1" }] },
             { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: [{ url: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/", tittel: "Se video" }] },
-            { 
-                navn: "Buren", 
-                fil: "2026_01_10.gpx", 
-                video: [
-                    { url: "https://www.instagram.com/p/DTVY5yfCDfU/", tittel: "Video 1" },
-                    { url: "https://www.instagram.com/p/DXCQalhiPgX/", tittel: "Video 2" }
-                ],
-                ekstraSpor: [
-                    { fil: "2026_04_12.gpx", tittel: "Vis spor fra video 2", farge: "#6366f1" }
-                ]
-            },
-            { 
-                navn: "Burshammeren", 
-                fil: "2026_03_26.gpx", 
-                video: [{ url: "https://www.instagram.com/reel/DWXPzaUiAO5/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTLiCcAiDMz/", tittel: "Video 2" }], 
-                ekstraSpor: [{ fil: "2025_12_31.gpx", tittel: "Vis spor fra video 2", farge: "#6366f1" }] 
-            },
+            { navn: "Buren", fil: "2026_01_10.gpx", video: [{ url: "https://www.instagram.com/p/DTVY5yfCDfU/", tittel: "Video 1" }, { url: "https://www.instagram.com/p/DXCQalhiPgX/", tittel: "Video 2" }], ekstraSpor: [{ fil: "2026_04_12.gpx", tittel: "Vis spor video 2", farge: "#6366f1" }] },
+            { navn: "Burshammeren", fil: "2026_03_26.gpx", video: [{ url: "https://www.instagram.com/reel/DWXPzaUiAO5/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTLiCcAiDMz/", tittel: "Video 2" }], ekstraSpor: [{ fil: "2025_12_31.gpx", tittel: "Vis spor video 2", farge: "#6366f1" }] },
             { navn: "Gabrielfjellet", fil: "2025_05_25.gpx", video: [{ url: "https://www.instagram.com/p/DKKd9vQsRke/", tittel: "Se video" }] },
             { navn: "Gorzelvtinden", fil: "2025_12_06.gpx", video: [{ url: "https://www.instagram.com/p/DR99FHAiF62/", tittel: "Se video" }] },
             { navn: "Gråtinden", fil: "2026_04_06.gpx", video: [{ url: "https://www.instagram.com/reel/DW1xhPniK_l/", tittel: "Se video" }] },
@@ -185,190 +123,87 @@
             { navn: "Straumsaksla", fil: "2025_05_24.gpx", video: [{ url: "https://www.instagram.com/p/DKDbUavsE9v/", tittel: "Se video" }] }
         ];
 
-        let allFiles = [];
-        topper.forEach(t => {
-            allFiles.push(t.fil);
-            if (t.ekstraSpor) t.ekstraSpor.forEach(e => allFiles.push(e.fil));
+        // Finn nyeste fil for NY-merke
+        let gpxDatoer = [];
+        topper.forEach(t => { 
+            gpxDatoer.push(t.fil); 
+            if(t.ekstraSpor) t.ekstraSpor.forEach(e => gpxDatoer.push(e.fil));
         });
-        const nyesteFilIBasen = allFiles.sort((a, b) => b.localeCompare(a))[0];
+        const nyesteGpx = gpxDatoer.sort().reverse()[0];
 
-        function getYearFromFilename(filename) {
-            return filename.split('_')[0];
+        function lagBadge(fil) {
+            const span = document.createElement('span');
+            if (fil === nyesteGpx) { span.className = 'badge badge-new'; span.innerText = 'NY'; }
+            else { span.className = 'badge badge-year'; span.innerText = fil.split('_')[0]; }
+            return span;
         }
 
-        function getDateFromFilename(filename) {
-            const parts = filename.split('_');
-            if (parts.length < 3) return "";
-            const year = parts[0];
-            const monthIdx = parseInt(parts[1]) - 1;
-            const day = parseInt(parts[2]);
-            const date = new Date(year, monthIdx, day);
-            return date.toLocaleDateString('no-NO', { day: 'numeric', month: 'long', year: 'numeric' });
-        }
-
-        function formatTime(ms) {
-            if (!ms || isNaN(ms)) return "N/A";
-            const totalSeconds = Math.floor(ms / 1000);
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            return hours > 0 ? `${hours}t ${minutes}m` : `${minutes}m`;
-        }
-
-        // Funksjon for å lage badge (NY eller Årstall)
-        function createBadge(filename) {
-            const badge = document.createElement('span');
-            if (filename === nyesteFilIBasen) {
-                badge.className = 'badge-label badge-new';
-                badge.innerText = 'NY';
-            } else {
-                badge.className = 'badge-label badge-year';
-                badge.innerText = getYearFromFilename(filename);
-            }
-            return badge;
-        }
-
-        function createElevationContent(layer, navn, filename, farge = '#fc4c02') {
-            const elevations = layer.get_elevation_data();
-            const points = elevations.map(e => e[1]);
-            const min = Math.min(...points);
-            const max = Math.max(...points);
-            const range = max - min || 1;
-            const datoStr = getDateFromFilename(filename);
-
-            const container = document.createElement('div');
-            container.innerHTML = `
-                <div style="font-weight:bold; margin-bottom:2px; font-size:14px;">${navn}</div>
-                <div class="elevation-date">${datoStr}</div>
-                <canvas width="220" height="80" style="background:#f8fafc; border: 1px solid #e2e8f0; border-radius:4px;"></canvas>
-                <div class="elevation-info">
-                    Høyde: ${Math.round(layer.get_elevation_max())}m | Lengde: ${(layer.get_distance() / 1000).toFixed(1)}km<br>
-                    Stigning: +${Math.round(layer.get_elevation_gain())}m | Tid: ${formatTime(layer.get_total_time())}
-                </div>
-            `;
-            const ctx = container.querySelector('canvas').getContext('2d');
-            const step = 220 / points.length;
-            ctx.beginPath(); ctx.strokeStyle = farge; ctx.lineWidth = 2;
-            points.forEach((ele, i) => {
-                const x = i * step;
-                const y = 75 - ((ele - min) / range) * 65; 
-                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-            });
-            ctx.stroke();
-            return container;
-        }
-
-        topper.sort((a, b) => a.navn.localeCompare(b.navn, 'nb'));
-
-        topper.forEach(topp => {
+        topper.sort((a,b) => a.navn.localeCompare(b.navn)).forEach(topp => {
             const btn = document.createElement('button');
-            btn.className = 'top-btn';
-            btn.innerText = topp.navn;
-
-            const harNyeste = (topp.fil === nyesteFilIBasen) || (topp.ekstraSpor && topp.ekstraSpor.some(e => e.fil === nyesteFilIBasen));
-            if (harNyeste) {
-                const nBadge = document.createElement('span');
-                nBadge.className = 'badge-label badge-new';
-                nBadge.innerText = 'NY';
-                btn.appendChild(nBadge);
-            }
-
+            btn.className = 'top-btn'; btn.innerText = topp.navn;
+            
+            // Sjekk om toppen har NY-merke
+            const harNy = (topp.fil === nyesteGpx) || (topp.ekstraSpor && topp.ekstraSpor.some(e => e.fil === nyesteGpx));
+            if(harNy) btn.appendChild(lagBadge(nyesteGpx));
             document.getElementById('buttons').appendChild(btn);
 
-            new L.GPX(topp.fil, {
+            const gpx = new L.GPX(topp.fil, {
                 async: true,
                 marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                polyline_options: { color: 'var(--strava-orange)', weight: 2, opacity: 0.8, lineCap: 'round' } 
-            }).on('loaded', function(e) {
+                polyline_options: { color: 'var(--strava-orange)', weight: 3, opacity: 0.7 }
+            }).on('loaded', (e) => {
                 const layer = e.target;
                 allTracksGroup.addLayer(layer);
-                layer.bindTooltip(topp.navn, { sticky: true, className: 'custom-tooltip' });
-                
-                const activate = (clickPos) => {
-                    valgtTopp = topp.navn;
-                    allTracksGroup.eachLayer(l => l.setStyle({ color: 'var(--strava-orange)', weight: 2, opacity: 0.8 })); 
-                    layer.setStyle({ color: 'var(--strava-orange)', weight: 3, opacity: 1 }).bringToFront();
-                    
-                    activeExtraLayers.forEach(l => map.removeLayer(l));
-                    activeExtraLayers = [];
+
+                const visInfo = (latlng) => {
+                    allTracksGroup.eachLayer(l => l.setStyle({opacity: 0.3, weight: 2}));
+                    layer.setStyle({opacity: 1, weight: 5}).bringToFront();
                     
                     videoContainer.innerHTML = '';
-
-                    // Hovedspor bryter
-                    const mToggle = document.createElement('button');
-                    mToggle.className = 'main-track-toggle'; mToggle.innerText = 'Skjul hovedspor';
-                    if (topp.fil === nyesteFilIBasen) {
-                        const b = document.createElement('span'); b.className = 'badge-label badge-new'; b.innerText = 'NY';
-                        mToggle.appendChild(b);
-                    }
                     
-                    mToggle.onclick = function() {
-                        if (map.hasLayer(layer)) { map.removeLayer(layer); this.innerText = 'Vis hovedspor'; this.classList.add('off'); }
-                        else { map.addLayer(layer); this.innerText = 'Skjul hovedspor'; this.classList.remove('off'); layer.bringToFront(); }
-                    };
-                    videoContainer.appendChild(mToggle);
+                    // Bryter
+                    const tgl = document.createElement('button');
+                    tgl.className = 'main-track-toggle'; tgl.innerText = 'Skjul spor';
+                    tgl.onclick = () => map.hasLayer(layer) ? map.removeLayer(layer) : map.addLayer(layer);
+                    videoContainer.appendChild(tgl);
 
-                    // Video-knapper med årstall/NY label
-                    topp.video.forEach((vid, index) => {
-                        const vBtn = document.createElement('a');
-                        vBtn.href = vid.url; vBtn.target = "_blank"; vBtn.innerText = vid.tittel;
-                        vBtn.className = `video-link-btn ${vid.url.includes("youtube") ? 'youtube' : ''}`;
-                        
-                        let currentGpx = topp.fil; // Standard (Video 1)
-                        if (index > 0 && topp.ekstraSpor && topp.ekstraSpor[index - 1]) {
-                            currentGpx = topp.ekstraSpor[index - 1].fil;
-                        }
-                        
-                        vBtn.appendChild(createBadge(currentGpx));
-                        videoContainer.appendChild(vBtn);
+                    // Videoer
+                    topp.video.forEach((v, i) => {
+                        const a = document.createElement('a');
+                        a.href = v.url; a.target = "_blank"; a.className = 'video-link-btn'; a.innerText = v.tittel;
+                        const tilhorendeFil = (i > 0 && topp.ekstraSpor && topp.ekstraSpor[i-1]) ? topp.ekstraSpor[i-1].fil : topp.fil;
+                        a.appendChild(lagBadge(tilhorendeFil));
+                        videoContainer.appendChild(a);
                     });
 
-                    // Ekstraspor-knapper
-                    if (topp.ekstraSpor) {
-                        topp.ekstraSpor.forEach(sporInfo => {
-                            const tBtn = document.createElement('button');
-                            tBtn.className = 'toggle-btn'; tBtn.innerText = sporInfo.tittel;
-                            tBtn.appendChild(createBadge(sporInfo.fil));
-
-                            let trackLayer = null;
-                            tBtn.onclick = function() {
-                                if (trackLayer) { map.removeLayer(trackLayer); trackLayer = null; this.classList.remove('active'); }
-                                else {
-                                    trackLayer = new L.GPX(sporInfo.fil, {
-                                        async: true, marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-                                        polyline_options: { color: sporInfo.farge, weight: 2, opacity: 0.9, dashArray: '4, 4' }
-                                    }).on('loaded', function(ev) {
-                                        ev.target.on('click', (evC) => {
-                                            L.popup({ className: 'elevation-popup', offset: [0, -10] })
-                                                .setLatLng(evC.latlng).setContent(createElevationContent(ev.target, `${topp.navn} (Alt.)`, sporInfo.fil, sporInfo.farge)).openOn(map);
-                                        });
-                                    }).addTo(map);
-                                    activeExtraLayers.push(trackLayer); this.classList.add('active');
-                                }
+                    // Ekstraspor
+                    if(topp.ekstraSpor) {
+                        topp.ekstraSpor.forEach(es => {
+                            const eb = document.createElement('button');
+                            eb.className = 'toggle-btn'; eb.innerText = es.tittel;
+                            eb.appendChild(lagBadge(es.fil));
+                            let esL = null;
+                            eb.onclick = () => {
+                                if(esL) { map.removeLayer(esL); esL = null; }
+                                else { esL = new L.GPX(es.fil, { async: true, marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }, polyline_options: { color: es.farge, weight: 3, dashArray: '5,5' }}).addTo(map); }
                             };
-                            videoContainer.appendChild(tBtn);
+                            videoContainer.appendChild(eb);
                         });
                     }
                     map.flyToBounds(layer.getBounds(), { padding: [50, 50] });
-                    if (clickPos) L.popup({ className: 'elevation-popup', offset: [0, -10] }).setLatLng(clickPos).setContent(createElevationContent(layer, topp.navn, topp.fil)).openOn(map);
                 };
 
-                const onHover = () => { if(map.hasLayer(layer)) { layer.setStyle({ color: 'var(--strava-blue)', weight: 4, opacity: 1 }).bringToFront(); } };
-                const offHover = () => { if(map.hasLayer(layer)) { layer.setStyle({ color: 'var(--strava-orange)', weight: (valgtTopp === topp.navn ? 3 : 2), opacity: 0.8 }); } };
-
-                btn.onmouseenter = onHover; btn.onmouseleave = offHover;
-                layer.on('mouseover', onHover).on('mouseout', offHover).on('click', (ev) => activate(ev.latlng));
-                btn.onclick = () => activate();
-
-                if (allTracksGroup.getLayers().length === topper.length) map.fitBounds(allTracksGroup.getBounds(), { padding: [40, 40] });
+                layer.on('click', (ev) => visInfo(ev.latlng));
+                btn.onclick = () => visInfo();
+                
+                if (allTracksGroup.getLayers().length === topper.length) map.fitBounds(allTracksGroup.getBounds());
             });
         });
 
         document.getElementById('resetBtn').onclick = () => {
-            valgtTopp = null;
-            activeExtraLayers.forEach(l => map.removeLayer(l));
-            allTracksGroup.eachLayer(l => { if (!map.hasLayer(l)) map.addLayer(l); l.setStyle({ color: 'var(--strava-orange)', weight: 2, opacity: 0.8 }); });
-            map.closePopup(); videoContainer.innerHTML = '';
-            map.flyToBounds(allTracksGroup.getBounds(), { padding: [40, 40], duration: 1.5 });
+            allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity: 0.7, weight: 3}); });
+            videoContainer.innerHTML = '';
+            map.fitBounds(allTracksGroup.getBounds());
         };
     </script>
 </body>
