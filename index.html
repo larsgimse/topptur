@@ -168,7 +168,9 @@
                 </div>`;
 
             setTimeout(() => {
-                const ctx = div.querySelector('canvas').getContext('2d');
+                const canvas = div.querySelector('canvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
                 ctx.beginPath(); ctx.strokeStyle = '#fc4c02'; ctx.lineWidth = 2;
                 elevs.forEach((e, i) => {
                     const x = i * (180 / elevs.length);
@@ -241,7 +243,10 @@
                         });
                     }
                     map.flyToBounds(l.getBounds(), {padding: [50, 50]});
-                    if(p) L.popup().setLatLng(p).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map);
+                    
+                    // Sørger for at popup åpnes uansett om man trykker på knapp eller på selve sporet
+                    const popupLatLng = p ? p : l.getBounds().getCenter();
+                    L.popup().setLatLng(popupLatLng).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map);
                 };
 
                 btn.onmouseover = () => { if(!aktivToppNavn) { l.setStyle({color: 'var(--strava-blue)', weight: 5, opacity: 1}).bringToFront(); map.panTo(l.getBounds().getCenter()); } };
