@@ -51,23 +51,26 @@
 
         #video-buttons-container {
             position: absolute; top: 15px; right: 15px; z-index: 1000;
-            display: flex; flex-direction: column; gap: 8px;
+            display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
         }
 
         .video-link-btn, .toggle-btn, .main-track-toggle {
             position: relative; background: white; padding: 10px 15px; border-radius: 50px; 
             font-weight: bold; text-decoration: none; font-size: 13px; border: 2px solid #ccc;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer;
         }
         .video-link-btn { border-color: var(--insta-pink); color: var(--insta-pink); }
+        .toggle-btn { border-color: var(--strava-blue); color: var(--strava-blue); }
+        .toggle-btn.active { background: var(--strava-blue); color: white; border-color: var(--strava-blue); }
         .main-track-toggle { background: var(--dark-grey); color: white; border: none; }
+        .main-track-toggle.off { background: white; color: var(--dark-grey); border: 2px solid var(--dark-grey); }
+
+        .elevation-popup .leaflet-popup-content { width: 220px !important; }
     </style>
 </head>
 <body>
 
     <h1>Toppturer rundt Tromsø</h1>
-    <div class="subtitle">Klikk på en topp for å se spor og video</div>
-
     <div id="buttons">
         <select id="mapSelect" style="padding:10px; border-radius:8px; font-weight:600; cursor:pointer;">
             <option value="norge">Norgeskart</option>
@@ -98,10 +101,10 @@
         };
 
         const topper = [
-            { navn: "884", fil: "2026_03_27.gpx", video: [{ url: "https://www.instagram.com/reel/DWg1TaHiJRJ/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTnrjgliITD/", tittel: "Video 2" }, { url: "https://www.instagram.com/p/DXFlkrDCLz1/", tittel: "Video 3" }], ekstraSpor: [{ fil: "2026_01_17.gpx", tittel: "Spor video 2", farge: "#6366f1" }, { fil: "2026_04_13.gpx", tittel: "Spor video 3", farge: "#00ced1" }] },
+            { navn: "884", fil: "2026_03_27.gpx", video: [{ url: "https://www.instagram.com/reel/DWg1TaHiJRJ/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTnrjgliITD/", tittel: "Video 2" }, { url: "https://www.instagram.com/p/DXFlkrDCLz1/", tittel: "Video 3" }], ekstraSpor: [{ fil: "2026_01_17.gpx", tittel: "Vis spor video 2", farge: "#6366f1" }, { fil: "2026_04_13.gpx", tittel: "Vis spor video 3", farge: "#00ced1" }] },
             { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: [{ url: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/", tittel: "Se video" }] },
-            { navn: "Buren", fil: "2026_01_10.gpx", video: [{ url: "https://www.instagram.com/p/DTVY5yfCDfU/", tittel: "Video 1" }, { url: "https://www.instagram.com/p/DXCQalhiPgX/", tittel: "Video 2" }], ekstraSpor: [{ fil: "2026_04_12.gpx", tittel: "Spor video 2", farge: "#6366f1" }] },
-            { navn: "Burshammeren", fil: "2026_03_26.gpx", video: [{ url: "https://www.instagram.com/reel/DWXPzaUiAO5/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTLiCcAiDMz/", tittel: "Video 2" }], ekstraSpor: [{ fil: "2025_12_31.gpx", tittel: "Spor video 2", farge: "#6366f1" }] },
+            { navn: "Buren", fil: "2026_01_10.gpx", video: [{ url: "https://www.instagram.com/p/DTVY5yfCDfU/", tittel: "Video 1" }, { url: "https://www.instagram.com/p/DXCQalhiPgX/", tittel: "Video 2" }], ekstraSpor: [{ fil: "2026_04_12.gpx", tittel: "Vis spor video 2", farge: "#6366f1" }] },
+            { navn: "Burshammeren", fil: "2026_03_26.gpx", video: [{ url: "https://www.instagram.com/reel/DWXPzaUiAO5/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTLiCcAiDMz/", tittel: "Video 2" }], ekstraSpor: [{ fil: "2025_12_31.gpx", tittel: "Vis spor video 2", farge: "#6366f1" }] },
             { navn: "Gabrielfjellet", fil: "2025_05_25.gpx", video: [{ url: "https://www.instagram.com/p/DKKd9vQsRke/", tittel: "Se video" }] },
             { navn: "Gorzelvtinden", fil: "2025_12_06.gpx", video: [{ url: "https://www.instagram.com/p/DR99FHAiF62/", tittel: "Se video" }] },
             { navn: "Gråtinden", fil: "2026_04_06.gpx", video: [{ url: "https://www.instagram.com/reel/DW1xhPniK_l/", tittel: "Se video" }] },
@@ -132,13 +135,13 @@
             const elevs = data.map(d => d[1]);
             const min = Math.min(...elevs), max = Math.max(...elevs), range = max - min || 1;
             const div = document.createElement('div');
-            div.innerHTML = `<div style="font-weight:bold;">${navn}</div><canvas width="200" height="60" style="border-bottom:1px solid #ccc;"></canvas><div>Max: ${Math.round(max)}m</div>`;
+            div.innerHTML = `<div style="font-weight:bold;">${navn}</div><canvas width="180" height="50" style="border-bottom:1px solid #ccc;"></canvas><div style="font-size:10px;">Topp: ${Math.round(max)}m | Gain: ${Math.round(layer.get_elevation_gain())}m</div>`;
             setTimeout(() => {
                 const ctx = div.querySelector('canvas').getContext('2d');
                 ctx.beginPath(); ctx.strokeStyle = '#fc4c02'; ctx.lineWidth = 2;
                 elevs.forEach((e, i) => {
-                    const x = i * (200 / elevs.length);
-                    const y = 55 - ((e - min) / range) * 45;
+                    const x = i * (180 / elevs.length);
+                    const y = 45 - ((e - min) / range) * 35;
                     if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
                 });
                 ctx.stroke();
@@ -149,10 +152,11 @@
         topper.sort((a,b) => a.navn.localeCompare(b.navn)).forEach(topp => {
             const btn = document.createElement('button');
             btn.className = 'top-btn'; btn.innerText = topp.navn;
-            if(topp.fil === nyesteGpx || (topp.ekstraSpor && topp.ekstraSpor.some(e => e.fil === nyesteGpx))) btn.appendChild(lagBadge(nyesteGpx));
+            const harNy = (topp.fil === nyesteGpx) || (topp.ekstraSpor && topp.ekstraSpor.some(e => e.fil === nyesteGpx));
+            if(harNy) btn.appendChild(lagBadge(nyesteGpx));
             document.getElementById('buttons').appendChild(btn);
 
-            new L.GPX(topp.fil, {
+            const mainTrack = new L.GPX(topp.fil, {
                 async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
                 polyline_options: { color: 'var(--strava-orange)', weight: 3, opacity: 0.7 }
             }).on('loaded', (e) => {
@@ -164,11 +168,16 @@
                     l.setStyle({opacity: 1, weight: 5}).bringToFront();
                     videoContainer.innerHTML = '';
 
+                    // Hovedspor-knapp
                     const mt = document.createElement('button');
-                    mt.className = 'main-track-toggle'; mt.innerText = 'Skjul spor';
-                    mt.onclick = () => map.hasLayer(l) ? map.removeLayer(l) : map.addLayer(l);
+                    mt.className = 'main-track-toggle'; mt.innerText = 'Skjul hovedspor';
+                    mt.onclick = function() {
+                        if (map.hasLayer(l)) { map.removeLayer(l); this.innerText = 'Vis hovedspor'; this.classList.add('off'); }
+                        else { map.addLayer(l); this.innerText = 'Skjul hovedspor'; this.classList.remove('off'); }
+                    };
                     videoContainer.appendChild(mt);
 
+                    // Video-knapper
                     topp.video.forEach((v, i) => {
                         const a = document.createElement('a'); a.href = v.url; a.target = "_blank"; a.className = 'video-link-btn'; a.innerText = v.tittel;
                         const tilhorer = (i > 0 && topp.ekstraSpor && topp.ekstraSpor[i-1]) ? topp.ekstraSpor[i-1].fil : topp.fil;
@@ -176,24 +185,34 @@
                         videoContainer.appendChild(a);
                     });
 
+                    // Ekstra spor-knapper
                     if(topp.ekstraSpor) {
                         topp.ekstraSpor.forEach(es => {
-                            const eb = document.createElement('button'); eb.className = 'toggle-btn'; eb.innerText = es.tittel;
+                            const eb = document.createElement('button'); 
+                            eb.className = 'toggle-btn'; 
+                            eb.innerText = es.tittel; // Bruker "Vis spor video 2" osv
                             eb.appendChild(lagBadge(es.fil));
                             let esL = null;
-                            eb.onclick = () => {
-                                if(esL) { map.removeLayer(esL); esL = null; }
-                                else { 
+                            eb.onclick = function() {
+                                if(esL) { 
+                                    map.removeLayer(esL); esL = null; 
+                                    this.classList.remove('active');
+                                    this.innerText = es.tittel;
+                                    this.appendChild(lagBadge(es.fil));
+                                } else { 
                                     esL = new L.GPX(es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null}, polyline_options: {color: es.farge, weight:3, dashArray:'5,5'}})
                                     .on('loaded', (ev) => ev.target.on('click', (c) => L.popup().setLatLng(c.latlng).setContent(tegnProfil(ev.target, es.tittel)).openOn(map)))
                                     .addTo(map);
+                                    this.classList.add('active');
+                                    this.innerText = 'Skjul ekstraspor';
+                                    this.appendChild(lagBadge(es.fil));
                                 }
                             };
                             videoContainer.appendChild(eb);
                         });
                     }
                     map.flyToBounds(l.getBounds(), {padding: [50, 50]});
-                    if(p) L.popup().setLatLng(p).setContent(tegnProfil(l, topp.navn)).openOn(map);
+                    if(p) L.popup({className:'elevation-popup'}).setLatLng(p).setContent(tegnProfil(l, topp.navn)).openOn(map);
                 };
 
                 l.on('click', (ev) => aktiver(ev.latlng));
