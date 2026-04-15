@@ -42,7 +42,6 @@
         
         .top-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
 
-        /* NY-merke stil */
         .badge-new {
             position: absolute; top: -8px; right: -8px;
             background: var(--new-green); color: white; font-size: 10px;
@@ -175,11 +174,11 @@
             { navn: "Middagstinden", fil: "2024_04_21.gpx", video: [{ url: "https://www.facebook.com/reel/398350683066500", tittel: "Se video (FB)" }] },
             { navn: "Rema 1000", fil: "2026_03_28.gpx", video: [{ url: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/", tittel: "Se video" }] },
             { navn: "Skittentinden", fil: "2026_03_15.gpx", video: [{ url: "https://www.instagram.com/reel/DWHz3RbCPlU/", tittel: "Se video" }] },
+            { navn: "Steinskarstinden", fil: "2026_03_08.gpx", video: [{ url: "https://www.instagram.com/p/DVodnhniPMj/", tittel: "Se video" }] },
             { navn: "Storstolpan", fil: "2025_05_08.gpx", video: [{ url: "https://www.instagram.com/p/DJjsfOesdWS/", tittel: "Se video" }] },
             { navn: "Stortinden", fil: "2024_03_26.gpx", video: [{ url: "https://www.youtube.com/watch?v=wix86hamTQ8", tittel: "Se video (YT)" }] }
         ];
 
-        // Finn nyeste dato blant alle filer for "NY"-badge
         let allFiles = [];
         topper.forEach(t => {
             allFiles.push(t.fil);
@@ -273,7 +272,6 @@
                     
                     videoContainer.innerHTML = '';
 
-                    // 1. Bryter for hovedspor
                     const mToggle = document.createElement('button');
                     mToggle.className = 'main-track-toggle'; mToggle.innerText = 'Skjul hovedspor';
                     if (topp.fil === nyesteFilIBasen) mToggle.appendChild(createNewBadge());
@@ -284,13 +282,11 @@
                     };
                     videoContainer.appendChild(mToggle);
 
-                    // 2. Video-knapper
                     topp.video.forEach((vid, index) => {
                         const vBtn = document.createElement('a');
                         vBtn.href = vid.url; vBtn.target = "_blank"; vBtn.innerText = vid.tittel;
                         vBtn.className = `video-link-btn ${vid.url.includes("youtube") ? 'youtube' : ''}`;
                         
-                        // NY-merke på video hvis tilhørende GPX er nyest
                         if (index === 0 && topp.fil === nyesteFilIBasen) {
                             vBtn.appendChild(createNewBadge());
                         } else if (index > 0 && topp.ekstraSpor && topp.ekstraSpor[index - 1]) {
@@ -301,7 +297,6 @@
                         videoContainer.appendChild(vBtn);
                     });
 
-                    // 3. Ekstraspor-knapper
                     if (topp.ekstraSpor) {
                         topp.ekstraSpor.forEach(sporInfo => {
                             const tBtn = document.createElement('button');
