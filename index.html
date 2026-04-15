@@ -33,7 +33,7 @@
             position: relative; background-color: var(--strava-orange); color: white; border: none; 
             border-radius: 8px; padding: 12px 20px; cursor: pointer; font-size: 14px; font-weight: 600; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s ease;
-            outline: none; /* FJERNER BLÅ FIRKANT */
+            outline: none;
         }
 
         .badge-label {
@@ -61,7 +61,7 @@
             position: relative; background: white; padding: 10px 15px; border-radius: 50px; 
             font-weight: bold; text-decoration: none; font-size: 13px; border: 2px solid #ccc;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer;
-            outline: none; /* FJERNER BLÅ FIRKANT */
+            outline: none;
         }
         .video-link-btn { border-color: var(--insta-pink); color: var(--insta-pink); }
         .toggle-btn.active { background: var(--strava-blue); color: white; border-color: var(--strava-blue); }
@@ -69,6 +69,7 @@
 
         #last-updated { margin-top: 15px; font-size: 12px; color: #64748b; font-style: italic; }
 
+        /* Stil for innholdet i pop-up */
         .elevation-info { text-align: left; min-width: 200px; color: #2c3e50; }
         .elevation-title { font-weight: bold; font-size: 16px; margin-bottom: 2px; }
         .elevation-date { font-size: 13px; color: #64748b; margin-bottom: 8px; }
@@ -153,21 +154,31 @@
             return s;
         }
 
+        // --- HOVEDFUNKSJON FOR Å TEGNE PROFIL OG DATA ---
         function tegnProfil(layer, navn, filnavn) {
             const data = layer.get_elevation_data();
             const div = document.createElement('div');
             div.className = 'elevation-info';
-            if(!data || data.length === 0) return `<b>${navn}</b>`;
-
-            const elevs = data.map(d => d[1]);
-            const min = Math.min(...elevs), max = Math.max(...elevs), range = max - min || 1;
-            const gain = layer.get_elevation_gain(), dist = layer.get_distance() / 1000, durationMs = layer.get_total_time();
+            
+            // Hent statistikk fra GPX-filen via Leaflet-GPX
+            const gain = layer.get_elevation_gain();
+            const dist = layer.get_distance() / 1000;
+            const durationMs = layer.get_total_time();
             
             let tidTekst = "N/A";
             if(durationMs > 0) {
-                const h = Math.floor(durationMs / 3600000), m = Math.floor((durationMs % 3600000) / 60000);
+                const h = Math.floor(durationMs / 3600000);
+                const m = Math.floor((durationMs % 3600000) / 60000);
                 tidTekst = `${h}t ${m}m`;
             }
+
+            if(!data || data.length === 0) {
+                div.innerHTML = `<b>${navn}</b><br><small>Ingen høydedata tilgjengelig</small>`;
+                return div;
+            }
+
+            const elevs = data.map(d => d[1]);
+            const min = Math.min(...elevs), max = Math.max(...elevs), range = max - min || 1;
 
             div.innerHTML = `
                 <div class="elevation-title">${navn}</div>
@@ -178,16 +189,22 @@
                     Stigning: +${Math.round(gain)}m | Tid: ${tidTekst}
                 </div>`;
 
+            // Tegn grafen litt etterpå så elementet er i DOM-en
             setTimeout(() => {
-                const ctx = div.querySelector('canvas').getContext('2d');
-                ctx.beginPath(); ctx.strokeStyle = '#fc4c02'; ctx.lineWidth = 2;
+                const canvas = div.querySelector('canvas');
+                if(!canvas) return;
+                const ctx = canvas.getContext('2d');
+                ctx.beginPath(); 
+                ctx.strokeStyle = '#fc4c02'; 
+                ctx.lineWidth = 2;
                 elevs.forEach((e, i) => {
-                    const x = i * (180 / elevs.length);
+                    const x = i * (180 / (elevs.length - 1));
                     const y = 55 - ((e - min) / range) * 45;
                     if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
                 });
                 ctx.stroke();
             }, 100);
+
             return div;
         }
 
@@ -202,7 +219,8 @@
             document.getElementById('buttons').appendChild(btn);
 
             const track = new L.GPX(topp.fil, {
-                async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
+                async: true, 
+                marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
                 polyline_options: { color: 'var(--strava-orange)', weight: 1.5, opacity: 0.5 }
             }).on('loaded', (e) => {
                 const l = e.target;
@@ -250,6 +268,7 @@
                     }
                     map.flyToBounds(l.getBounds(), {padding: [50, 50]});
 
+                    // Hvis klikk kom fra sporet, vis pop-up med all data
                     if(viaKlikkPaSpor) {
                         L.popup().setLatLng(latlng).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map);
                     }
