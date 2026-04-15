@@ -56,6 +56,7 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer;
         }
         .video-link-btn { border-color: var(--insta-pink); color: var(--insta-pink); }
+        .toggle-btn { border-color: var(--strava-blue); color: var(--strava-blue); }
         .toggle-btn.active { background: var(--strava-blue); color: white; border-color: var(--strava-blue); }
         .main-track-toggle { background: var(--dark-grey); color: white; border: none; }
         .custom-tooltip { font-weight: bold; }
@@ -94,10 +95,10 @@
         };
 
         const topper = [
-            { navn: "884", fil: "2026_03_27.gpx", video: [{ url: "https://www.instagram.com/reel/DWg1TaHiJRJ/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTnrjgliITD/", tittel: "Video 2" }, { url: "https://www.instagram.com/p/DXFlkrDCLz1/", tittel: "Video 3" }], ekstraSpor: [{ fil: "2026_01_17.gpx", tittel: "Vis spor video 2", farge: "#6366f1" }, { fil: "2026_04_13.gpx", tittel: "Vis spor video 3", farge: "#00ced1" }] },
+            { navn: "884", fil: "2026_03_27.gpx", video: [{ url: "https://www.instagram.com/reel/DWg1TaHiJRJ/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTnrjgliITD/", tittel: "Video 2" }, { url: "https://www.instagram.com/p/DXFlkrDCLz1/", tittel: "Video 3" }], ekstraSpor: [{ fil: "2026_01_17.gpx", tittel: "Vis spor fra video 2", farge: "#5c6bc0" }, { fil: "2026_04_13.gpx", tittel: "Vis spor fra video 3", farge: "#008b8b" }] },
             { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: [{ url: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/", tittel: "Se video" }] },
-            { navn: "Buren", fil: "2026_01_10.gpx", video: [{ url: "https://www.instagram.com/p/DTVY5yfCDfU/", tittel: "Video 1" }, { url: "https://www.instagram.com/p/DXCQalhiPgX/", tittel: "Video 2" }], ekstraSpor: [{ fil: "2026_04_12.gpx", tittel: "Vis spor video 2", farge: "#6366f1" }] },
-            { navn: "Burshammeren", fil: "2026_03_26.gpx", video: [{ url: "https://www.instagram.com/reel/DWXPzaUiAO5/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTLiCcAiDMz/", tittel: "Video 2" }], ekstraSpor: [{ fil: "2025_12_31.gpx", tittel: "Vis spor video 2", farge: "#6366f1" }] },
+            { navn: "Buren", fil: "2026_01_10.gpx", video: [{ url: "https://www.instagram.com/p/DTVY5yfCDfU/", tittel: "Video 1" }, { url: "https://www.instagram.com/p/DXCQalhiPgX/", tittel: "Video 2" }], ekstraSpor: [{ fil: "2026_04_12.gpx", tittel: "Vis spor fra video 2", farge: "#5c6bc0" }] },
+            { navn: "Burshammeren", fil: "2026_03_26.gpx", video: [{ url: "https://www.instagram.com/reel/DWXPzaUiAO5/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTLiCcAiDMz/", tittel: "Video 2" }], ekstraSpor: [{ fil: "2025_12_31.gpx", tittel: "Vis spor fra video 2", farge: "#5c6bc0" }] },
             { navn: "Gabrielfjellet", fil: "2025_05_25.gpx", video: [{ url: "https://www.instagram.com/p/DKKd9vQsRke/", tittel: "Se video" }] },
             { navn: "Gorzelvtinden", fil: "2025_12_06.gpx", video: [{ url: "https://www.instagram.com/p/DR99FHAiF62/", tittel: "Se video" }] },
             { navn: "Gråtinden", fil: "2026_04_06.gpx", video: [{ url: "https://www.instagram.com/reel/DW1xhPniK_l/", tittel: "Se video" }] },
@@ -160,8 +161,8 @@
 
                 const aktiver = (p) => {
                     aktivTopp = topp.navn;
-                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.15, weight: 2})); // Spor i nærheten
-                    l.setStyle({opacity: 1, weight: 5}).bringToFront();
+                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.35, weight: 2})); // Spor i nærheten litt tydeligere
+                    l.setStyle({opacity: 1, weight: 4}).bringToFront(); // Hovedspor litt tynnere (4 vs 5)
                     videoContainer.innerHTML = '';
 
                     const mt = document.createElement('button');
@@ -182,12 +183,18 @@
                             eb.appendChild(lagBadge(es.fil));
                             let esL = null;
                             eb.onclick = function() {
-                                if(esL) { map.removeLayer(esL); esL = null; this.classList.remove('active'); }
-                                else { 
+                                if(esL) { 
+                                    map.removeLayer(esL); esL = null; 
+                                    this.classList.remove('active'); 
+                                    this.innerText = es.tittel; // "Vis spor fra video X"
+                                    this.appendChild(lagBadge(es.fil));
+                                } else { 
                                     esL = new L.GPX(es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null}, polyline_options: {color: es.farge, weight:3, dashArray:'5,5'}})
                                     .on('loaded', (ev) => ev.target.on('click', (c) => L.popup().setLatLng(c.latlng).setContent(tegnProfil(ev.target, es.tittel)).openOn(map)))
                                     .addTo(map);
-                                    this.classList.add('active');
+                                    this.classList.add('active'); 
+                                    this.innerText = 'Skru av spor'; 
+                                    this.appendChild(lagBadge(es.fil));
                                 }
                             };
                             videoContainer.appendChild(eb);
@@ -197,10 +204,9 @@
                     if(p) L.popup().setLatLng(p).setContent(tegnProfil(l, topp.navn)).openOn(map);
                 };
 
-                // Hover på knapper: Sentrerer kartet og uthever sporet
                 btn.onmouseover = () => {
                     if(!aktivTopp) {
-                        l.setStyle({color: 'var(--strava-blue)', weight: 6, opacity: 1}).bringToFront();
+                        l.setStyle({color: 'var(--strava-blue)', weight: 5, opacity: 1}).bringToFront();
                         map.panTo(l.getBounds().getCenter());
                     }
                 };
