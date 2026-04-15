@@ -32,7 +32,6 @@
             border-radius: 8px; padding: 12px 20px; cursor: pointer; font-size: 14px; font-weight: 600; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.1s;
         }
-        .top-btn:active { transform: scale(0.95); }
 
         .badge-label {
             position: absolute; top: -8px; right: -8px; color: white; font-size: 10px;
@@ -58,11 +57,10 @@
         .video-link-btn, .toggle-btn, .main-track-toggle {
             position: relative; background: white; padding: 10px 15px; border-radius: 50px; 
             font-weight: bold; text-decoration: none; font-size: 13px; border: 2px solid #ccc;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         .video-link-btn { border-color: var(--insta-pink); color: var(--insta-pink); }
         .main-track-toggle { background: var(--dark-grey); color: white; border: none; }
-
-        .elevation-popup .leaflet-popup-content { width: 240px !important; }
     </style>
 </head>
 <body>
@@ -71,7 +69,7 @@
     <div class="subtitle">Klikk på en topp for å se spor og video</div>
 
     <div id="buttons">
-        <select id="mapSelect" style="padding:10px; border-radius:8px; font-weight:600;">
+        <select id="mapSelect" style="padding:10px; border-radius:8px; font-weight:600; cursor:pointer;">
             <option value="norge">Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
         </select>
@@ -87,7 +85,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        // Sett startpunkt til Tromsø umiddelbart så kartet ikke er grått
         const map = L.map('map').setView([69.65, 18.95], 10);
         const allTracksGroup = L.featureGroup().addTo(map);
         const videoContainer = document.getElementById('video-buttons-container');
@@ -129,20 +126,15 @@
             return s;
         }
 
-        function tegnProfil(layer, navn, fil) {
+        function tegnProfil(layer, navn) {
             const data = layer.get_elevation_data();
-            if(!data || data.length === 0) return `<b>${navn}</b><br>Ingen høydedata`;
-            
+            if(!data || data.length === 0) return `<b>${navn}</b>`;
             const elevs = data.map(d => d[1]);
             const min = Math.min(...elevs), max = Math.max(...elevs), range = max - min || 1;
-            
             const div = document.createElement('div');
-            div.innerHTML = `<div style="font-weight:bold; font-size:14px;">${navn}</div><canvas width="200" height="60" style="margin-top:5px; border-bottom:1px solid #ccc;"></canvas><div style="font-size:11px; margin-top:5px;">Topp: ${Math.round(max)}m | Stigning: ${Math.round(layer.get_elevation_gain())}m</div>`;
-            
+            div.innerHTML = `<div style="font-weight:bold;">${navn}</div><canvas width="200" height="60" style="border-bottom:1px solid #ccc;"></canvas><div>Max: ${Math.round(max)}m</div>`;
             setTimeout(() => {
-                const canvas = div.querySelector('canvas');
-                if(!canvas) return;
-                const ctx = canvas.getContext('2d');
+                const ctx = div.querySelector('canvas').getContext('2d');
                 ctx.beginPath(); ctx.strokeStyle = '#fc4c02'; ctx.lineWidth = 2;
                 elevs.forEach((e, i) => {
                     const x = i * (200 / elevs.length);
@@ -160,7 +152,7 @@
             if(topp.fil === nyesteGpx || (topp.ekstraSpor && topp.ekstraSpor.some(e => e.fil === nyesteGpx))) btn.appendChild(lagBadge(nyesteGpx));
             document.getElementById('buttons').appendChild(btn);
 
-            const track = new L.GPX(topp.fil, {
+            new L.GPX(topp.fil, {
                 async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
                 polyline_options: { color: 'var(--strava-orange)', weight: 3, opacity: 0.7 }
             }).on('loaded', (e) => {
@@ -193,7 +185,7 @@
                                 if(esL) { map.removeLayer(esL); esL = null; }
                                 else { 
                                     esL = new L.GPX(es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null}, polyline_options: {color: es.farge, weight:3, dashArray:'5,5'}})
-                                    .on('loaded', (ev) => ev.target.on('click', (c) => L.popup().setLatLng(c.latlng).setContent(tegnProfil(ev.target, es.tittel, es.fil)).openOn(map)))
+                                    .on('loaded', (ev) => ev.target.on('click', (c) => L.popup().setLatLng(c.latlng).setContent(tegnProfil(ev.target, es.tittel)).openOn(map)))
                                     .addTo(map);
                                 }
                             };
@@ -201,7 +193,7 @@
                         });
                     }
                     map.flyToBounds(l.getBounds(), {padding: [50, 50]});
-                    if(p) L.popup().setLatLng(p).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map);
+                    if(p) L.popup().setLatLng(p).setContent(tegnProfil(l, topp.navn)).openOn(map);
                 };
 
                 l.on('click', (ev) => aktiver(ev.latlng));
