@@ -56,9 +56,14 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer;
         }
         .video-link-btn { border-color: var(--insta-pink); color: var(--insta-pink); }
-        .toggle-btn { border-color: var(--strava-blue); color: var(--strava-blue); }
         .toggle-btn.active { background: var(--strava-blue); color: white; border-color: var(--strava-blue); }
         .main-track-toggle { background: var(--dark-grey); color: white; border: none; }
+
+        /* Stil for pop-up tekst */
+        .elevation-info { text-align: left; min-width: 180px; color: #2c3e50; }
+        .elevation-title { font-weight: bold; font-size: 15px; margin-bottom: 2px; }
+        .elevation-date { font-size: 11px; color: #64748b; margin-bottom: 8px; font-style: italic; }
+        .elevation-stats { font-size: 11px; margin-top: 5px; color: #2c3e50; font-weight: 500; }
         .custom-tooltip { font-weight: bold; }
     </style>
 </head>
@@ -116,6 +121,15 @@
         topper.forEach(t => { gpxLister.push(t.fil); if(t.ekstraSpor) t.ekstraSpor.forEach(e => gpxLister.push(e.fil)); });
         const nyesteGpx = gpxLister.sort().reverse()[0];
 
+        function formaterDato(fil) {
+            const deler = fil.split('_');
+            if(deler.length < 3) return "";
+            const år = deler[0];
+            const mnd = deler[1];
+            const dag = deler[2].split('.')[0];
+            return `Spor fra ${dag}.${mnd}.${år}`;
+        }
+
         function lagBadge(fil) {
             const s = document.createElement('span');
             s.className = (fil === nyesteGpx) ? 'badge-label badge-new' : 'badge-label badge-year';
@@ -123,19 +137,38 @@
             return s;
         }
 
-        function tegnProfil(layer, navn) {
+        function tegnProfil(layer, navn, filnavn) {
             const data = layer.get_elevation_data();
-            if(!data || data.length === 0) return `<b>${navn}</b>`;
+            const div = document.createElement('div');
+            div.className = 'elevation-info';
+            
+            if(!data || data.length === 0) {
+                div.innerHTML = `<div class="elevation-title">${navn}</div><div>Ingen høydedata</div>`;
+                return div;
+            }
+
             const elevs = data.map(d => d[1]);
             const min = Math.min(...elevs), max = Math.max(...elevs), range = max - min || 1;
-            const div = document.createElement('div');
-            div.innerHTML = `<div style="font-weight:bold;">${navn}</div><canvas width="180" height="50" style="border-bottom:1px solid #ccc;"></canvas><div style="font-size:10px;">Topp: ${Math.round(max)}m | Gain: ${Math.round(layer.get_elevation_gain())}m</div>`;
+            const gain = layer.get_elevation_gain();
+            const datoTekst = formaterDato(filnavn);
+
+            div.innerHTML = `
+                <div class="elevation-title">${navn}</div>
+                <div class="elevation-date">${datoTekst}</div>
+                <canvas width="180" height="60" style="border-bottom:1px solid #ddd;"></canvas>
+                <div class="elevation-stats">
+                    Topp: ${Math.round(max)}m | Stigning: ${Math.round(gain)}m
+                </div>
+            `;
+
             setTimeout(() => {
-                const ctx = div.querySelector('canvas').getContext('2d');
+                const canvas = div.querySelector('canvas');
+                if(!canvas) return;
+                const ctx = canvas.getContext('2d');
                 ctx.beginPath(); ctx.strokeStyle = '#fc4c02'; ctx.lineWidth = 2;
                 elevs.forEach((e, i) => {
                     const x = i * (180 / elevs.length);
-                    const y = 45 - ((e - min) / range) * 35;
+                    const y = 55 - ((e - min) / range) * 45;
                     if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
                 });
                 ctx.stroke();
@@ -143,7 +176,7 @@
             return div;
         }
 
-        let aktivTopp = null;
+        let aktivToppNavn = null;
 
         topper.sort((a,b) => a.navn.localeCompare(b.navn)).forEach(topp => {
             const btn = document.createElement('button');
@@ -160,9 +193,10 @@
                 l.bindTooltip(topp.navn, {sticky: true, className: 'custom-tooltip'});
 
                 const aktiver = (p) => {
-                    aktivTopp = topp.navn;
-                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.35, weight: 2})); // Spor i nærheten litt tydeligere
-                    l.setStyle({opacity: 1, weight: 4}).bringToFront(); // Hovedspor litt tynnere (4 vs 5)
+                    aktivToppNavn = topp.navn;
+                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.35, weight: 2, color: 'var(--strava-orange)'}));
+                    l.setStyle({opacity: 1, weight: 4, color: 'var(--strava-orange)'}).bringToFront();
+                    
                     videoContainer.innerHTML = '';
 
                     const mt = document.createElement('button');
@@ -185,33 +219,29 @@
                             eb.onclick = function() {
                                 if(esL) { 
                                     map.removeLayer(esL); esL = null; 
-                                    this.classList.remove('active'); 
-                                    this.innerText = es.tittel; // "Vis spor fra video X"
-                                    this.appendChild(lagBadge(es.fil));
+                                    this.classList.remove('active'); this.innerText = es.tittel; this.appendChild(lagBadge(es.fil));
                                 } else { 
                                     esL = new L.GPX(es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null}, polyline_options: {color: es.farge, weight:3, dashArray:'5,5'}})
-                                    .on('loaded', (ev) => ev.target.on('click', (c) => L.popup().setLatLng(c.latlng).setContent(tegnProfil(ev.target, es.tittel)).openOn(map)))
+                                    .on('loaded', (ev) => ev.target.on('click', (c) => L.popup().setLatLng(c.latlng).setContent(tegnProfil(ev.target, es.tittel, es.fil)).openOn(map)))
                                     .addTo(map);
-                                    this.classList.add('active'); 
-                                    this.innerText = 'Skru av spor'; 
-                                    this.appendChild(lagBadge(es.fil));
+                                    this.classList.add('active'); this.innerText = 'Skru av spor'; this.appendChild(lagBadge(es.fil));
                                 }
                             };
                             videoContainer.appendChild(eb);
                         });
                     }
                     map.flyToBounds(l.getBounds(), {padding: [50, 50]});
-                    if(p) L.popup().setLatLng(p).setContent(tegnProfil(l, topp.navn)).openOn(map);
+                    if(p) L.popup().setLatLng(p).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map);
                 };
 
                 btn.onmouseover = () => {
-                    if(!aktivTopp) {
+                    if(!aktivToppNavn) {
                         l.setStyle({color: 'var(--strava-blue)', weight: 5, opacity: 1}).bringToFront();
                         map.panTo(l.getBounds().getCenter());
                     }
                 };
                 btn.onmouseout = () => {
-                    if(!aktivTopp) l.setStyle({color: 'var(--strava-orange)', weight: 3, opacity: 0.7});
+                    if(!aktivToppNavn) l.setStyle({color: 'var(--strava-orange)', weight: 3, opacity: 0.7});
                 };
 
                 l.on('click', (ev) => aktiver(ev.latlng));
@@ -222,7 +252,7 @@
         });
 
         document.getElementById('resetBtn').onclick = () => {
-            aktivTopp = null;
+            aktivToppNavn = null;
             allTracksGroup.eachLayer(l => { 
                 if(!map.hasLayer(l)) map.addLayer(l); 
                 l.setStyle({opacity:0.7, weight:3, color: 'var(--strava-orange)'}); 
