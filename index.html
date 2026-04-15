@@ -23,10 +23,9 @@
             background: #f1f5f9; color: var(--dark-grey);
         }
 
-        /* Stil for overskrifter og tekst */
         h1 { margin-bottom: 5px; }
-        .subtitle { font-size: 18px; color: #475569; margin-top: 0; margin-bottom: 10px; font-weight: 500; }
-        .description { max-width: 800px; margin: 0 auto 20px; color: #64748b; line-height: 1.6; }
+        .subtitle { font-size: 18px; color: #475569; margin-top: 0; margin-bottom: 5px; font-weight: 500; }
+        .description { font-size: 16px; color: #64748b; margin-top: 0; margin-bottom: 20px; }
 
         #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
         
@@ -78,8 +77,8 @@
 <body>
 
     <h1>Toppturer rundt Tromsø</h1>
-    <p class="subtitle">En visuell oversikt over mine favoritt-turer</p>
-    <p class="description">Klikk på en fjelltopp i listen eller direkte i kartet for å se detaljer, høydeprofil og linker til videoer fra turene.</p>
+    <p class="subtitle">Klikk på sporet eller knapp for å se detaljer og video fra toppene</p>
+    <p class="description">Høydeprofil vises ved klikk på sporene</p>
 
     <div id="buttons">
         <select id="mapSelect" style="padding:10px; border-radius:8px; font-weight:600; cursor:pointer;">
@@ -211,7 +210,6 @@
                 const aktiver = (p) => {
                     map.closePopup();
                     aktivToppNavn = topp.navn;
-                    
                     allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.2, weight: 1, color: 'var(--strava-orange)'}));
                     l.setStyle({opacity: 1, weight: 2.5, color: 'var(--strava-orange)'}).bringToFront(); 
 
