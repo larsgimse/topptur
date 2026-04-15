@@ -33,6 +33,7 @@
             position: relative; background-color: var(--strava-orange); color: white; border: none; 
             border-radius: 8px; padding: 12px 20px; cursor: pointer; font-size: 14px; font-weight: 600; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s ease;
+            outline: none; /* FJERNER BLÅ FIRKANT */
         }
 
         .badge-label {
@@ -60,6 +61,7 @@
             position: relative; background: white; padding: 10px 15px; border-radius: 50px; 
             font-weight: bold; text-decoration: none; font-size: 13px; border: 2px solid #ccc;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer;
+            outline: none; /* FJERNER BLÅ FIRKANT */
         }
         .video-link-btn { border-color: var(--insta-pink); color: var(--insta-pink); }
         .toggle-btn.active { background: var(--strava-blue); color: white; border-color: var(--strava-blue); }
@@ -81,11 +83,11 @@
     <p class="description">Høydeprofil vises ved klikk på sporene</p>
 
     <div id="buttons">
-        <select id="mapSelect" style="padding:10px; border-radius:8px; font-weight:600; cursor:pointer;">
+        <select id="mapSelect" style="padding:10px; border-radius:8px; font-weight:600; cursor:pointer; outline:none;">
             <option value="norge">Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
         </select>
-        <button id="resetBtn" style="padding:10px 20px; border-radius:8px; background:#2c3e50; color:white; border:none; font-weight:600; cursor:pointer;">Nullstill kart</button>
+        <button id="resetBtn" style="padding:10px 20px; border-radius:8px; background:#2c3e50; color:white; border:none; font-weight:600; cursor:pointer; outline:none;">Nullstill kart</button>
     </div>
 
     <div id="map-container">
@@ -248,7 +250,6 @@
                     }
                     map.flyToBounds(l.getBounds(), {padding: [50, 50]});
 
-                    // VIKTIG: Viser popup kun hvis brukeren klikket direkte på sporet
                     if(viaKlikkPaSpor) {
                         L.popup().setLatLng(latlng).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map);
                     }
@@ -257,9 +258,7 @@
                 btn.onmouseover = () => { if(!aktivToppNavn) { l.setStyle({color: 'var(--strava-blue)', weight: 3.5, opacity: 1}).bringToFront(); map.panTo(l.getBounds().getCenter()); } };
                 btn.onmouseout = () => { if(!aktivToppNavn) l.setStyle({color: 'var(--strava-orange)', weight: 1.5, opacity: 0.5}); };
                 
-                // Klikk på spor trigger popup
                 l.on('click', (ev) => aktiver(true, ev.latlng));
-                // Klikk på knapp trigger IKKE popup
                 btn.onclick = () => aktiver(false);
             });
         });
