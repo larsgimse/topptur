@@ -207,9 +207,10 @@
                 allTracksGroup.addLayer(l);
                 l.bindTooltip(topp.navn, {sticky: true, className: 'custom-tooltip'});
 
-                const aktiver = (p) => {
+                const aktiver = (viaKlikkPaSpor, latlng) => {
                     map.closePopup();
                     aktivToppNavn = topp.navn;
+                    
                     allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.2, weight: 1, color: 'var(--strava-orange)'}));
                     l.setStyle({opacity: 1, weight: 2.5, color: 'var(--strava-orange)'}).bringToFront(); 
 
@@ -246,14 +247,20 @@
                         });
                     }
                     map.flyToBounds(l.getBounds(), {padding: [50, 50]});
-                    const popupPoint = p || l.getBounds().getCenter();
-                    setTimeout(() => { L.popup().setLatLng(popupPoint).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map); }, 200);
+
+                    // VIKTIG: Viser popup kun hvis brukeren klikket direkte på sporet
+                    if(viaKlikkPaSpor) {
+                        L.popup().setLatLng(latlng).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map);
+                    }
                 };
 
                 btn.onmouseover = () => { if(!aktivToppNavn) { l.setStyle({color: 'var(--strava-blue)', weight: 3.5, opacity: 1}).bringToFront(); map.panTo(l.getBounds().getCenter()); } };
                 btn.onmouseout = () => { if(!aktivToppNavn) l.setStyle({color: 'var(--strava-orange)', weight: 1.5, opacity: 0.5}); };
-                l.on('click', (ev) => aktiver(ev.latlng));
-                btn.onclick = () => aktiver();
+                
+                // Klikk på spor trigger popup
+                l.on('click', (ev) => aktiver(true, ev.latlng));
+                // Klikk på knapp trigger IKKE popup
+                btn.onclick = () => aktiver(false);
             });
         });
 
