@@ -143,7 +143,7 @@
             { navn: "884", fil: "2026_03_27.gpx", video: ["https://www.instagram.com/reel/DWg1TaHiJRJ/", "https://www.instagram.com/reel/DTnrjgliITD/", "https://www.instagram.com/p/DXFlkrDCLz1/"], ekstraSpor: [{ fil: "2026_01_17.gpx", farge: "#5c6bc0" }, { fil: "2026_04_13.gpx", farge: "#008b8b" }] },
             { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: ["https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/"] },
             { navn: "Buren", fil: "2026_01_10.gpx", video: ["https://www.instagram.com/p/DTVY5yfCDfU/", "https://www.instagram.com/p/DXCQalhiPgX/", "https://www.instagram.com/p/C5b3I2UsTb0/"], ekstraSpor: [{ fil: "2026_04_12.gpx", farge: "#5c6bc0" }, { fil: "2024_04_05.gpx", farge: "#4caf50" }] },
-            { navn: "Burshammeren", fil: "2026_03_26.gpx", video: ["https://www.instagram.com/reel/DWXPzaUiAO5/", "https://www.instagram.com/reel/DTLiCcAiDMz/", "https://www.instagram.com/p/C5b3I2UsTb0/"], ekstraSpor: [{ fil: "2025_12_31.gpx", farge: "#5c6bc0" }, { fil: "2024_04_05.gpx", farge: "#4caf50" }] },
+            { navn: "Burshammeren", fil: "2026_03_26.gpx", video: ["https://www.instagram.com/reel/DWXPzaUiAO5/", "https://www.instagram.com/reel/DTLiCcAiDMz/", "https://www.instagram.com/p/C5b3I2UsTb0/"], ekstraSpor: [{ fil: "2025_12_31.gpx", farge: "#5c6bc0" }, { fil: "2024_04_05.garge: "#4caf50" }] },
             { navn: "Gabrielfjellet", fil: "2025_05_25.gpx", video: ["https://www.instagram.com/p/DKKd9vQsRke/"] },
             { navn: "Gorzelvtinden", fil: "2025_12_06.gpx", video: ["https://www.instagram.com/p/DR99FHAiF62/"] },
             { navn: "Gråtinden", fil: "2026_04_06.gpx", video: ["https://www.instagram.com/reel/DW1xhPniK_l/"] },
@@ -166,11 +166,7 @@
         const nyesteGpx = alleGpx.sort().reverse()[0];
 
         function mndNavn(mnd) { return ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"][parseInt(mnd)-1]; }
-
-        function formaterDato(fil) {
-            const deler = fil.split('_'); if(deler.length < 3) return "";
-            return `${parseInt(deler[2])}. ${mndNavn(deler[1])} ${deler[0]}`;
-        }
+        function formaterDato(fil) { const deler = fil.split('_'); if(deler.length < 3) return ""; return `${parseInt(deler[2])}. ${mndNavn(deler[1])} ${deler[0]}`; }
 
         function lagBadge(fil) {
             const s = document.createElement('span');
@@ -231,11 +227,8 @@
                     l.setStyle({opacity: 1, weight: 5, color: 'var(--strava-orange)'}).bringToFront(); 
 
                     videoContainer.innerHTML = '';
-                    const mt = document.createElement('button');
-                    mt.className = 'main-track-toggle'; mt.innerText = 'Hovedspor av/på';
-                    mt.onclick = () => map.hasLayer(l) ? map.removeLayer(l) : map.addLayer(l);
-                    videoContainer.appendChild(mt);
-
+                    
+                    // Video-lenker
                     topp.video?.forEach((url, i) => {
                         const a = document.createElement('a'); a.href = url; a.target = "_blank"; a.className = 'video-link-btn'; a.innerText = `Video ${i+1}`;
                         const filRef = (i > 0 && topp.ekstraSpor && topp.ekstraSpor[i-1]) ? topp.ekstraSpor[i-1].fil : topp.fil;
@@ -243,15 +236,17 @@
                         videoContainer.appendChild(a);
                     });
 
-                    const searchBtn = document.createElement('a');
-                    searchBtn.href = `https://www.google.no/search?q=${encodeURIComponent(topp.navn + ' topptursbeskrivelse')}`;
-                    searchBtn.target = "_blank"; searchBtn.className = 'search-link-btn';
-                    searchBtn.innerHTML = `<span>🔍</span> Finn turbeskrivelse`;
-                    videoContainer.appendChild(searchBtn);
+                    // Hovedspor-bryter
+                    const mt = document.createElement('button');
+                    mt.className = 'main-track-toggle'; mt.innerText = 'Hovedspor av/på';
+                    mt.onclick = () => map.hasLayer(l) ? map.removeLayer(l) : map.addLayer(l);
+                    videoContainer.appendChild(mt);
 
+                    // Ekstra spor-brytere (Spor til Video 2 osv)
                     if(topp.ekstraSpor) {
                         topp.ekstraSpor.forEach((es, idx) => {
-                            const eb = document.createElement('button'); eb.className = 'toggle-btn'; eb.innerText = `Spor ${idx+1} av/på`;
+                            const eb = document.createElement('button'); eb.className = 'toggle-btn'; 
+                            eb.innerText = `Spor til video ${idx+2} av/på`;
                             eb.appendChild(lagBadge(es.fil));
                             let esL = null;
                             eb.onclick = function() {
@@ -260,7 +255,7 @@
                                     esL = new L.GPX(es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null}, polyline_options: {color: es.farge, weight:4, dashArray:'5,8'}})
                                     .on('loaded', (ev) => { 
                                         aktiveEkstraSporLayers.push(ev.target);
-                                        ev.target.on('click', (c) => { L.DomEvent.stopPropagation(c); L.popup().setLatLng(c.latlng).setContent(tegnProfil(ev.target, `Spor ${idx+1}`, es.fil)).openOn(map); });
+                                        ev.target.on('click', (c) => { L.DomEvent.stopPropagation(c); L.popup().setLatLng(c.latlng).setContent(tegnProfil(ev.target, `Spor til video ${idx+2}`, es.fil)).openOn(map); });
                                     }).addTo(map);
                                     this.classList.add('active');
                                 }
@@ -268,6 +263,13 @@
                             videoContainer.appendChild(eb);
                         });
                     }
+
+                    const searchBtn = document.createElement('a');
+                    searchBtn.href = `https://www.google.no/search?q=${encodeURIComponent(topp.navn + ' topptursbeskrivelse')}`;
+                    searchBtn.target = "_blank"; searchBtn.className = 'search-link-btn';
+                    searchBtn.innerHTML = `<span>🔍</span> Finn turbeskrivelse`;
+                    videoContainer.appendChild(searchBtn);
+
                     map.flyToBounds(l.getBounds(), {padding: [40, 40], duration: 0.8});
                     if(p) setTimeout(() => { L.popup().setLatLng(p).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map); }, 200);
                 };
