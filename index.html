@@ -337,37 +337,46 @@
                     }
                 };
 
+                // FIX: Bedre midtstilling ved hovring
                 btn.onmouseover = () => { 
                     if(!aktivToppNavn) { 
                         l.setStyle({color: 'var(--strava-blue)', weight: 5, opacity: 1}).bringToFront();
-                        map.panTo(l.getBounds().getCenter()); // Midstiller oversiktskartet på dette sporet
+                        const center = l.getBounds().getCenter();
+                        map.flyTo(center, map.getZoom(), { animate: true, duration: 0.5 });
                     } 
                 };
                 btn.onmouseout = () => { if(!aktivToppNavn) l.setStyle({color: 'var(--strava-orange)', weight: 3, opacity: 0.7}); };
                 l.on('click', (ev) => { L.DomEvent.stopPropagation(ev); aktiver(ev.latlng); });
                 btn.onclick = () => aktiver(null); 
 
-                // Opprinnelig lasting: sørg for at alle spor vises
+                // FIX: Sørg for at alle spor vises ved oppstart
                 if (allTracksGroup.getLayers().length === topper.length) {
-                    setTimeout(() => map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]}), 200);
+                    setTimeout(() => {
+                        const bounds = allTracksGroup.getBounds();
+                        if (bounds.isValid()) map.fitBounds(bounds, {padding: [50, 50]});
+                    }, 500);
                 }
             });
         });
 
+        // FIX: Forbedret nullstilling
         document.getElementById('resetBtn').onclick = () => {
             map.closePopup();
             aktivToppNavn = null;
             aktiveEkstraSporLayers.forEach(layer => map.removeLayer(layer));
             aktiveEkstraSporLayers = [];
+            
             allTracksGroup.eachLayer(l => { 
                 if(!map.hasLayer(l)) map.addLayer(l); 
                 l.setStyle({opacity:0.7, weight:3, color: 'var(--strava-orange)'}); 
             });
+            
             videoContainer.innerHTML = '';
-            // Sørger for at kartutsnittet viser alle spor
-            setTimeout(() => {
-                map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]});
-            }, 50);
+            
+            const bounds = allTracksGroup.getBounds();
+            if (bounds.isValid()) {
+                map.fitBounds(bounds, {padding: [50, 50], animate: true});
+            }
         };
     </script>
 </body>
