@@ -21,6 +21,11 @@
             background: #f1f5f9; color: var(--dark-grey);
         }
 
+        /* Overskrift-styling */
+        h1 { margin-bottom: 5px; }
+        h2 { font-size: 18px; font-weight: 500; margin: 0 0 5px 0; color: #475569; }
+        h3 { font-size: 14px; font-weight: 400; margin: 0 0 20px 0; color: #64748b; }
+
         #buttons { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
         
         .top-btn { 
@@ -30,9 +35,10 @@
         }
         .top-btn:hover { background-color: var(--strava-blue); transform: translateY(-1px); }
 
+        /* Mindre labels på knappene */
         .badge-label {
-            position: absolute; top: -8px; right: -8px; color: white; font-size: 10px;
-            padding: 2px 6px; border-radius: 10px; border: 2px solid white;
+            position: absolute; top: -6px; right: -6px; color: white; font-size: 8px;
+            padding: 1px 4px; border-radius: 8px; border: 1.5px solid white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; font-weight: bold;
         }
         .badge-new { background: var(--new-green); animation: pulse 2s infinite; }
@@ -54,6 +60,8 @@
         @media (max-width: 600px) {
             #video-buttons-container { position: relative; top: 0; right: 0; flex-direction: row; justify-content: center; margin-top: 10px; align-items: center; }
             #map { height: 50vh; }
+            h2 { font-size: 16px; }
+            h3 { font-size: 13px; }
         }
 
         .video-link-btn, .toggle-btn, .main-track-toggle {
@@ -77,6 +85,9 @@
 <body>
 
     <h1>Toppturer rundt Tromsø</h1>
+    <h2>Klikk på sporet eller knapp for å se detaljer og video fra toppene</h2>
+    <h3>Høydeprofil vises ved klikk på sporene. Årstallet er når video ble publisert.</h3>
+
     <div id="buttons">
         <select id="mapSelect" style="padding:10px; border-radius:8px; font-weight:600; cursor:pointer;">
             <option value="norge">Norgeskart</option>
