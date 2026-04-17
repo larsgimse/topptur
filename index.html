@@ -142,11 +142,12 @@
                 fil: "2026_03_26.gpx", 
                 video: [
                     { url: "https://www.instagram.com/reel/DWXPzaUiAO5/", tittel: "Video 1" }, 
-                    { url: "https://www.instagram.com/p/C5b3I2UsTb0/", tittel: "Video 2", dato: "2024_04_06" }
+                    { url: "https://www.instagram.com/reel/DTLiCcAiDMz/", tittel: "Video 2" },
+                    { url: "https://www.instagram.com/p/C5b3I2UsTb0/", tittel: "Video 3", dato: "2024_04_06" }
                 ], 
                 ekstraSpor: [
-                    { fil: "2025_12_31.gpx", tittel: "Vis spor fra video 1", farge: "#5c6bc0" },
-                    { fil: "2024_04_05.gpx", tittel: "Vis spor fra video 2", farge: "#4caf50" }
+                    { fil: "2025_12_31.gpx", tittel: "Vis spor fra video 2", farge: "#5c6bc0" },
+                    { fil: "2024_04_05.gpx", tittel: "Vis spor fra video 3", farge: "#4caf50" }
                 ] 
             },
             { navn: "Gabrielfjellet", fil: "2025_05_25.gpx", video: [{ url: "https://www.instagram.com/p/DKKd9vQsRke/", tittel: "Se video" }] },
@@ -288,10 +289,7 @@
 
                     topp.video?.forEach((v, i) => {
                         const a = document.createElement('a'); a.href = v.url; a.target = "_blank"; a.className = 'video-link-btn'; a.innerText = v.tittel;
-                        
-                        // Sjekker om video har overstyrt dato (som 2024_04_06) ellers bruk knyttet gpx
                         const filRef = v.dato ? v.dato : ((topp.ekstraSpor && topp.ekstraSpor[i-1]) ? topp.ekstraSpor[i-1].fil : topp.fil);
-                        
                         a.appendChild(lagBadge(filRef));
                         videoContainer.appendChild(a);
                     });
