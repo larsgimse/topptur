@@ -26,27 +26,32 @@
         }
 
         h1 { margin: 0 0 5px 0; font-size: 24px; }
-        h2 { font-size: 16px; font-weight: 500; margin: 0 0 5px 0; color: #475569; }
+        h2 { font-size: 16px; font-weight: 500; margin: 0 0 5px 0; color: #475569; line-height: 1.4; }
 
         #buttons { 
             display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; 
             margin-bottom: 15px; padding: 5px;
         }
 
-        /* Video-container logikk: I kartet på PC, under på mobil */
+        /* --- VIDEO-KNAPPER LOGIKK --- */
         #video-buttons-container { 
-            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 10px;
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; 
+            margin: 10px auto; max-width: 1100px;
         }
 
+        /* PC-VERSJON: Knapper INNI kartet */
         @media (min-width: 769px) {
+            #map-container { position: relative; } 
             #video-buttons-container {
-                position: absolute; top: 10px; right: 10px; z-index: 1000;
-                flex-direction: column; align-items: flex-end; max-width: 200px;
-                background: rgba(255,255,255,0.2); padding: 10px; border-radius: 12px;
-                backdrop-filter: blur(4px); margin-bottom: 0;
+                position: absolute; top: 15px; right: 15px; z-index: 1000;
+                flex-direction: column; align-items: flex-end; width: auto;
+                background: rgba(255,255,255,0.25); padding: 10px; border-radius: 12px;
+                backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.3);
+                margin: 0;
             }
         }
 
+        /* MOBIL-VERSJON: Knapper UNDER kartet (scrollbare) */
         @media (max-width: 768px) {
             #buttons, #video-buttons-container {
                 justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto;
@@ -66,7 +71,7 @@
         }
         
         .top-btn:hover { background-color: var(--strava-blue); transform: translateY(-1px); }
-        .top-btn:hover .badge-label { transform: scale(1.1); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        .top-btn:hover .badge-label { transform: scale(1.15); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
 
         .badge-label {
             position: absolute; top: -6px; right: -6px; color: white; font-size: 8px;
@@ -80,14 +85,14 @@
 
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
-        #map-container { max-width: 1100px; margin: 0 auto; position: relative; }
-        #map { height: 65vh; min-height: 450px; width: 100%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        #map-container { max-width: 1100px; margin: 0 auto; }
+        #map { height: 65vh; min-height: 480px; width: 100%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
 
         .video-link-btn, .toggle-btn, .main-track-toggle, .search-link-btn {
             position: relative; background: white; padding: 10px 16px; border-radius: 8px; 
             font-weight: 600; text-decoration: none; font-size: 13px; border: 2px solid #ccc;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; color: var(--dark-grey);
-            display: flex; align-items: center; gap: 5px; white-space: nowrap;
+            display: flex; align-items: center; gap: 5px; white-space: nowrap; margin-bottom: 2px;
         }
         .video-link-btn { border-color: var(--insta-pink); color: var(--insta-pink); }
         .search-link-btn { border-color: var(--search-blue); color: var(--search-blue); }
@@ -100,7 +105,7 @@
 <body>
 
     <h1>Toppturer rundt Tromsø</h1>
-    <h2>Klikk på en topp for detaljer</h2>
+    <h2>Klikk på sporet eller knapp for video og detaljer<br><span style="font-size: 13px; color: #64748b;">Årstallet viser når turen ble filmet/publisert</span></h2>
 
     <div id="controls-row" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px;">
         <select id="mapSelect" style="padding:8px; border-radius:8px; font-weight:600; cursor:pointer;">
@@ -266,23 +271,19 @@
                     if(p) setTimeout(() => { L.popup().setLatLng(p).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map); }, 200);
                 };
 
-                // HOVER LOGIKK: Zoom 50% inn og midtstill
                 btn.onmouseover = () => { 
                     if(!aktivToppNavn) { 
                         l.setStyle({color: 'var(--strava-blue)', weight: 5, opacity: 1}).bringToFront(); 
                         clearTimeout(hoverTimeout); 
                         hoverTimeout = setTimeout(() => {
-                            const center = l.getBounds().getCenter();
-                            // Zoomer inn ett nivå (ca 50% "nærmere") og sentrerer
-                            map.setView(center, map.getZoom() + 1, {animate: true});
-                        }, 150); 
+                            map.fitBounds(l.getBounds(), {padding: [120, 120], animate: true});
+                        }, 100); 
                     } 
                 };
                 btn.onmouseout = () => { 
                     if(!aktivToppNavn) {
                         l.setStyle({color: 'var(--strava-orange)', weight: 3, opacity: 0.7}); 
                         clearTimeout(hoverTimeout); 
-                        // Zoomer ut igjen til oversikten
                         map.fitBounds(allTracksGroup.getBounds(), {padding: [30, 30], animate: true});
                     }
                 };
