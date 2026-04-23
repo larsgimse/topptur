@@ -30,13 +30,11 @@
         h1 { margin: 0 0 5px 0; font-size: 24px; }
         h2 { font-size: 16px; font-weight: 500; margin: 0 0 5px 0; color: #475569; }
 
-        /* Felles stil for sveipbare containere */
         #buttons, #video-buttons-container { 
             display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; 
             margin-bottom: 15px; padding: 5px;
         }
 
-        /* Mobil-spesifikk sveiping */
         @media (max-width: 768px) {
             #buttons, #video-buttons-container {
                 justify-content: flex-start;
@@ -48,10 +46,8 @@
                 scrollbar-width: none;
             }
             #buttons::-webkit-scrollbar, #video-buttons-container::-webkit-scrollbar { display: none; }
-            
             .top-btn, .video-link-btn, .toggle-btn, .main-track-toggle, .search-link-btn { 
-                flex: 0 0 auto;
-                scroll-snap-align: center; 
+                flex: 0 0 auto; scroll-snap-align: center; 
             }
         }
 
@@ -62,7 +58,6 @@
         }
         .top-btn:hover { background-color: var(--strava-blue); transform: translateY(-1px); }
 
-        /* Merke/Badge stil med 35% zoom */
         .badge-label {
             position: absolute; top: -6px; right: -6px; color: white; font-size: 8px;
             padding: 1px 4px; border-radius: 8px; border: 1.5px solid white;
@@ -71,8 +66,7 @@
             transform-origin: center;
         }
         .top-btn:hover .badge-label, .video-link-btn:hover .badge-label, .toggle-btn:hover .badge-label {
-            transform: scale(1.35);
-            z-index: 20;
+            transform: scale(1.35); z-index: 20;
         }
 
         .badge-new { background: var(--new-green); animation: pulse 2s infinite; }
@@ -86,7 +80,6 @@
         #map-container { max-width: 1100px; margin: 0 auto; position: relative; }
         #map { height: 60vh; min-height: 400px; width: 100%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
 
-        /* Stil for video/spor knapper */
         .video-link-btn, .toggle-btn, .main-track-toggle, .search-link-btn {
             position: relative; background: white; padding: 10px 16px; border-radius: 8px; 
             font-weight: 600; text-decoration: none; font-size: 13px; border: 2px solid #ccc;
@@ -115,7 +108,6 @@
     </div>
 
     <div id="buttons"></div>
-
     <div id="video-buttons-container"></div>
 
     <div id="map-container">
@@ -128,11 +120,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        const map = L.map('map').setView([69.65, 18.95], 10);
+        const map = L.map('map').setView([69.65, 18.95], 9);
         const allTracksGroup = L.featureGroup().addTo(map);
         const videoContainer = document.getElementById('video-buttons-container');
         let aktiveEkstraSporLayers = [];
-        let hoverTimeout;
+        let loadedCount = 0;
         
         const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { attribution: '&copy; Kartverket' }).addTo(map);
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
@@ -166,8 +158,8 @@
             { navn: "Tverrfjellet", fil: "2023_12_29.gpx", video: [{ url: "https://www.instagram.com/p/C1cfjMVMZnJ/", tittel: "Se video" }] }
         ];
 
-        let alleGpx = topper.flatMap(t => [t.fil, ...(t.ekstraSpor?.map(e => e.fil) || [])]);
-        const nyesteGpx = alleGpx.sort().reverse()[0];
+        let alleGpxFiler = topper.flatMap(t => [t.fil]);
+        const nyesteGpx = topper.flatMap(t => [t.fil, ...(t.ekstraSpor?.map(e => e.fil) || [])]).sort().reverse()[0];
 
         function mndNavn(mnd) { return ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"][parseInt(mnd)-1]; }
         function formaterDato(fil) { const deler = fil.split('_'); return deler.length >= 3 ? `${parseInt(deler[2])}. ${mndNavn(deler[1])} ${deler[0]}` : ""; }
@@ -206,8 +198,6 @@
             return div;
         }
 
-        let aktivToppNavn = null;
-
         topper.sort((a,b) => a.navn.localeCompare(b.navn)).forEach(topp => {
             const btn = document.createElement('button');
             btn.className = 'top-btn'; btn.innerText = topp.navn;
@@ -222,18 +212,22 @@
                 const l = e.target;
                 allTracksGroup.addLayer(l);
                 l.bindTooltip(topp.navn, {sticky: true});
+                
+                loadedCount++;
+                if (loadedCount === topper.length) {
+                    setTimeout(() => {
+                        const bounds = allTracksGroup.getBounds();
+                        if (bounds.isValid()) map.fitBounds(bounds, {padding: [30, 30]});
+                    }, 500);
+                }
 
                 const aktiver = (p) => {
-                    aktivToppNavn = topp.navn;
                     aktiveEkstraSporLayers.forEach(layer => map.removeLayer(layer));
                     aktiveEkstraSporLayers = [];
                     allTracksGroup.eachLayer(layer => { layer.setStyle({opacity: 0.25, weight: 2.5}); });
                     l.setStyle({opacity: 1, weight: 5, color: 'var(--strava-orange)'}).bringToFront(); 
 
-                    // Oppdater video/spor-container (den sveipbare raden i midten)
                     videoContainer.innerHTML = '';
-                    
-                    // Video-knapper
                     topp.video?.forEach((v, i) => {
                         const a = document.createElement('a'); a.href = v.url; a.target = "_blank"; a.className = 'video-link-btn'; a.innerText = v.tittel;
                         const filRef = v.dato ? v.dato : ((topp.ekstraSpor && topp.ekstraSpor[i-1]) ? topp.ekstraSpor[i-1].fil : topp.fil);
@@ -241,13 +235,11 @@
                         videoContainer.appendChild(a);
                     });
 
-                    // Hovedspor-bryter
                     const mt = document.createElement('button');
                     mt.className = 'main-track-toggle'; mt.innerText = 'Hovedspor';
                     mt.onclick = () => map.hasLayer(l) ? map.removeLayer(l) : map.addLayer(l);
                     videoContainer.appendChild(mt);
 
-                    // Ekstra spor-brytere
                     if(topp.ekstraSpor) {
                         topp.ekstraSpor.forEach(es => {
                             const eb = document.createElement('button'); eb.className = 'toggle-btn'; eb.innerText = es.tittel;
@@ -268,7 +260,6 @@
                         });
                     }
 
-                    // Finn turbeskrivelse
                     const sBtn = document.createElement('a'); sBtn.href = `https://www.google.com/search?q=${topp.navn}+turbeskrivelse`; sBtn.target="_blank"; sBtn.className='search-link-btn'; sBtn.innerText='Søk info';
                     videoContainer.appendChild(sBtn);
 
@@ -282,13 +273,14 @@
         });
 
         document.getElementById('resetBtn').onclick = () => {
-            map.closePopup(); aktivToppNavn = null; videoContainer.innerHTML = '';
+            map.closePopup(); videoContainer.innerHTML = '';
             aktiveEkstraSporLayers.forEach(l => map.removeLayer(l)); aktiveEkstraSporLayers = [];
             allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.7, weight:3, color: 'var(--strava-orange)'}); });
             map.fitBounds(allTracksGroup.getBounds(), {padding: [30, 30]});
         };
 
-        document.getElementById('last-updated').innerText = `Oppdatert: ${new Date().toLocaleDateString('no-NO')}`;
+        const updateDato = new Date(document.lastModified);
+        document.getElementById('last-updated').innerText = `Oppdatert: ${updateDato.getDate()}. ${mndNavn(updateDato.getMonth() + 1)} ${updateDato.getFullYear()}`;
     </script>
 </body>
 </html>
