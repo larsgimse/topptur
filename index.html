@@ -74,7 +74,7 @@
             position: absolute; top: -6px; right: -6px; color: white; font-size: 8px;
             padding: 1px 4px; border-radius: 8px; border: 1.5px solid white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; font-weight: bold;
-            transition: transform 0.2s ease; pointer-events: none;
+            pointer-events: none;
         }
         .badge-new { background: var(--new-green); animation: pulse 2s infinite; }
         .badge-year { background: var(--year-grey); }
@@ -264,20 +264,18 @@
                     searchBtn.innerHTML = `<span>🔍</span> Info`;
                     videoContainer.appendChild(searchBtn);
 
-                    // Ved KLIKK ønsker vi fortsatt å se hele sporet
                     map.flyToBounds(l.getBounds(), {padding: [50, 50], duration: 0.8});
                     if(p) setTimeout(() => { L.popup().setLatLng(p).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map); }, 200);
                 };
 
-                // HOVER FAST ZOOM LOGIKK (Tvinger nivå 13 for alle)
+                // HOVER: Endrer kun farge og midtstiller (beholder zoom)
                 btn.onmouseover = () => { 
                     if(!aktivToppNavn) { 
                         l.setStyle({color: 'var(--strava-blue)', weight: 5, opacity: 1}).bringToFront(); 
                         clearTimeout(hoverTimeout); 
                         hoverTimeout = setTimeout(() => {
                             const center = l.getBounds().getCenter();
-                            // Vi bruker setView med FAST ZOOM 13 for å unngå ulik størrelse
-                            map.setView(center, 13, {animate: true});
+                            map.panTo(center, {animate: true});
                         }, 50); 
                     } 
                 };
@@ -285,8 +283,6 @@
                     if(!aktivToppNavn) {
                         l.setStyle({color: 'var(--strava-orange)', weight: 3, opacity: 0.7}); 
                         clearTimeout(hoverTimeout); 
-                        // Går tilbake til oversikten
-                        map.fitBounds(allTracksGroup.getBounds(), {padding: [30, 30], animate: true});
                     }
                 };
 
