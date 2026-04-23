@@ -22,43 +22,70 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             text-align: center; margin: 0; padding: 15px 5px; 
             background: #f1f5f9; color: var(--dark-grey);
-            overflow-x: hidden;
+            overflow-x: hidden; display: flex; flex-direction: column;
         }
 
-        h1 { margin: 0 0 5px 0; font-size: 24px; }
-        h2 { font-size: 16px; font-weight: 500; margin: 0 0 5px 0; color: #475569; }
-        h3 { font-size: 13px; font-weight: 400; margin: 0 0 15px 0; color: #64748b; }
+        h1 { margin: 0 0 5px 0; font-size: 24px; order: 1; }
+        h2 { font-size: 16px; font-weight: 500; margin: 0 0 15px 0; color: #475569; order: 2; }
 
+        /* Fjell-knapper */
         #buttons { 
             display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; 
-            margin-bottom: 20px; padding: 5px;
+            margin-bottom: 10px; padding: 5px; order: 3;
         }
 
-        @media (max-width: 600px) {
+        /* Kontroll-rad */
+        #controls-row {
+            display: flex; justify-content: center; align-items: center; 
+            gap: 10px; margin-bottom: 15px; flex-wrap: wrap; order: 4;
+        }
+
+        /* CONTAINER FOR KART */
+        #map-container { 
+            position: relative; max-width: 1100px; margin: 0 auto; width: 100%; order: 6; 
+        }
+
+        #map { 
+            height: 65vh; min-height: 450px; width: 100%; 
+            border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+        }
+
+        /* VIDEO-KNAPPER (PC: Inne i kartet) */
+        #video-buttons-container { 
+            position: absolute; top: 10px; right: 10px; z-index: 1000; 
+            display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+        }
+
+        /* MOBIL-TILPASNING */
+        @media (max-width: 768px) {
             #buttons {
-                justify-content: flex-start;
-                flex-wrap: nowrap;
-                overflow-x: auto;
-                padding: 10px 15px;
-                -webkit-overflow-scrolling: touch;
-                scroll-snap-type: x mandatory;
-                scrollbar-width: none;
+                justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto;
+                padding: 10px 15px; -webkit-overflow-scrolling: touch;
+                scroll-snap-type: x mandatory; scrollbar-width: none;
             }
-            #buttons::-webkit-scrollbar { display: none; }
-            .top-btn { flex: 0 0 auto; scroll-snap-align: center; }
+            #video-buttons-container {
+                order: 5; /* Mellom controls og kart */
+                position: relative; top: 0; right: 0; width: 100%; 
+                flex-direction: row; justify-content: flex-start; flex-wrap: nowrap; 
+                overflow-x: auto; padding: 5px 15px 15px 15px; 
+                -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; 
+                scrollbar-width: none; box-sizing: border-box;
+            }
+            #buttons::-webkit-scrollbar, #video-buttons-container::-webkit-scrollbar { display: none; }
+            .top-btn, .video-link-btn, .toggle-btn, .main-track-toggle, .search-link-btn { flex: 0 0 auto; scroll-snap-align: center; }
         }
 
+        /* Knappe-stiler */
         .top-btn { 
             position: relative; background-color: var(--strava-orange); color: white; border: none; 
             border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 600; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s ease; white-space: nowrap;
         }
-        .top-btn:hover { background-color: var(--strava-blue); transform: translateY(-1px); }
-
+        
         .badge-label {
             position: absolute; top: -6px; right: -6px; color: white; font-size: 8px;
             padding: 1px 4px; border-radius: 8px; border: 1.5px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; font-weight: bold; pointer-events: none;
         }
         .badge-new { background: var(--new-green); animation: pulse 2s infinite; }
         .badge-year { background: var(--year-grey); }
@@ -66,31 +93,10 @@
 
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
-        #map-container { position: relative; max-width: 1100px; margin: 0 auto; }
-        #map { 
-            height: 65vh; min-height: 400px; width: 100%; border-radius: 12px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); background-color: #e5e7eb;
-        }
-
-        /* PC: Legger knappene til høyre INNI kartet */
-        #video-buttons-container {
-            position: absolute; top: 10px; right: 10px; z-index: 1000;
-            display: flex; flex-direction: column; gap: 6px; align-items: flex-end;
-        }
-
-        /* MOBIL: Legger knappene under kartet på rekke */
-        @media (max-width: 600px) {
-            #video-buttons-container { 
-                position: relative; top: 0; right: 0; flex-direction: row; 
-                flex-wrap: wrap; justify-content: center; margin-top: 15px; 
-            }
-            #map { height: 50vh; }
-        }
-
         .video-link-btn, .toggle-btn, .main-track-toggle, .search-link-btn {
-            position: relative; background: white; padding: 8px 12px; border-radius: 50px; 
-            font-weight: bold; text-decoration: none; font-size: 12px; border: 2px solid #ccc;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.1); cursor: pointer; color: var(--dark-grey);
+            position: relative; background: white; padding: 8px 12px; border-radius: 8px; 
+            font-weight: 600; text-decoration: none; font-size: 12px; border: 2px solid #ccc;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; color: var(--dark-grey);
             display: flex; align-items: center; gap: 5px; white-space: nowrap;
         }
         .video-link-btn { border-color: var(--insta-pink); color: var(--insta-pink); }
@@ -98,19 +104,17 @@
         .toggle-btn.active { background: var(--strava-blue); color: white; border-color: var(--strava-blue); }
         .main-track-toggle { background: var(--dark-grey); color: white; border: none; }
 
-        .elevation-info { text-align: left; min-width: 180px; color: #2c3e50; }
-        .elevation-title { font-weight: bold; font-size: 15px; margin-bottom: 2px; }
-        .elevation-stats { font-size: 11px; margin-top: 5px; border-top: 1px solid #eee; padding-top: 5px; }
-        #last-updated { margin-top: 15px; font-size: 11px; color: #64748b; font-style: italic; }
+        #last-updated { margin-top: 15px; font-size: 11px; color: #64748b; font-style: italic; order: 7; }
     </style>
 </head>
 <body>
 
     <h1>Toppturer rundt Tromsø</h1>
-    <h2>Klikk på sporet eller knapp for video og detaljer</h2>
-    <h3>Årstallet viser når turen ble filmet/publisert</h3>
+    <h2>Klikk på knapp eller spor for video og info</h2>
 
-    <div id="controls-row" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px;">
+    <div id="buttons"></div>
+
+    <div id="controls-row">
         <select id="mapSelect" style="padding:8px; border-radius:8px; font-weight:600; cursor:pointer;">
             <option value="norge">Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
@@ -118,11 +122,10 @@
         <button id="resetBtn" style="padding:8px 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer;">Nullstill kart</button>
     </div>
 
-    <div id="buttons"></div>
+    <div id="video-buttons-container"></div>
 
     <div id="map-container">
         <div id="map"></div>
-        <div id="video-buttons-container"></div>
     </div>
     
     <div id="last-updated"></div>
@@ -135,7 +138,7 @@
         const allTracksGroup = L.featureGroup().addTo(map);
         const videoContainer = document.getElementById('video-buttons-container');
         let aktiveEkstraSporLayers = [];
-        let hoverTimeout;
+        let aktivToppNavn = null;
         
         const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { attribution: '&copy; Kartverket' }).addTo(map);
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
@@ -169,15 +172,8 @@
             { navn: "Tverrfjellet", fil: "2023_12_29.gpx", video: [{ url: "https://www.instagram.com/p/C1cfjMVMZnJ/", tittel: "Se video" }] }
         ];
 
-        let alleGpx = [];
-        topper.forEach(t => { 
-            alleGpx.push(t.fil); 
-            if(t.ekstraSpor) t.ekstraSpor.forEach(e => alleGpx.push(e.fil)); 
-        });
+        let alleGpx = topper.flatMap(t => [t.fil, ...(t.ekstraSpor?.map(e => e.fil) || [])]);
         const nyesteGpx = alleGpx.sort().reverse()[0];
-
-        function mndNavn(mnd) { return ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"][parseInt(mnd)-1]; }
-        function formaterDato(fil) { const deler = fil.split('_'); if(deler.length < 3) return ""; return `${parseInt(deler[2])}. ${mndNavn(deler[1])} ${deler[0]}`; }
 
         function lagBadge(fil) {
             const s = document.createElement('span');
@@ -188,55 +184,24 @@
             return s;
         }
 
-        function tegnProfil(layer, navn, filnavn) {
-            const data = layer.get_elevation_data();
-            const div = document.createElement('div');
-            div.className = 'elevation-info';
-            if(!data || data.length === 0) return `<b>${navn}</b>`;
-            const elevs = data.map(d => d[1]);
-            const min = Math.min(...elevs), max = Math.max(...elevs), range = max - min || 1;
-            const gain = layer.get_elevation_gain(), dist = layer.get_distance() / 1000, durationMs = layer.get_total_time();
-            let tidTekst = durationMs > 0 ? `${Math.floor(durationMs / 3600000)}t ${Math.floor((durationMs % 3600000) / 60000)}m` : "N/A";
-
-            div.innerHTML = `<div class="elevation-title">${navn}</div><div style="font-size:11px; color:#666;">${formaterDato(filnavn)}</div><canvas width="170" height="50"></canvas><div class="elevation-stats">${Math.round(max)}m | ${dist.toFixed(1)}km | +${Math.round(gain)}m | ${tidTekst}</div>`;
-            setTimeout(() => {
-                const canvas = div.querySelector('canvas');
-                if(!canvas) return;
-                const ctx = canvas.getContext('2d');
-                ctx.beginPath(); ctx.strokeStyle = '#fc4c02'; ctx.lineWidth = 2;
-                elevs.forEach((e, i) => {
-                    const x = i * (170 / elevs.length);
-                    const y = 45 - ((e - min) / range) * 35;
-                    if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-                });
-                ctx.stroke();
-            }, 100);
-            return div;
-        }
-
-        let aktivToppNavn = null;
-
         topper.sort((a,b) => a.navn.localeCompare(b.navn)).forEach(topp => {
             const btn = document.createElement('button');
             btn.className = 'top-btn'; btn.innerText = topp.navn;
-            const erNy = (topp.fil === nyesteGpx) || (topp.ekstraSpor && topp.ekstraSpor.some(e => e.fil === nyesteGpx));
-            btn.appendChild(lagBadge(erNy ? nyesteGpx : topp.fil));
+            btn.appendChild(lagBadge(topp.fil));
             document.getElementById('buttons').appendChild(btn);
 
             const track = new L.GPX(topp.fil, {
                 async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
-                polyline_options: { color: 'var(--strava-orange)', weight: 3, opacity: 0.7, interactive: true }
+                polyline_options: { color: 'var(--strava-orange)', weight: 3, opacity: 0.7 }
             }).on('loaded', (e) => {
                 const l = e.target;
                 allTracksGroup.addLayer(l);
-                l.bindTooltip(topp.navn, {sticky: true, className: 'custom-tooltip'});
-
-                const aktiver = (p) => {
-                    clearTimeout(hoverTimeout);
-                    map.closePopup(); aktivToppNavn = topp.navn;
+                
+                const aktiver = () => {
+                    aktivToppNavn = topp.navn;
                     aktiveEkstraSporLayers.forEach(layer => map.removeLayer(layer));
                     aktiveEkstraSporLayers = [];
-                    allTracksGroup.eachLayer(layer => { if (!map.hasLayer(layer)) map.addLayer(layer); layer.setStyle({opacity: 0.25, weight: 2.5}); });
+                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.2, weight: 2}));
                     l.setStyle({opacity: 1, weight: 5, color: 'var(--strava-orange)'}).bringToFront(); 
 
                     videoContainer.innerHTML = '';
@@ -248,29 +213,23 @@
                     });
 
                     const mt = document.createElement('button');
-                    mt.className = 'main-track-toggle'; mt.innerText = 'Hovedspor av/på';
+                    mt.className = 'main-track-toggle'; mt.innerText = 'Hovedspor';
                     mt.onclick = () => map.hasLayer(l) ? map.removeLayer(l) : map.addLayer(l);
                     videoContainer.appendChild(mt);
 
-                    if(topp.ekstraSpor) {
-                        topp.ekstraSpor.forEach(es => {
-                            const eb = document.createElement('button'); eb.className = 'toggle-btn'; eb.innerText = es.tittel + ' av/på';
-                            eb.appendChild(lagBadge(es.fil));
-                            let esL = null;
-                            eb.onclick = function() {
-                                if(esL) { map.removeLayer(esL); aktiveEkstraSporLayers = aktiveEkstraSporLayers.filter(x => x !== esL); esL = null; this.classList.remove('active'); }
-                                else { 
-                                    esL = new L.GPX(es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null}, polyline_options: {color: es.farge, weight:4, dashArray:'5,8'}})
-                                    .on('loaded', (ev) => { 
-                                        aktiveEkstraSporLayers.push(ev.target);
-                                        ev.target.on('click', (c) => { L.DomEvent.stopPropagation(c); L.popup().setLatLng(c.latlng).setContent(tegnProfil(ev.target, es.tittel, es.fil)).openOn(map); });
-                                    }).addTo(map);
-                                    this.classList.add('active');
-                                }
-                            };
-                            videoContainer.appendChild(eb);
-                        });
-                    }
+                    topp.ekstraSpor?.forEach(es => {
+                        const eb = document.createElement('button'); eb.className = 'toggle-btn'; eb.innerText = es.tittel;
+                        eb.appendChild(lagBadge(es.fil));
+                        let esL = null;
+                        eb.onclick = function() {
+                            if(esL) { map.removeLayer(esL); aktiveEkstraSporLayers = aktiveEkstraSporLayers.filter(x => x !== esL); esL = null; this.classList.remove('active'); }
+                            else { 
+                                esL = new L.GPX(es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null}, polyline_options: {color: es.farge, weight:4, dashArray:'5,8'}}).addTo(map);
+                                this.classList.add('active');
+                            }
+                        };
+                        videoContainer.appendChild(eb);
+                    });
 
                     const searchBtn = document.createElement('a');
                     searchBtn.href = `https://www.google.no/search?q=${encodeURIComponent(topp.navn + ' topptursbeskrivelse')}`;
@@ -278,28 +237,34 @@
                     searchBtn.innerHTML = `<span>🔍</span> Finn turbeskrivelse`;
                     videoContainer.appendChild(searchBtn);
 
-                    map.flyToBounds(l.getBounds(), {padding: [40, 40], duration: 0.8});
-                    if(p) setTimeout(() => { L.popup().setLatLng(p).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map); }, 200);
+                    map.flyToBounds(l.getBounds(), {padding: [50, 50], duration: 0.8});
                 };
 
-                btn.onmouseover = () => { if(!aktivToppNavn) { l.setStyle({color: 'var(--strava-blue)', weight: 5, opacity: 1}).bringToFront(); clearTimeout(hoverTimeout); hoverTimeout = setTimeout(() => map.panTo(l.getBounds().getCenter(), {animate:true}), 150); } };
-                btn.onmouseout = () => { if(!aktivToppNavn) l.setStyle({color: 'var(--strava-orange)', weight: 3, opacity: 0.7}); clearTimeout(hoverTimeout); };
-                l.on('click', (ev) => { L.DomEvent.stopPropagation(ev); aktiver(ev.latlng); });
-                btn.onclick = () => { aktiver(null); btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); };
+                // HOVER ZOOM LOGIKK
+                btn.onmouseenter = () => {
+                    if (!aktivToppNavn) {
+                        l.setStyle({color: 'var(--strava-blue)', weight: 6, opacity: 1}).bringToFront();
+                        map.flyToBounds(l.getBounds(), {padding: [100, 100], duration: 0.4});
+                    }
+                };
+                btn.onmouseleave = () => {
+                    if (!aktivToppNavn) {
+                        l.setStyle({color: 'var(--strava-orange)', weight: 3, opacity: 0.7});
+                        map.flyToBounds(allTracksGroup.getBounds(), {padding: [30, 30], duration: 0.4});
+                    }
+                };
 
-                if (allTracksGroup.getLayers().length === topper.length) { setTimeout(() => { const b = allTracksGroup.getBounds(); if (b.isValid()) map.fitBounds(b, {padding: [30, 30]}); }, 500); }
-            }).on('error', () => { btn.style.opacity = "0.4"; });
+                l.on('click', (ev) => { L.DomEvent.stopPropagation(ev); aktiver(); });
+                btn.onclick = () => aktiver();
+            });
         });
 
         document.getElementById('resetBtn').onclick = () => {
-            map.closePopup(); aktivToppNavn = null; aktiveEkstraSporLayers.forEach(l => map.removeLayer(l)); aktiveEkstraSporLayers = [];
+            aktivToppNavn = null; videoContainer.innerHTML = '';
+            aktiveEkstraSporLayers.forEach(l => map.removeLayer(l)); aktiveEkstraSporLayers = [];
             allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.7, weight:3, color: 'var(--strava-orange)'}); });
-            videoContainer.innerHTML = '';
-            const b = allTracksGroup.getBounds(); if (b.isValid()) map.fitBounds(b, {padding: [30, 30], animate: true});
+            map.flyToBounds(allTracksGroup.getBounds(), {padding: [30, 30], duration: 0.8});
         };
-
-        const updateDato = new Date(document.lastModified);
-        document.getElementById('last-updated').innerText = `Oppdatert: ${updateDato.getDate()}. ${mndNavn(updateDato.getMonth() + 1)} ${updateDato.getFullYear()}`;
     </script>
 </body>
 </html>
