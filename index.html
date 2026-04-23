@@ -28,19 +28,19 @@
         h1 { margin: 0 0 5px 0; font-size: 24px; }
         h2 { font-size: 16px; font-weight: 500; margin: 0 0 5px 0; color: #475569; line-height: 1.4; }
 
-        /* Fjell-knapper (toppen) */
+        /* Fjell-knapper øverst */
         #buttons { 
             display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; 
             margin-bottom: 10px; padding: 5px;
         }
 
-        /* Video/Spor-knapper (mellom fjell og kart på mobil) */
+        /* Video/Spor-knapper (mellom fjell og kart på mobil, inni kart på PC) */
         #video-buttons-container { 
             display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; 
-            margin: 0 auto 15px auto; max-width: 1100px; min-height: 45px; /* Holder plassen selv når tom */
+            margin: 0 auto 15px auto; max-width: 1100px; min-height: 45px;
         }
 
-        /* PC-SPESIFIKK: Flytt video-knapper inn i kartet */
+        /* PC-VERSJON: Knapper svever over kartet */
         @media (min-width: 769px) {
             #map-container { position: relative; max-width: 1100px; margin: 0 auto; } 
             #video-buttons-container {
@@ -52,7 +52,7 @@
             }
         }
 
-        /* MOBIL-SPESIFIKK: Scrollbare lister */
+        /* MOBIL-VERSJON: Horisontal scrolling av knapper */
         @media (max-width: 768px) {
             #buttons, #video-buttons-container {
                 justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto;
@@ -110,7 +110,6 @@
     <h2>Klikk på sporet eller knapp for video og detaljer<br><span style="font-size: 13px; color: #64748b;">Årstallet viser når turen ble filmet/publisert</span></h2>
 
     <div id="buttons"></div>
-
     <div id="video-buttons-container"></div>
 
     <div id="controls-row" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px;">
@@ -274,6 +273,7 @@
                     if(p) setTimeout(() => { L.popup().setLatLng(p).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map); }, 200);
                 };
 
+                // HOVER FAST ZOOM FIX: map.setView(center, 12) sikrer lik zoom hver gang
                 btn.onmouseover = () => { 
                     if(!aktivToppNavn) { 
                         l.setStyle({color: 'var(--strava-blue)', weight: 5, opacity: 1}).bringToFront(); 
@@ -281,7 +281,7 @@
                         hoverTimeout = setTimeout(() => {
                             const center = l.getBounds().getCenter();
                             map.setView(center, 12, {animate: true});
-                        }, 100); 
+                        }, 50); 
                     } 
                 };
                 btn.onmouseout = () => { 
