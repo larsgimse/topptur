@@ -12,10 +12,7 @@
             --insta-pink: #e1306c;
             --dark-grey: #2c3e50;
             --new-green: #22c55e;
-            --soft-green: #d1fae5;
-            --dark-green: #065f46;
             --year-grey: #64748b;
-            --search-blue: #4285f4;
             --switch-grey: #cbd5e1;
         }
 
@@ -30,38 +27,36 @@
         .subtitle { font-size: 15px; font-weight: 600; margin: 0; color: #475569; order: 2; }
         .info-text { font-size: 13px; font-weight: 400; margin: 4px 0 15px 0; color: #64748b; order: 3; }
 
+        /* Fjellknappene slik de var */
         #buttons { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; padding: 5px; order: 4; }
+        
         #controls-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; order: 5; }
+        
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; width: 100%; order: 7; }
-        #map { height: 60vh; min-height: 400px; width: 100%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        #map { height: 65vh; min-height: 450px; width: 100%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
 
+        /* KONTROLLPANEL INNE I KARTET (Video, Ekstraspor etc) */
         #video-buttons-container { 
             position: absolute; top: 10px; right: 10px; z-index: 1000; 
             display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+            width: 200px;
         }
 
         @media (max-width: 768px) {
             #buttons { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding: 10px 15px; scrollbar-width: none; }
-            #video-buttons-container {
-                order: 6; position: relative; top: 0; right: 0; width: 100%; 
-                flex-direction: row; justify-content: flex-start; flex-wrap: nowrap; 
-                overflow-x: auto; padding: 5px 15px 15px 15px; box-sizing: border-box; scrollbar-width: none;
-            }
-            #buttons::-webkit-scrollbar, #video-buttons-container::-webkit-scrollbar { display: none; }
-            .top-btn, .video-link-btn, .switch-container, .search-link-btn { flex: 0 0 auto; }
+            #buttons::-webkit-scrollbar { display: none; }
+            #video-buttons-container { width: 150px; }
         }
 
-        /* FJELLKNAPPER */
+        /* FJELLKNAPPER STIL */
         .top-btn { 
             position: relative; background-color: var(--strava-orange); color: white; border: none; 
             border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 600; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; transition: background-color 0.3s, transform 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; transition: all 0.2s;
         }
-        
-        .top-btn:hover { transform: translateY(-2px); }
-        .top-btn.active { background-color: var(--strava-blue); transform: scale(1.05); z-index: 5; }
+        .top-btn.active { background-color: var(--strava-blue); transform: scale(1.05); }
 
-        /* BADGE STIL & HOVER EFFEKT */
+        /* BADGES */
         .badge-label {
             position: absolute; top: -6px; right: -6px; color: white; font-size: 8px;
             padding: 1px 4px; border-radius: 8px; border: 1.5px solid white;
@@ -69,39 +64,32 @@
             pointer-events: none; transition: transform 0.2s, font-size 0.2s;
         }
         .top-btn:hover .badge-label { transform: scale(1.3); font-size: 9px; }
-
         .badge-new { background: var(--new-green); animation: pulse 2s infinite; }
         .badge-year { background: var(--year-grey); }
-        .badge-2026 { background: var(--soft-green); color: var(--dark-green); border-color: var(--dark-green); }
+        .badge-2026 { background: #d1fae5; color: #065f46; border-color: #065f46; }
 
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
-        /* VIDEO & SØK */
+        /* VIDEO & SØK INNE I KARTET */
         .video-link-btn, .search-link-btn {
-            position: relative; background: white; padding: 8px 12px; border-radius: 8px; 
-            font-weight: 600; text-decoration: none; font-size: 12px; border: 2px solid #ccc;
-            display: flex; align-items: center; gap: 5px; color: var(--dark-grey); white-space: nowrap;
+            background: rgba(255, 255, 255, 0.9); padding: 8px 12px; border-radius: 8px; 
+            font-weight: 600; text-decoration: none; font-size: 12px; border: 2px solid var(--insta-pink);
+            display: flex; align-items: center; gap: 5px; color: var(--insta-pink); 
+            white-space: nowrap; width: 100%; box-sizing: border-box; backdrop-filter: blur(4px);
         }
-        .video-link-btn { border-color: var(--insta-pink); color: var(--insta-pink); }
-        .search-link-btn { border-color: var(--search-blue); color: var(--search-blue); }
+        .search-link-btn { border-color: var(--strava-blue); color: var(--strava-blue); }
 
-        /* SKYVEBRYTERE */
+        /* SWITCHES INNE I KARTET */
         .switch-container {
-            display: flex; align-items: center; background: white; padding: 6px 10px;
-            border-radius: 8px; border: 2px solid #ccc; gap: 10px; cursor: pointer;
-            font-size: 12px; font-weight: 600; position: relative;
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(255, 255, 255, 0.9); padding: 6px 10px;
+            border-radius: 8px; border: 1px solid #ccc; cursor: pointer;
+            font-size: 11px; font-weight: 600; width: 100%; box-sizing: border-box; backdrop-filter: blur(4px);
         }
-        .switch-track {
-            width: 34px; height: 18px; background-color: var(--switch-grey);
-            border-radius: 20px; position: relative; transition: background 0.3s;
-        }
-        .switch-thumb {
-            width: 14px; height: 14px; background-color: white; border-radius: 50%;
-            position: absolute; top: 2px; left: 2px; transition: transform 0.3s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-        .switch-container.active .switch-track { background-color: var(--strava-blue); }
-        .switch-container.active .switch-thumb { transform: translateX(16px); }
+        .switch-track { width: 30px; height: 16px; background: var(--switch-grey); border-radius: 20px; position: relative; transition: 0.3s; }
+        .switch-thumb { width: 12px; height: 12px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; }
+        .switch-container.active .switch-track { background: var(--strava-blue); }
+        .switch-container.active .switch-thumb { transform: translateX(14px); }
     </style>
 </head>
 <body>
@@ -120,10 +108,9 @@
         <button id="resetBtn" style="padding:8px 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer;">Nullstill kart</button>
     </div>
 
-    <div id="video-buttons-container"></div>
-
     <div id="map-container">
         <div id="map"></div>
+        <div id="video-buttons-container"></div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -169,7 +156,6 @@
             { navn: "Tverrfjellet", fil: "2023_12_29.gpx", video: [{ url: "https://www.instagram.com/p/C1cfjMVMZnJ/", tittel: "Se video" }] }
         ];
 
-        let loadedCount = 0;
         const nyesteGpx = "2026_03_27.gpx";
 
         function lagBadge(fil) {
@@ -194,7 +180,7 @@
                 const minutter = Math.floor((diffMs % 3600000) / 60000);
                 tidInfo = `<br>⏱️ Tid: ${timer}t ${minutter}min`;
             }
-            const txt = `<b>${tittel}</b><br>📏 Distanse: ${(d/1000).toFixed(1)} km<br>📈 Stigning: ${e.toFixed(0)} m<br>🏔️ Topp: ${h.toFixed(0)} moh${tidInfo}`;
+            const txt = `<b>${tittel}</b><br>📏 ${(d/1000).toFixed(1)} km<br>📈 ${e.toFixed(0)} m | 🏔️ ${h.toFixed(0)} moh${tidInfo}`;
             gpxLayer.bindPopup(txt).openPopup();
         }
 
@@ -222,26 +208,20 @@
 
             const track = new L.GPX(topp.fil, {
                 async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
-                polyline_options: { color: 'var(--strava-orange)', weight: 3, opacity: 0.7 }
+                polyline_options: { color: 'var(--strava-orange)', weight: 1.5, opacity: 0.6 }
             }).on('loaded', (e) => {
                 const l = e.target;
                 allTracksGroup.addLayer(l);
-                loadedCount++;
-                if(loadedCount === topper.length) {
-                    setTimeout(() => map.fitBounds(allTracksGroup.getBounds(), {padding:[20,20]}), 500);
-                }
                 
                 const aktiver = () => {
                     isReseting = false; aktivToppNavn = topp.navn;
-                    
-                    // Oppdater knappfarger
                     document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
 
                     aktiveEkstraSporLayers.forEach(layer => map.removeLayer(layer));
                     aktiveEkstraSporLayers = [];
-                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.2, weight: 2, color: 'var(--strava-orange)'}));
-                    l.setStyle({opacity: 1, weight: 5, color: 'var(--strava-orange)'}).bringToFront(); 
+                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.1, weight: 1, color: 'var(--strava-orange)'}));
+                    l.setStyle({opacity: 1, weight: 2.5, color: 'var(--strava-orange)'}).bringToFront(); 
 
                     videoContainer.innerHTML = '';
                     topp.video?.forEach((v, i) => {
@@ -258,9 +238,8 @@
                         let esL = null;
                         videoContainer.appendChild(skapToggle(es.tittel, false, (on) => {
                             if (on) {
-                                esL = new L.GPX(es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null}, polyline_options: {color: es.farge, weight:4, dashArray:'5,8'}}).addTo(map);
+                                esL = new L.GPX(es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null}, polyline_options: {color: es.farge, weight:1.5, dashArray:'4,6'}}).addTo(map);
                                 aktiveEkstraSporLayers.push(esL);
-                                esL.on('loaded', () => esL.on('click', () => visProfil(esL, es.tittel)));
                             } else if (esL) { 
                                 map.removeLayer(esL);
                                 aktiveEkstraSporLayers = aktiveEkstraSporLayers.filter(x => x !== esL);
@@ -270,45 +249,41 @@
 
                     videoContainer.appendChild(Object.assign(document.createElement('a'), {
                         href: `https://www.google.no/search?q=${encodeURIComponent(topp.navn + ' topptursbeskrivelse')}`,
-                        target: "_blank", className: 'search-link-btn', innerHTML: `<span>🔍</span> Finn turbeskrivelse`
+                        target: "_blank", className: 'search-link-btn', innerHTML: `<span>🔍</span> Turbeskrivelse`
                     }));
                     map.flyToBounds(l.getBounds(), {padding: [50, 50]});
                 };
 
-                // HOVER EFFEKT PÅ PC
                 btn.onmouseenter = () => {
                     if (!aktivToppNavn && !isReseting) {
-                        l.setStyle({color: 'var(--strava-blue)', weight: 6, opacity: 1}).bringToFront();
-                        map.flyToBounds(l.getBounds(), {padding: [100, 100], duration: 0.3});
+                        l.setStyle({color: 'var(--strava-blue)', weight: 3, opacity: 1}).bringToFront();
                     }
                 };
                 btn.onmouseleave = () => {
                     if (!aktivToppNavn && !isReseting) {
-                        l.setStyle({color: 'var(--strava-orange)', weight: 3, opacity: 0.7});
-                        map.fitBounds(allTracksGroup.getBounds(), {padding: [30, 30], duration: 0.3});
+                        l.setStyle({color: 'var(--strava-orange)', weight: 1.5, opacity: 0.6});
                     }
                 };
 
                 btn.onclick = aktiver;
-                l.on('click', (ev) => { L.DomEvent.stopPropagation(ev); aktiver(); visProfil(l, topp.navn); });
+                l.on('click', (ev) => { L.DomEvent.stopPropagation(ev); aktiver(); });
             });
         });
 
         document.getElementById('resetBtn').onclick = () => {
             isReseting = true; aktivToppNavn = null; videoContainer.innerHTML = '';
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
-            map.stop(); map.closePopup();
+            map.closePopup();
             aktiveEkstraSporLayers.forEach(l => map.removeLayer(l));
             allTracksGroup.eachLayer(l => { 
                 if(!map.hasLayer(l)) map.addLayer(l); 
-                l.setStyle({opacity:0.7, weight:3, color: 'var(--strava-orange)'}); 
+                l.setStyle({opacity:0.6, weight:1.5, color: 'var(--strava-orange)'}); 
             });
-            setTimeout(() => { 
-                map.invalidateSize(); 
-                map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]}); 
-                isReseting = false; 
-            }, 50);
+            map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]});
+            setTimeout(() => isReseting = false, 300);
         };
+        
+        setTimeout(() => map.fitBounds(allTracksGroup.getBounds(), {padding:[20,20]}), 1000);
     </script>
 </body>
 </html>
