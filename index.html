@@ -26,29 +26,34 @@
         }
 
         h1 { margin: 0 0 5px 0; font-size: 24px; }
-        h2 { font-size: 16px; font-weight: 500; margin: 0 0 5px 0; color: #475569; line-height: 1.4; }
+        h2 { font-size: 16px; font-weight: 500; margin: 0 0 15px 0; color: #475569; line-height: 1.4; }
 
+        /* Fjell-knapper øverst */
         #buttons { 
             display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; 
             margin-bottom: 10px; padding: 5px;
         }
 
+        /* Video/Spor/Info-container */
         #video-buttons-container { 
             display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; 
-            margin: 0 auto 15px auto; max-width: 1100px; min-height: 45px;
+            margin: 0 auto 10px auto; max-width: 1100px; min-height: 45px;
         }
 
+        /* PC-VERSJON: Knappene ligger INNI kartet øverst til høyre */
         @media (min-width: 769px) {
             #map-container { position: relative; max-width: 1100px; margin: 0 auto; } 
             #video-buttons-container {
                 position: absolute; top: 15px; right: 15px; z-index: 1000;
-                flex-direction: column; align-items: flex-end; width: auto;
-                background: rgba(255,255,255,0.25); padding: 10px; border-radius: 12px;
-                backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.3);
+                flex-direction: row; /* Ligger i bredden */
+                justify-content: flex-end; width: auto;
+                background: rgba(255,255,255,0.4); padding: 8px; border-radius: 12px;
+                backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.5);
                 margin: 0; min-height: 0;
             }
         }
 
+        /* MOBIL-VERSJON: Scrollbar rad under tittelen */
         @media (max-width: 768px) {
             #buttons, #video-buttons-container {
                 justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto;
@@ -86,10 +91,10 @@
         #map { height: 60vh; min-height: 400px; width: 100%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
 
         .video-link-btn, .toggle-btn, .main-track-toggle, .search-link-btn {
-            position: relative; background: white; padding: 10px 16px; border-radius: 8px; 
-            font-weight: 600; text-decoration: none; font-size: 13px; border: 2px solid #ccc;
+            position: relative; background: white; padding: 8px 12px; border-radius: 8px; 
+            font-weight: 600; text-decoration: none; font-size: 12px; border: 2px solid #ccc;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; color: var(--dark-grey);
-            display: flex; align-items: center; gap: 5px; white-space: nowrap; margin-bottom: 2px;
+            display: flex; align-items: center; gap: 5px; white-space: nowrap;
         }
         .video-link-btn { border-color: var(--insta-pink); color: var(--insta-pink); }
         .search-link-btn { border-color: var(--search-blue); color: var(--search-blue); }
@@ -105,6 +110,7 @@
     <h2>Klikk på sporet eller knapp for video og detaljer</h2>
 
     <div id="buttons"></div>
+    
     <div id="video-buttons-container"></div>
 
     <div id="controls-row" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px;">
@@ -268,7 +274,6 @@
                     if(p) setTimeout(() => { L.popup().setLatLng(p).setContent(tegnProfil(l, topp.navn, topp.fil)).openOn(map); }, 200);
                 };
 
-                // HOVER: Endrer kun farge og midtstiller (beholder zoom)
                 btn.onmouseover = () => { 
                     if(!aktivToppNavn) { 
                         l.setStyle({color: 'var(--strava-blue)', weight: 5, opacity: 1}).bringToFront(); 
