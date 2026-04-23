@@ -28,30 +28,31 @@
         h1 { margin: 0 0 5px 0; font-size: 24px; }
         h2 { font-size: 16px; font-weight: 500; margin: 0 0 5px 0; color: #475569; line-height: 1.4; }
 
+        /* Fjell-knapper (toppen) */
         #buttons { 
             display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; 
-            margin-bottom: 15px; padding: 5px;
+            margin-bottom: 10px; padding: 5px;
         }
 
-        /* --- VIDEO-KNAPPER LOGIKK --- */
+        /* Video/Spor-knapper (mellom fjell og kart på mobil) */
         #video-buttons-container { 
             display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; 
-            margin: 10px auto; max-width: 1100px;
+            margin: 0 auto 15px auto; max-width: 1100px; min-height: 45px; /* Holder plassen selv når tom */
         }
 
-        /* PC-VERSJON: Knapper INNI kartet */
+        /* PC-SPESIFIKK: Flytt video-knapper inn i kartet */
         @media (min-width: 769px) {
-            #map-container { position: relative; } 
+            #map-container { position: relative; max-width: 1100px; margin: 0 auto; } 
             #video-buttons-container {
                 position: absolute; top: 15px; right: 15px; z-index: 1000;
                 flex-direction: column; align-items: flex-end; width: auto;
                 background: rgba(255,255,255,0.25); padding: 10px; border-radius: 12px;
                 backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.3);
-                margin: 0;
+                margin: 0; min-height: 0;
             }
         }
 
-        /* MOBIL-VERSJON: Knapper UNDER kartet (scrollbare) */
+        /* MOBIL-SPESIFIKK: Scrollbare lister */
         @media (max-width: 768px) {
             #buttons, #video-buttons-container {
                 justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto;
@@ -62,6 +63,7 @@
             .top-btn, .video-link-btn, .toggle-btn, .main-track-toggle, .search-link-btn { 
                 flex: 0 0 auto; scroll-snap-align: center; 
             }
+            #video-buttons-container:empty { display: none; }
         }
 
         .top-btn { 
@@ -86,7 +88,7 @@
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
         #map-container { max-width: 1100px; margin: 0 auto; }
-        #map { height: 65vh; min-height: 480px; width: 100%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        #map { height: 60vh; min-height: 400px; width: 100%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
 
         .video-link-btn, .toggle-btn, .main-track-toggle, .search-link-btn {
             position: relative; background: white; padding: 10px 16px; border-radius: 8px; 
@@ -107,6 +109,10 @@
     <h1>Toppturer rundt Tromsø</h1>
     <h2>Klikk på sporet eller knapp for video og detaljer<br><span style="font-size: 13px; color: #64748b;">Årstallet viser når turen ble filmet/publisert</span></h2>
 
+    <div id="buttons"></div>
+
+    <div id="video-buttons-container"></div>
+
     <div id="controls-row" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px;">
         <select id="mapSelect" style="padding:8px; border-radius:8px; font-weight:600; cursor:pointer;">
             <option value="norge">Norgeskart</option>
@@ -115,11 +121,8 @@
         <button id="resetBtn" style="padding:8px 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer;">Nullstill</button>
     </div>
 
-    <div id="buttons"></div>
-    
     <div id="map-container">
         <div id="map"></div>
-        <div id="video-buttons-container"></div>
     </div>
     
     <div id="last-updated"></div>
@@ -276,7 +279,8 @@
                         l.setStyle({color: 'var(--strava-blue)', weight: 5, opacity: 1}).bringToFront(); 
                         clearTimeout(hoverTimeout); 
                         hoverTimeout = setTimeout(() => {
-                            map.fitBounds(l.getBounds(), {padding: [120, 120], animate: true});
+                            const center = l.getBounds().getCenter();
+                            map.setView(center, 12, {animate: true});
                         }, 100); 
                     } 
                 };
