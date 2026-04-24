@@ -185,11 +185,11 @@
             return s;
         }
 
-        // Funksjon for nedlasting av GPX
+        // Oppdatert funksjon med understrek i filnavn
         function lastNedGPX(filsti, toppNavn) {
             const link = document.createElement('a');
             link.href = filsti;
-            link.download = `${toppNavn}Gimse.gpx`;
+            link.download = `${toppNavn}_Gimse.gpx`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -273,13 +273,6 @@
                         videoContainer.appendChild(a);
                     });
 
-                    // Legg til Nedlastingsknapp
-                    const dlBtn = document.createElement('div');
-                    dlBtn.className = 'download-btn';
-                    dlBtn.innerHTML = `<span>💾</span> Last ned GPX`;
-                    dlBtn.onclick = () => lastNedGPX(topp.fil, topp.navn);
-                    videoContainer.appendChild(dlBtn);
-
                     videoContainer.appendChild(skapToggle('Hovedspor', true, (on) => on ? map.addLayer(l) : map.removeLayer(l)));
                     videoContainer.appendChild(skapToggle('Høydeprofil', false, (on) => on ? visProfil(l, topp.navn) : map.closePopup()));
 
@@ -300,6 +293,14 @@
                         href: `https://www.google.no/search?q=${encodeURIComponent(topp.navn + ' topptursbeskrivelse')}`,
                         target: "_blank", className: 'search-link-btn', innerHTML: `<span>🔍</span> Turbeskrivelse`
                     }));
+
+                    // Nedlastingsknappen er flyttet helt nederst
+                    const dlBtn = document.createElement('div');
+                    dlBtn.className = 'download-btn';
+                    dlBtn.innerHTML = `<span>💾</span> Last ned GPX`;
+                    dlBtn.onclick = () => lastNedGPX(topp.fil, topp.navn);
+                    videoContainer.appendChild(dlBtn);
+
                     map.flyToBounds(l.getBounds(), {padding: [50, 50]});
                 };
 
