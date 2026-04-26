@@ -180,7 +180,7 @@
             { navn: "Rødtinden", fil: "2025_08_11.gpx", video: [{ url: "https://www.instagram.com/p/DNQt9aPsjSt/", tittel: "Se video" }] },
             { navn: "Djeveltanna", fil: "2024_08_03.gpx", video: [{ url: "https://www.instagram.com/p/C-dPqdWM4Ku/", tittel: "Se video" }] },
             { navn: "Stor Blåmann", fil: "2024_10_19.gpx", video: [{ url: "https://www.instagram.com/p/DBV6c6BMzbg/", tittel: "Se video" }] },
-            { navn: "Soria Moria Travers", fil: "2025_07_31.gpx", video: [{ url: "https://www.instagram.com/p/DMx5G2usjON/", tittel: "Se video" }] }
+            { navn: "Soria Moria traversen", fil: "2025_07_31.gpx", video: [{ url: "https://www.instagram.com/p/DMx5G2usjON/", tittel: "Se video" }] }
         ];
 
         function lagBadge(fil) {
@@ -355,8 +355,10 @@
                         ));
                     });
 
+                    // Oppdatert søkelogikk for Rødtinden
+                    const sokNavn = topp.navn === "Rødtinden" ? "Rødtinden 776" : topp.navn;
                     videoContainer.appendChild(Object.assign(document.createElement('a'), {
-                        href: `https://www.google.no/search?q=${encodeURIComponent(topp.navn + ' fjellturbeskrivelse')}`,
+                        href: `https://www.google.no/search?q=${encodeURIComponent(sokNavn + ' fjellturbeskrivelse')}`,
                         target: "_blank", className: 'search-link-btn', innerHTML: `<span>🔍</span> Turbeskrivelse`
                     }));
 
