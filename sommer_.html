@@ -38,6 +38,7 @@
             width: 100%; 
             border-radius: 12px; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+            background: #e5e7eb; 
         }
 
         #video-buttons-container { 
@@ -47,18 +48,10 @@
         }
 
         .toggle-ui-btn {
-            background: var(--dark-grey);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            cursor: pointer;
-            margin-bottom: 4px;
-            opacity: 0.8;
+            background: var(--dark-grey); color: white; border: none;
+            padding: 6px 12px; border-radius: 6px; font-size: 11px;
+            font-weight: 700; cursor: pointer; margin-bottom: 4px; opacity: 0.8;
         }
-        .toggle-ui-btn:hover { opacity: 1; }
 
         .ui-hidden .video-link-btn, 
         .ui-hidden .control-row-container, 
@@ -68,7 +61,7 @@
         }
 
         @media (max-width: 768px) {
-            #buttons { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding: 10px 15px; scrollbar-width: none; }
+            #buttons { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding: 10px 15px; }
             #buttons::-webkit-scrollbar { display: none; }
             #video-buttons-container { width: 220px; }
             #map { height: 100vw; min-height: unset; width: 100%; }
@@ -85,7 +78,7 @@
             position: absolute; top: -6px; right: -6px; color: white; font-size: 8px;
             padding: 1px 4px; border-radius: 8px; border: 1.5px solid white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; font-weight: bold; 
-            pointer-events: none; transition: transform 0.2s;
+            pointer-events: none;
         }
         .badge-year { background: var(--year-grey); }
 
@@ -130,16 +123,9 @@
         .active .switch-thumb { transform: translateX(14px); }
 
         .vinter-link-btn {
-            padding: 8px 15px; 
-            border-radius: 8px; 
-            background: var(--download-blue); /* Endret farge til blå */
-            color: white; 
-            border: none; 
-            font-weight: 600; 
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 13.3px;
-            display: inline-block;
+            padding: 8px 15px; border-radius: 8px; background: var(--download-blue); 
+            color: white; border: none; font-weight: 600; cursor: pointer;
+            text-decoration: none; font-size: 13.3px; display: inline-block;
         }
     </style>
 </head>
@@ -176,7 +162,11 @@
         let aktivToppNavn = null;
         let isReseting = false;
 
-        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { attribution: '&copy; Kartverket' }).addTo(map);
+        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { 
+            attribution: '&copy; Kartverket',
+            maxZoom: 18
+        }).addTo(map);
+
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
 
         document.getElementById('mapSelect').onchange = (e) => {
@@ -186,10 +176,14 @@
 
         const topper = [
             { navn: "Orvasstinden", fil: "2025_09_25.gpx", video: [{ url: "https://www.instagram.com/p/DPKU6TiCH9y/", tittel: "Se video" }] },
-            { navn: "Hamperokken", fil: "2025_07_14.gpx", video: [{ url: "https://www.instagram.com/p/DMcEC9dIb6M/", tittel: "Se video" }] }
+            { navn: "Hamperokken", fil: "2025_07_14.gpx", video: [{ url: "https://www.instagram.com/p/DMcEC9dIb6M/", tittel: "Se video" }] },
+            { navn: "Rødtinden", fil: "2024_08_10.gpx", video: [{ url: "https://www.instagram.com/p/C-fH6xVI...", tittel: "Se video" }] },
+            { navn: "Store Blåmann", fil: "2024_07_20.gpx", video: [{ url: "https://www.instagram.com/p/C9psV2YI...", tittel: "Se video" }] },
+            { navn: "Djeveltanna", fil: "2024_06_15.gpx", video: [{ url: "https://www.instagram.com/p/C8PFD77I...", tittel: "Se video" }] }
         ];
 
         function lagBadge(fil) {
+            if (!fil) return document.createElement('span');
             const s = document.createElement('span');
             const aar = fil.split('_')[0];
             s.className = 'badge-label badge-year';
