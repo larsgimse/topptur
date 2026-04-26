@@ -8,10 +8,9 @@
     <style>
         :root {
             --strava-orange: #fc4c02;
-            --strava-blue: #0076ff;
+            --strava-green: #16a34a; /* Endret fra blå til grønn */
             --insta-pink: #e1306c;
             --dark-grey: #2c3e50;
-            --new-green: #22c55e;
             --year-grey: #64748b;
             --switch-grey: #cbd5e1;
             --download-blue: #0ea5e9;
@@ -80,7 +79,7 @@
             border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 600; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; transition: all 0.2s;
         }
-        .top-btn.active { background-color: var(--strava-blue); transform: scale(1.05); }
+        .top-btn.active { background-color: var(--strava-green); transform: scale(1.05); }
 
         .badge-label {
             position: absolute; top: -6px; right: -6px; color: white; font-size: 8px;
@@ -89,7 +88,6 @@
             pointer-events: none; transition: transform 0.2s;
         }
         .badge-year { background: var(--year-grey); }
-        .badge-2026 { background: #d1fae5; color: #065f46; border-color: #065f46; }
 
         .video-link-btn, .search-link-btn {
             background: rgba(255, 255, 255, 0.95); padding: 8px 12px; border-radius: 8px; 
@@ -97,9 +95,8 @@
             display: flex; align-items: center; gap: 5px; color: var(--insta-pink); 
             width: 100%; box-sizing: border-box; backdrop-filter: blur(4px); cursor: pointer;
         }
-        .search-link-btn { border-color: var(--strava-blue); color: var(--strava-blue); }
+        .search-link-btn { border-color: var(--strava-green); color: var(--strava-green); }
         
-        /* Download Area */
         .download-area {
             width: 100%; background: rgba(255, 255, 255, 0.95); border-radius: 8px; 
             border: 2px solid var(--download-blue); padding: 8px 10px; 
@@ -115,7 +112,6 @@
             font-size: 12px; font-weight: 700; color: var(--download-blue); 
             text-decoration: underline; cursor: pointer;
         }
-        .dl-link:hover { color: var(--dark-grey); }
 
         .control-row-container {
             display: flex; align-items: center; justify-content: space-between;
@@ -130,19 +126,19 @@
 
         .switch-track { width: 30px; height: 16px; background: var(--switch-grey); border-radius: 20px; position: relative; cursor: pointer; }
         .switch-thumb { width: 12px; height: 12px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; }
-        .active .switch-track { background: var(--strava-blue); }
+        .active .switch-track { background: var(--strava-green); }
         .active .switch-thumb { transform: translateX(14px); }
 
         .vinter-link-btn {
             padding: 8px 15px; 
             border-radius: 8px; 
-            background: var(--strava-blue); 
+            background: var(--strava-green); 
             color: white; 
             border: none; 
             font-weight: 600; 
             cursor: pointer;
             text-decoration: none;
-            font-size: 13.3px; /* Match standard button font */
+            font-size: 13.3px;
             display: inline-block;
         }
     </style>
@@ -195,8 +191,8 @@
         function lagBadge(fil) {
             const s = document.createElement('span');
             const aar = fil.split('_')[0];
-            if (aar === "2026") { s.className = 'badge-label badge-2026'; s.innerText = aar; }
-            else { s.className = 'badge-label badge-year'; s.innerText = aar; }
+            s.className = 'badge-label badge-year';
+            s.innerText = aar;
             return s;
         }
 
@@ -368,39 +364,26 @@
                         target: "_blank", className: 'search-link-btn', innerHTML: `<span>🔍</span> Turbeskrivelse`
                     }));
 
-                    // Download section
                     const dlArea = document.createElement('div');
                     dlArea.className = 'download-area';
-                    
                     const dlHeader = document.createElement('div');
                     dlHeader.className = 'download-header';
                     dlHeader.innerHTML = `<span>💾</span> Last ned:`;
                     dlArea.appendChild(dlHeader);
-
                     const linksCont = document.createElement('div');
                     linksCont.className = 'download-links-container';
-
                     const aMain = document.createElement('span');
                     aMain.className = 'dl-link';
                     aMain.innerText = 'Hovedspor';
                     aMain.onclick = () => lastNedGPX(topp.fil, `${topp.navn}_Hovedspor`);
                     linksCont.appendChild(aMain);
-
-                    topp.ekstraSpor?.forEach(es => {
-                        const aExtra = document.createElement('span');
-                        aExtra.className = 'dl-link';
-                        aExtra.innerText = es.tittel;
-                        aExtra.onclick = () => lastNedGPX(es.fil, `${topp.navn}_${es.tittel}`);
-                        linksCont.appendChild(aExtra);
-                    });
-
                     dlArea.appendChild(linksCont);
                     videoContainer.appendChild(dlArea);
 
                     map.flyToBounds(l.getBounds(), {padding: [50, 50]});
                 };
 
-                btn.onmouseenter = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--strava-blue)', weight: 3, opacity: 1}).bringToFront(); };
+                btn.onmouseenter = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--strava-green)', weight: 3, opacity: 1}).bringToFront(); };
                 btn.onmouseleave = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--strava-orange)', weight: 1.5, opacity: 0.6}); };
                 btn.onclick = aktiver;
                 l.on('click', (ev) => { L.DomEvent.stopPropagation(ev); aktiver(); });
