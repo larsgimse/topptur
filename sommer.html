@@ -175,7 +175,7 @@
         };
 
         const topper = [
-            { navn: "Buren", fil: "2025_10_06.gpx", video: [{ url: "https://youtu.be/-m3sEIIIUHg?si=_j5hQx5ddrKI1ZmT", tittel: "Se video", dato: "2020_08_23" }] },
+            { navn: "Buren", fil: "2025_10_06.gpx", overrideAar: "2020", video: [{ url: "https://youtu.be/-m3sEIIIUHg?si=_j5hQx5ddrKI1ZmT", tittel: "Se video", dato: "2020_08_23" }] },
             { navn: "Orvasstinden", fil: "2025_09_25.gpx", video: [{ url: "https://www.instagram.com/p/DPKU6TiCH9y/", tittel: "Se video" }] },
             { navn: "Hamperokken", fil: "2025_07_14.gpx", video: [{ url: "https://www.instagram.com/p/DMcEC9dIb6M/", tittel: "Se video" }] },
             { navn: "Rødtinden", fil: "2025_08_11.gpx", video: [{ url: "https://www.instagram.com/p/DNQt9aPsjSt/", tittel: "Se video" }] },
@@ -185,10 +185,10 @@
             { navn: "Skamtinden", fil: "2020_08_21.gpx", video: [{ url: "https://youtu.be/iC2wVCNLIT0?si=3CaqrmlwrcNz0_cx", tittel: "Se video" }] }
         ];
 
-        function lagBadge(fil) {
-            if (!fil) return document.createElement('span');
+        function lagBadge(fil, override) {
+            if (!fil && !override) return document.createElement('span');
             const s = document.createElement('span');
-            const aar = fil.split('_')[0];
+            const aar = override ? override : fil.split('_')[0];
             s.className = 'badge-label badge-year';
             s.innerText = aar;
             return s;
@@ -305,7 +305,7 @@
         topper.sort((a,b) => a.navn.localeCompare(b.navn)).forEach(topp => {
             const btn = document.createElement('button');
             btn.className = 'top-btn'; btn.innerText = topp.navn;
-            btn.appendChild(lagBadge(topp.fil));
+            btn.appendChild(lagBadge(topp.fil, topp.overrideAar));
             document.getElementById('buttons').appendChild(btn);
 
             const track = new L.GPX(topp.fil, {
