@@ -162,7 +162,7 @@
         let aktivToppNavn = null;
         let isReseting = false;
 
-        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { 
+        const norgeLayer = L.tileLayer('https://cache.kartvervet.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { 
             attribution: '&copy; Kartverket',
             maxZoom: 18
         }).addTo(map);
@@ -183,7 +183,8 @@
             { navn: "Stor Blåmann", fil: "2024_10_19.gpx", video: [{ url: "https://www.instagram.com/p/DBV6c6BMzbg/", tittel: "Se video" }] },
             { navn: "Soria Moria traversen", fil: "2025_07_31.gpx", video: [{ url: "https://www.instagram.com/p/DMx5G2usjON/", tittel: "Se video" }] },
             { navn: "Skamtinden", fil: "2020_08_21.gpx", video: [{ url: "https://youtu.be/iC2wVCNLIT0?si=3CaqrmlwrcNz0_cx", tittel: "Se video" }] },
-            { navn: "Steinskarstinden (travers)", fil: "2023_09_24.gpx", video: [{ url: "https://www.instagram.com/p/CxlNRAZsclX/", tittel: "Se bilder", type: "photo" }] }
+            { navn: "Steinskarstinden (travers)", fil: "2023_09_24.gpx", video: [{ url: "https://www.instagram.com/p/CxlNRAZsclX/", tittel: "Se bilder", type: "photo" }] },
+            { navn: "Store Hollendaren", fil: "2021_10_03.gpx", video: [{ url: "https://www.instagram.com/p/CUlH0IFs2vb/", tittel: "Se bilder", type: "photo" }] }
         ];
 
         function lagBadge(fil, override) {
