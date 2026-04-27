@@ -162,7 +162,7 @@
         let aktivToppNavn = null;
         let isReseting = false;
 
-        const norgeLayer = L.tileLayer('https://cache.kartvervet.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { 
+        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { 
             attribution: '&copy; Kartverket',
             maxZoom: 18
         }).addTo(map);
@@ -182,9 +182,7 @@
             { navn: "Djeveltanna", fil: "2024_08_03.gpx", video: [{ url: "https://www.instagram.com/p/C-dPqdWM4Ku/", tittel: "Se video" }] },
             { navn: "Stor Blåmann", fil: "2024_10_19.gpx", video: [{ url: "https://www.instagram.com/p/DBV6c6BMzbg/", tittel: "Se video" }] },
             { navn: "Soria Moria traversen", fil: "2025_07_31.gpx", video: [{ url: "https://www.instagram.com/p/DMx5G2usjON/", tittel: "Se video" }] },
-            { navn: "Skamtinden", fil: "2020_08_21.gpx", video: [{ url: "https://youtu.be/iC2wVCNLIT0?si=3CaqrmlwrcNz0_cx", tittel: "Se video" }] },
-            { navn: "Steinskarstinden (travers)", fil: "2023_09_24.gpx", video: [{ url: "https://www.instagram.com/p/CxlNRAZsclX/", tittel: "Se bilder", type: "photo" }] },
-            { navn: "Store Hollendaren", fil: "2021_10_03.gpx", video: [{ url: "https://www.instagram.com/p/CUlH0IFs2vb/", tittel: "Se bilder", type: "photo" }] }
+            { navn: "Skamtinden", fil: "2020_08_21.gpx", video: [{ url: "https://youtu.be/iC2wVCNLIT0?si=3CaqrmlwrcNz0_cx", tittel: "Se video" }] }
         ];
 
         function lagBadge(fil, override) {
@@ -335,10 +333,7 @@
                     videoContainer.appendChild(hideBtn);
 
                     topp.video?.forEach((v, i) => {
-                        const a = document.createElement('a'); a.href = v.url; a.target = "_blank"; a.className = 'video-link-btn'; 
-                        const icon = v.type === "photo" ? "📷 " : "🎥 ";
-                        a.innerText = icon + v.tittel;
-                        
+                        const a = document.createElement('a'); a.href = v.url; a.target = "_blank"; a.className = 'video-link-btn'; a.innerText = v.tittel;
                         const filRef = v.dato ? v.dato : ((topp.ekstraSpor && topp.ekstraSpor[i-1]) ? topp.ekstraSpor[i-1].fil : topp.fil);
                         a.appendChild(lagBadge(filRef));
                         videoContainer.appendChild(a);
