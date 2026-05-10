@@ -112,16 +112,7 @@
             width: 100%; background: rgba(255, 255, 255, 0.95); border-radius: 8px; 
             border: 2px solid var(--download-blue); padding: 8px 10px; 
             box-sizing: border-box; backdrop-filter: blur(4px); text-align: left;
-        }
-        .download-header { 
-            font-size: 11px; font-weight: 800; color: var(--download-blue); 
-            margin-bottom: 6px; display: flex; align-items: center; gap: 5px;
-            text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        .download-links-container { display: flex; flex-wrap: wrap; gap: 8px; }
-        .dl-link { 
-            font-size: 12px; font-weight: 700; color: var(--download-blue); 
-      Her er den komplette koden med de nye tilleggene integrert. Jeg har lagt til CSS-animasjonen for pulsering og JavaScript-logikken som styrer effekten samt sørger for at alle spor er klikkbare med riktig musepeker.
+      Her er den komplette, ferdige koden. Jeg har rettet opp logikken slik at den pulserende effekten fungerer stabilt, og sørget for at alle spor i oversiktskartet er klikkbare med riktig musepeker.
 
 ```html
 <!DOCTYPE html>
@@ -267,13 +258,13 @@
         .active .switch-track { background: var(--strava-blue); }
         .active .switch-thumb { transform: translateX(14px); }
 
-        /* --- TILLEGG: Pulserende effekt --- */
+        /* NY EFFEKT: Pulsering og klikkbarhet */
         @keyframes pulsering {
             0%   { opacity: 0.3; }
             50%  { opacity: 0.8; }
             100% { opacity: 0.3; }
         }
-        .pulserende-spor {
+        .spor-oversikt {
             animation: pulsering 2.5s ease-in-out infinite;
             cursor: pointer !important;
         }
@@ -473,13 +464,24 @@
                 const l = e.target;
                 allTracksGroup.addLayer(l);
                 
+                // Legg til pulseringseffekt for spor på oversiktskartet
+                const pathEl = l.getElement();
+                if(pathEl) pathEl.classList.add('spor-oversikt');
+
                 const aktiver = () => {
                     isReseting = false; aktivToppNavn = topp.navn;
                     document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     aktiveEkstraSporLayers.forEach(layer => map.removeLayer(layer));
                     aktiveEkstraSporLayers = [];
-                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.1, weight: 1, color: 'var(--strava-orange)'}));
+                    
+                    // Fjern pulsering når man går inn på en spesifikk topp
+                    allTracksGroup.eachLayer(layer => {
+                        const el = layer.getElement();
+                        if(el) el.classList.remove('spor-oversikt');
+                        layer.setStyle({opacity: 0.1, weight: 1, color: 'var(--strava-orange)'});
+                    });
+
                     l.setStyle({opacity: 1, weight: 2.5, color: 'var(--strava-orange)'}).bringToFront(); 
 
                     videoContainer.innerHTML = '';
@@ -555,7 +557,7 @@
                 btn.onmouseleave = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--strava-orange)', weight: 1.5, opacity: 0.6}); };
                 
                 btn.onclick = aktiver;
-                l.on('click', (ev) => { L.DomEvent.stopPropagation(ev); aktiver(); });
+                l.on('click', (ev) => { L.DomEvent.stopPropagation(ev); aktiver(); }); // Gjør spor klikkbare
             });
         });
 
@@ -564,39 +566,19 @@
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
             map.closePopup();
             aktiveEkstraSporLayers.forEach(l => map.removeLayer(l));
-            allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.6, weight:1.5, color: 'var(--strava-orange)'}); });
+            
+            allTracksGroup.eachLayer(l => { 
+                if(!map.hasLayer(l)) map.addLayer(l); 
+                const el = l.getElement();
+                if(el) el.classList.add('spor-oversikt'); // Gjenopprett pulsering
+                l.setStyle({opacity:0.6, weight:1.5, color: 'var(--strava-orange)'}); 
+            });
+            
             map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]});
             setTimeout(() => isReseting = false, 300);
         };
         
         setTimeout(() => map.fitBounds(allTracksGroup.getBounds(), {padding:[20,20]}), 1000);
-
-        // --- TILLEGG: Håndtere pulsering og klikk på spor --- //
-        setInterval(() => {
-            const iOversikt = (aktivToppNavn === null && !isReseting);
-            allTracksGroup.eachLayer((layer) => {
-                const path = layer.getElement();
-                if (path) {
-                    if (iOversikt) {
-                        path.classList.add('pulserende-spor');
-                    } else {
-                        path.classList.remove('pulserende-spor');
-                    }
-                }
-            });
-        }, 500);
-
-        allTracksGroup.on('layeradd', (e) => {
-            const layer = e.layer;
-            if (layer instanceof L.Path) {
-                layer.on('mouseover', () => {
-                    if (aktivToppNavn === null && !isReseting) {
-                        const el = layer.getElement();
-                        if(el) el.style.cursor = 'pointer';
-                    }
-                });
-            }
-        });
     </script>
 </body>
 </html>
