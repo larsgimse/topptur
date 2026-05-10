@@ -1,127 +1,10 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Toppturer rundt Tromsø</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        :root {
-            --strava-orange: #fc4c02;
-            --strava-blue: #0076ff;
-            --insta-pink: #e1306c;
-            --dark-grey: #2c3e50;
-            --new-green: #22c55e;
-            --year-grey: #64748b;
-            --switch-grey: #cbd5e1;
-            --download-blue: #0ea5e9;
-        }
-
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            text-align: center; margin: 0; padding: 10px 5px; 
-            background: #f1f5f9; color: var(--dark-grey);
-            overflow-x: hidden; display: flex; flex-direction: column;
-        }
-
-        h1 { margin: 15px 0 5px 0; font-size: 26px; order: 1; }
-        .subtitle { font-size: 15px; font-weight: 600; margin: 0; color: #475569; order: 2; }
-        .info-text { font-size: 13px; font-weight: 400; margin: 4px 0 15px 0; color: #64748b; order: 3; }
-
-        #buttons { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; padding: 5px; order: 4; }
-        #controls-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; order: 5; }
-        
-        #map-container { position: relative; max-width: 1100px; margin: 0 auto; width: 100%; order: 7; }
-        
-        #map { 
-            height: 65vh; 
-            min-height: 450px; 
-            width: 100%; 
-            border-radius: 12px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-        }
-
-        #video-buttons-container { 
-            position: absolute; top: 10px; right: 10px; z-index: 1000; 
-            display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
-            width: 240px;
-        }
-
-        .toggle-ui-btn {
-            background: var(--dark-grey);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            cursor: pointer;
-            margin-bottom: 4px;
-            opacity: 0.8;
-        }
-        .toggle-ui-btn:hover { opacity: 1; }
-
-        .ui-hidden .video-link-btn, 
-        .ui-hidden .control-row-container, 
-        .ui-hidden .search-link-btn,
-        .ui-hidden .download-area {
-            display: none !important;
-        }
-
-        @media (max-width: 768px) {
-            #buttons { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding: 10px 15px; scrollbar-width: none; }
-            #buttons::-webkit-scrollbar { display: none; }
-            #video-buttons-container { width: 220px; }
-            #map { height: 100vw; min-height: unset; width: 100%; }
-        }
-
-        .top-btn { 
-            position: relative; background-color: var(--strava-orange); color: white; border: none; 
-            border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 600; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; transition: all 0.2s ease-in-out;
-        }
-
-        @media (hover: hover) {
-            .top-btn:hover:not(.active) {
-                background-color: #ff6a2d;
-                transform: scale(1.05);
-                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-            }
-        }
-
-        .top-btn.active { background-color: var(--strava-blue); transform: scale(1.05); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-
-        .badge-label {
-            position: absolute; top: -6px; right: -6px; color: white; font-size: 8px;
-            padding: 1px 4px; border-radius: 8px; border: 1.5px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; font-weight: bold; 
-            pointer-events: none; transition: transform 0.2s;
-        }
-        .badge-year { background: var(--year-grey); }
-        .badge-2026 { background: #d1fae5; color: #065f46; border-color: #065f46; }
-
-        .video-link-btn, .search-link-btn {
-            background: rgba(255, 255, 255, 0.95); padding: 8px 12px; border-radius: 8px; 
-            font-weight: 700; text-decoration: none; font-size: 12px; border: 2.5px solid var(--insta-pink);
-            display: flex; align-items: center; gap: 5px; color: var(--insta-pink); 
-            width: 100%; box-sizing: border-box; backdrop-filter: blur(4px); cursor: pointer;
-        }
-        .search-link-btn { border-color: var(--strava-blue); color: var(--strava-blue); }
-        
-        .download-area {
-            width: 100%; background: rgba(255, 255, 255, 0.95); border-radius: 8px; 
-            border: 2px solid var(--download-blue); padding: 8px 10px; 
-            box-sizing: border-box; backdrop-filter: blur(4px); text-align: left;
-      Her er den komplette, ferdige koden. Jeg har rettet opp logikken slik at den pulserende effekten fungerer stabilt, og sørget for at alle spor i oversiktskartet er klikkbare med riktig musepeker.
-
-```html
-<!DOCTYPE html>
-<html lang="no">
-<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Toppturer rundt Tromsø</title>
-    <link rel="stylesheet" href="[https://unpkg.com/leaflet@1.9.4/dist/leaflet.css](https://unpkg.com/leaflet@1.9.4/dist/leaflet.css)" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root {
             --strava-orange: #fc4c02;
@@ -258,15 +141,14 @@
         .active .switch-track { background: var(--strava-blue); }
         .active .switch-thumb { transform: translateX(14px); }
 
-        /* NY EFFEKT: Pulsering og klikkbarhet */
+        /* NYTT: Definerer CSS-animasjonen og klassen for pulsering */
         @keyframes pulsering {
-            0%   { opacity: 0.3; }
-            50%  { opacity: 0.8; }
-            100% { opacity: 0.3; }
+            0% { opacity: 0.2; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0.2; }
         }
-        .spor-oversikt {
-            animation: pulsering 2.5s ease-in-out infinite;
-            cursor: pointer !important;
+        .spor-pulsering {
+            animation: pulsering 2s ease-in-out infinite;
         }
     </style>
 </head>
@@ -292,8 +174,8 @@
         <div id="video-buttons-container"></div>
     </div>
 
-    <script src="[https://unpkg.com/leaflet@1.9.4/dist/leaflet.js](https://unpkg.com/leaflet@1.9.4/dist/leaflet.js)"></script>
-    <script src="[https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js](https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js)"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
         const map = L.map('map', { zoomSnap: 0.5 }).setView([69.65, 18.95], 10);
@@ -303,7 +185,7 @@
         let aktivToppNavn = null;
         let isReseting = false;
 
-        const norgeLayer = L.tileLayer('[https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/](https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/){z}/{y}/{x}.png', { attribution: '&copy; Kartverket' }).addTo(map);
+        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { attribution: '&copy; Kartverket' }).addTo(map);
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
 
         document.getElementById('mapSelect').onchange = (e) => {
@@ -312,27 +194,27 @@
         };
 
         const topper = [
-            { navn: "884", fil: "2026_03_27.gpx", video: [{ url: "[https://www.instagram.com/reel/DWg1TaHiJRJ/](https://www.instagram.com/reel/DWg1TaHiJRJ/)", tittel: "Video 1" }, { url: "[https://www.instagram.com/reel/DTnrjgliITD/](https://www.instagram.com/reel/DTnrjgliITD/)", tittel: "Video 2" }, { url: "[https://www.instagram.com/p/DXFlkrDCLz1/](https://www.instagram.com/p/DXFlkrDCLz1/)", tittel: "Video 3" }], ekstraSpor: [{ fil: "2026_01_17.gpx", tittel: "Spor 2", farge: "#5c6bc0" }, { fil: "2026_04_13.gpx", tittel: "Spor 3", farge: "#008b8b" }] },
-            { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: [{ url: "[https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/](https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/)", tittel: "Se video" }] },
-            { navn: "Buren", fil: "2026_01_10.gpx", video: [{ url: "[https://www.instagram.com/p/DTVY5yfCDfU/](https://www.instagram.com/p/DTVY5yfCDfU/)", tittel: "Video 1" }, { url: "[https://www.instagram.com/p/DXCQalhiPgX/](https://www.instagram.com/p/DXCQalhiPgX/)", tittel: "Video 2" }, { url: "[https://www.instagram.com/p/C5b3I2UsTb0/](https://www.instagram.com/p/C5b3I2UsTb0/)", tittel: "Video 3", dato: "2024_04_06" }], ekstraSpor: [{ fil: "2026_04_12.gpx", tittel: "Spor 2", farge: "#5c6bc0" }, { fil: "2024_04_05.gpx", tittel: "Spor 3", farge: "#4caf50" }] },
-            { navn: "Burshammeren", fil: "2026_03_26.gpx", video: [{ url: "[https://www.instagram.com/reel/DWXPzaUiAO5/](https://www.instagram.com/reel/DWXPzaUiAO5/)", tittel: "Video 1" }, { url: "[https://www.instagram.com/reel/DTLiCcAiDMz/](https://www.instagram.com/reel/DTLiCcAiDMz/)", tittel: "Video 2" }, { url: "[https://www.instagram.com/p/C5b3I2UsTb0/](https://www.instagram.com/p/C5b3I2UsTb0/)", tittel: "Video 3", dato: "2024_04_06" }], ekstraSpor: [{ fil: "2025_12_31.gpx", tittel: "Spor 2", farge: "#5c6bc0" }, { fil: "2024_04_05.gpx", tittel: "Spor 3", farge: "#4caf50" }] },
-            { navn: "Fagerfjellet", fil: "2025_04_22.gpx", video: [{ url: "[https://www.instagram.com/p/DI1NoNqsl-F/](https://www.instagram.com/p/DI1NoNqsl-F/)", tittel: "Video 1" }, { url: "[https://www.instagram.com/p/DECfPK3sre3/](https://www.instagram.com/p/DECfPK3sre3/)", tittel: "Video 2" }], ekstraSpor: [{ fil: "2024_12_23.gpx", tittel: "Spor 2", farge: "#5c6bc0" }] },
-            { navn: "Gabrielfjellet", fil: "2025_05_25.gpx", video: [{ url: "[https://www.instagram.com/p/DKKd9vQsRke/](https://www.instagram.com/p/DKKd9vQsRke/)", tittel: "Se video" }] },
-            { navn: "Gorzelvtinden", fil: "2025_12_06.gpx", video: [{ url: "[https://www.instagram.com/p/DR99FHAiF62/](https://www.instagram.com/p/DR99FHAiF62/)", tittel: "Se video" }] },
-            { navn: "Gråtinden", fil: "2026_04_06.gpx", video: [{ url: "[https://www.instagram.com/reel/DW1xhPniK_l/](https://www.instagram.com/reel/DW1xhPniK_l/)", tittel: "Se video" }] },
-            { navn: "Klemmartindan", fil: "2024_04_28.gpx", video: [{ url: "[https://www.instagram.com/p/C6UAgP4M4as/](https://www.instagram.com/p/C6UAgP4M4as/)", tittel: "Se video" }] },
-            { navn: "Langfjellaksla", fil: "2026_04_08.gpx", video: [{ url: "[https://www.instagram.com/reel/DW4gus-iLa9/](https://www.instagram.com/reel/DW4gus-iLa9/)", tittel: "Video 1" }, { url: "[https://www.instagram.com/reels/DYInP-Tosh6/](https://www.instagram.com/reels/DYInP-Tosh6/)", tittel: "Video 2", dato: "2026_05_09" }], ekstraSpor: [{ fil: "2026_05_09.gpx", tittel: "Spor 2", farge: "#5c6bc0" }] },
-            { navn: "Middagstinden", fil: "2024_04_21.gpx", video: [{ url: "[https://www.instagram.com/reel/DXKmwWNtmA6/](https://www.instagram.com/reel/DXKmwWNtmA6/)", tittel: "Se video" }] },
-            { navn: "Rema 1000", fil: "2026_03_28.gpx", video: [{ url: "[https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/](https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/)", tittel: "Se video" }] },
-            { navn: "Skittentinden", fil: "2026_03_15.gpx", video: [{ url: "[https://www.instagram.com/reel/DWHz3RbCPlU/](https://www.instagram.com/reel/DWHz3RbCPlU/)", tittel: "Video 1" }, { url: "[https://www.instagram.com/p/DXwr41Fodzo/](https://www.instagram.com/p/DXwr41Fodzo/)", tittel: "Video 2", dato: "2026_04_04" }], ekstraSpor: [{ fil: "2026_04_04.gpx", tittel: "Spor 2", farge: "#5c6bc0" }] },
-            { navn: "Sollidalsaksla", fil: "2026_03_16.gpx", video: [{ url: "[https://www.instagram.com/p/DV9l8tPCAuh/](https://www.instagram.com/p/DV9l8tPCAuh/)", tittel: "Se video" }] },
-            { navn: "Steinskartinden", fil: "2026_03_08.gpx", video: [{ url: "[https://www.instagram.com/p/DVodnhniPMj/](https://www.instagram.com/p/DVodnhniPMj/)", tittel: "Video 1" }, { url: "[https://www.instagram.com/p/DWPmIqVCCo7/](https://www.instagram.com/p/DWPmIqVCCo7/)", tittel: "Video 2" }], ekstraSpor: [{ fil: "2026_03_22.gpx", tittel: "Spor 2", farge: "#5c6bc0" }] },
-            { navn: "Stormheimfjellet", fil: "2024_04_06.gpx", video: [{ url: "[https://www.instagram.com/p/C5s6FTisaY-/](https://www.instagram.com/p/C5s6FTisaY-/)", tittel: "Se video" }] },
-            { navn: "Storstolpan", fil: "2025_05_08.gpx", video: [{ url: "[https://www.instagram.com/p/DJjsfOesdWS/](https://www.instagram.com/p/DJjsfOesdWS/)", tittel: "Se video" }] },
-            { navn: "Stortinden", fil: "2024_03_26.gpx", video: [{ url: "[https://www.youtube.com/watch?v=wix86hamTQ8](https://www.youtube.com/watch?v=wix86hamTQ8)", tittel: "Se video" }] },
-            { navn: "Straumsaksla", fil: "2025_05_24.gpx", video: [{ url: "[https://www.instagram.com/p/DKDbUavsE9v/](https://www.instagram.com/p/DKDbUavsE9v/)", tittel: "Se video" }] },
-            { navn: "Svartnestinden", fil: "2026_04_05.gpx", video: [{ url: "[https://www.instagram.com/p/DXcJLaViMUt/](https://www.instagram.com/p/DXcJLaViMUt/)", tittel: "Se video" }] },
-            { navn: "Tverrfjellet", fil: "2023_12_29.gpx", video: [{ url: "[https://www.instagram.com/p/C1cfjMVMZnJ/](https://www.instagram.com/p/C1cfjMVMZnJ/)", tittel: "Se video" }] }
+            { navn: "884", fil: "2026_03_27.gpx", video: [{ url: "https://www.instagram.com/reel/DWg1TaHiJRJ/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTnrjgliITD/", tittel: "Video 2" }, { url: "https://www.instagram.com/p/DXFlkrDCLz1/", tittel: "Video 3" }], ekstraSpor: [{ fil: "2026_01_17.gpx", tittel: "Spor 2", farge: "#5c6bc0" }, { fil: "2026_04_13.gpx", tittel: "Spor 3", farge: "#008b8b" }] },
+            { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", video: [{ url: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/", tittel: "Se video" }] },
+            { navn: "Buren", fil: "2026_01_10.gpx", video: [{ url: "https://www.instagram.com/p/DTVY5yfCDfU/", tittel: "Video 1" }, { url: "https://www.instagram.com/p/DXCQalhiPgX/", tittel: "Video 2" }, { url: "https://www.instagram.com/p/C5b3I2UsTb0/", tittel: "Video 3", dato: "2024_04_06" }], ekstraSpor: [{ fil: "2026_04_12.gpx", tittel: "Spor 2", farge: "#5c6bc0" }, { fil: "2024_04_05.gpx", tittel: "Spor 3", farge: "#4caf50" }] },
+            { navn: "Burshammeren", fil: "2026_03_26.gpx", video: [{ url: "https://www.instagram.com/reel/DWXPzaUiAO5/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTLiCcAiDMz/", tittel: "Video 2" }, { url: "https://www.instagram.com/p/C5b3I2UsTb0/", tittel: "Video 3", dato: "2024_04_06" }], ekstraSpor: [{ fil: "2025_12_31.gpx", tittel: "Spor 2", farge: "#5c6bc0" }, { fil: "2024_04_05.gpx", tittel: "Spor 3", farge: "#4caf50" }] },
+            { navn: "Fagerfjellet", fil: "2025_04_22.gpx", video: [{ url: "https://www.instagram.com/p/DI1NoNqsl-F/", tittel: "Video 1" }, { url: "https://www.instagram.com/p/DECfPK3sre3/", tittel: "Video 2" }], ekstraSpor: [{ fil: "2024_12_23.gpx", tittel: "Spor 2", farge: "#5c6bc0" }] },
+            { navn: "Gabrielfjellet", fil: "2025_05_25.gpx", video: [{ url: "https://www.instagram.com/p/DKKd9vQsRke/", tittel: "Se video" }] },
+            { navn: "Gorzelvtinden", fil: "2025_12_06.gpx", video: [{ url: "https://www.instagram.com/p/DR99FHAiF62/", tittel: "Se video" }] },
+            { navn: "Gråtinden", fil: "2026_04_06.gpx", video: [{ url: "https://www.instagram.com/reel/DW1xhPniK_l/", tittel: "Se video" }] },
+            { navn: "Klemmartindan", fil: "2024_04_28.gpx", video: [{ url: "https://www.instagram.com/p/C6UAgP4M4as/", tittel: "Se video" }] },
+            { navn: "Langfjellaksla", fil: "2026_04_08.gpx", video: [{ url: "https://www.instagram.com/reel/DW4gus-iLa9/", tittel: "Video 1" }, { url: "https://www.instagram.com/reels/DYInP-Tosh6/", tittel: "Video 2", dato: "2026_05_09" }], ekstraSpor: [{ fil: "2026_05_09.gpx", tittel: "Spor 2", farge: "#5c6bc0" }] },
+            { navn: "Middagstinden", fil: "2024_04_21.gpx", video: [{ url: "https://www.instagram.com/reel/DXKmwWNtmA6/", tittel: "Se video" }] },
+            { navn: "Rema 1000", fil: "2026_03_28.gpx", video: [{ url: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/", tittel: "Se video" }] },
+            { navn: "Skittentinden", fil: "2026_03_15.gpx", video: [{ url: "https://www.instagram.com/reel/DWHz3RbCPlU/", tittel: "Video 1" }, { url: "https://www.instagram.com/p/DXwr41Fodzo/", tittel: "Video 2", dato: "2026_04_04" }], ekstraSpor: [{ fil: "2026_04_04.gpx", tittel: "Spor 2", farge: "#5c6bc0" }] },
+            { navn: "Sollidalsaksla", fil: "2026_03_16.gpx", video: [{ url: "https://www.instagram.com/p/DV9l8tPCAuh/", tittel: "Se video" }] },
+            { navn: "Steinskartinden", fil: "2026_03_08.gpx", video: [{ url: "https://www.instagram.com/p/DVodnhniPMj/", tittel: "Video 1" }, { url: "https://www.instagram.com/p/DWPmIqVCCo7/", tittel: "Video 2" }], ekstraSpor: [{ fil: "2026_03_22.gpx", tittel: "Spor 2", farge: "#5c6bc0" }] },
+            { navn: "Stormheimfjellet", fil: "2024_04_06.gpx", video: [{ url: "https://www.instagram.com/p/C5s6FTisaY-/", tittel: "Se video" }] },
+            { navn: "Storstolpan", fil: "2025_05_08.gpx", video: [{ url: "https://www.instagram.com/p/DJjsfOesdWS/", tittel: "Se video" }] },
+            { navn: "Stortinden", fil: "2024_03_26.gpx", video: [{ url: "https://www.youtube.com/watch?v=wix86hamTQ8", tittel: "Se video" }] },
+            { navn: "Straumsaksla", fil: "2025_05_24.gpx", video: [{ url: "https://www.instagram.com/p/DKDbUavsE9v/", tittel: "Se video" }] },
+            { navn: "Svartnestinden", fil: "2026_04_05.gpx", video: [{ url: "https://www.instagram.com/p/DXcJLaViMUt/", tittel: "Se video" }] },
+            { navn: "Tverrfjellet", fil: "2023_12_29.gpx", video: [{ url: "https://www.instagram.com/p/C1cfjMVMZnJ/", tittel: "Se video" }] }
         ];
 
         function lagBadge(fil) {
@@ -464,10 +346,12 @@
                 const l = e.target;
                 allTracksGroup.addLayer(l);
                 
-                // Legg til pulseringseffekt for spor på oversiktskartet
+                // NYTT: Legg på pulseringsklasse på SVG-elementet når sporet lastes inn
                 const pathEl = l.getElement();
-                if(pathEl) pathEl.classList.add('spor-oversikt');
-
+                if (pathEl) {
+                    pathEl.classList.add('spor-pulsering');
+                }
+                
                 const aktiver = () => {
                     isReseting = false; aktivToppNavn = topp.navn;
                     document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
@@ -475,13 +359,15 @@
                     aktiveEkstraSporLayers.forEach(layer => map.removeLayer(layer));
                     aktiveEkstraSporLayers = [];
                     
-                    // Fjern pulsering når man går inn på en spesifikk topp
                     allTracksGroup.eachLayer(layer => {
-                        const el = layer.getElement();
-                        if(el) el.classList.remove('spor-oversikt');
-                        layer.setStyle({opacity: 0.1, weight: 1, color: 'var(--strava-orange)'});
+                        // NYTT: Fjern pulsering fra alle andre spor når ett aktiveres
+                        const otherPath = layer.getElement();
+                        if (otherPath) {
+                            otherPath.classList.remove('spor-pulsering');
+                        }
+                        layer.setStyle({opacity: 0.1, weight: 1, color: 'var(--strava-orange)'})
                     });
-
+                    
                     l.setStyle({opacity: 1, weight: 2.5, color: 'var(--strava-orange)'}).bringToFront(); 
 
                     videoContainer.innerHTML = '';
@@ -518,7 +404,7 @@
                     });
 
                     videoContainer.appendChild(Object.assign(document.createElement('a'), {
-                        href: `[https://www.google.no/search?q=$](https://www.google.no/search?q=$){encodeURIComponent(topp.navn + ' topptursbeskrivelse')}`,
+                        href: `https://www.google.no/search?q=${encodeURIComponent(topp.navn + ' topptursbeskrivelse')}`,
                         target: "_blank", className: 'search-link-btn', innerHTML: `<span>🔍</span> Turbeskrivelse`
                     }));
 
@@ -557,7 +443,7 @@
                 btn.onmouseleave = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--strava-orange)', weight: 1.5, opacity: 0.6}); };
                 
                 btn.onclick = aktiver;
-                l.on('click', (ev) => { L.DomEvent.stopPropagation(ev); aktiver(); }); // Gjør spor klikkbare
+                l.on('click', (ev) => { L.DomEvent.stopPropagation(ev); aktiver(); });
             });
         });
 
@@ -566,14 +452,15 @@
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
             map.closePopup();
             aktiveEkstraSporLayers.forEach(l => map.removeLayer(l));
-            
             allTracksGroup.eachLayer(l => { 
                 if(!map.hasLayer(l)) map.addLayer(l); 
-                const el = l.getElement();
-                if(el) el.classList.add('spor-oversikt'); // Gjenopprett pulsering
+                // NYTT: Gjenopprett pulsering på alle spor ved nullstilling
+                const path = l.getElement();
+                if (path) {
+                    path.classList.add('spor-pulsering');
+                }
                 l.setStyle({opacity:0.6, weight:1.5, color: 'var(--strava-orange)'}); 
             });
-            
             map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]});
             setTimeout(() => isReseting = false, 300);
         };
