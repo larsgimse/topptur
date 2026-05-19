@@ -56,7 +56,10 @@
             border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 600; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; transition: all 0.2s ease-in-out;
         }
-        .top-btn.active { background-color: var(--strava-green); transform: scale(1.05); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        /* Gjør knappen litt større ved hovring */
+        .top-btn:hover { transform: scale(1.05); }
+        /* Gjør knappen blå når den er aktiv/valgt */
+        .top-btn.active { background-color: var(--hover-blue); transform: scale(1.05); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
 
         .badge-label {
             position: absolute; top: -6px; right: -6px; color: white; font-size: 8px;
@@ -247,7 +250,7 @@
                 btn.onmouseenter = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--hover-blue)', weight: 4, opacity: 1}).bringToFront(); };
                 btn.onmouseleave = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--summer-green)', weight: 1.5, opacity: 0.6}); };
 
-                // HOVER EFFEKT DIREKTE PÅ KARTSPORET (NYTT)
+                // HOVER EFFEKT DIREKTE PÅ KARTSPORET
                 l.on('mouseover', () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--hover-blue)', weight: 4, opacity: 1}).bringToFront(); });
                 l.on('mouseout', () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--summer-green)', weight: 1.5, opacity: 0.6}); });
 
