@@ -3,237 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Topptur Oversiktskart</title>
+    <title>Toppturer - Oversiktskart</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
+        :root {
+            --bg-color: #111111;
+            --panel-bg: #1a1a1a;
+            --text-color: #eeeeee;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--panel-bg);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #222;
+            z-index: 1000;
+        }
+
+        h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+        
+        .nav-buttons { display: flex; gap: 10px; }
+        .btn {
+            padding: 8px 14px;
+            border-radius: 6px;
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #333;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #3a3a3a; }
+
+        #map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
             width: 100%;
             height: 100%;
-            background-color: #000000;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+            background: var(--bg-color);
         }
-        canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-            cursor: grab;
-        }
-        canvas:active {
-            cursor: grabbing;
-        }
-        .status {
+
+        /* Statusindikator mens filer lastes inn */
+        #loading-status {
             position: absolute;
-            top: 15px;
-            left: 15px;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 11px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(26, 26, 26, 0.9);
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            font-size: 0.85rem;
+            z-index: 1000;
             pointer-events: none;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 14px;
-            border-radius: 2px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: opacity 0.5s ease;
         }
     </style>
 </head>
 <body>
 
-    <div class="status" id="loader">Søker etter GPX-spor...</div>
-    <canvas id="mapCanvas"></canvas>
+    <header>
+        <h1>Toppturer - Alle Spor</h1>
+        <div class="nav-buttons">
+            <a href="vinter.html" class="btn">❄️ Vinter</a>
+            <a href="sommer.html" class="btn">☀️ Sommer</a>
+        </div>
+    </header>
+
+    <div id="map-container">
+        <div id="map"></div>
+        <div id="loading-status">Laster GPX-spor... <span id="progress">0</span>/<span id="total">0</span></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet-gpx plugin (Samme som du bruker i vinter.html) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        const canvas = document.getElementById('mapCanvas');
-        const ctx = canvas.getContext('2d');
-        const loader = document.getElementById('loader');
+        // 1. Liste over absolutt alle GPX-filer du vil ha med på oversikten
+        // Her kan du lime inn filnavnene fra både vinter og sommer
+        const gpxFiler = [
+            'gpx/Blatinden.gpx',
+            'gpx/Buren.gpx',
+            'gpx/Fastdalstinden.gpx',
+            'gpx/Kjostinden.gpx',
+            'gpx/Rundfjellet.gpx',
+            'gpx/Sofiatinden.gpx',
+            'gpx/Storsteintestinden.gpx'
+            // Legg til resten av filene dine her fortløpende...
+        ];
 
-        let tracks = [];
-        let zoom = 1.0;
-        let offsetX = 0;
-        let offsetY = 0;
-        let isDragging = false;
-        let startX, startY;
+        // 2. Initialiser kartet sentrert rundt Tromsø med mørk bakgrunn
+        const map = L.map('map', {
+            zoomControl: true,
+            maxZoom: 18
+        }).setView([69.65, 18.95], 9);
+
+        // CartoDB Dark Matter – perfekt for "hvit strek på sort bunn"
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        // 3. Innstillinger for de tynne, hvite linjene
+        const gpxOptions = {
+            async: true,
+            polyline_options: {
+                color: '#ffffff',     // Hvit farge
+                opacity: 0.5,        // Litt gjennomsiktig så overlappende spor gløder mer (heatmap-effekt)
+                weight: 1.5,         // Tynn strek
+                lineCap: 'round'
+            },
+            marker_options: {
+                startIconUrl: null,  // Fjerner start- og stopp-markører helt
+                endIconUrl: null,
+                shadowUrl: null
+            }
+        };
+
+        // 4. Håndtering av lasting og samling av kartutsnitt
+        let loadedCount = 0;
+        const totalFiles = gpxFiler.length;
+        const bounds = L.latLngBounds();
         
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-        let centerX = 0, centerY = 0, scaleYFactor = 1;
+        document.getElementById('total').textContent = totalFiles;
 
-        // 1. Finn alle GPX-filer fra den offentlige nettsiden
-        async function loadAllTracks() {
-            try {
-                // Vi henter kildekoden direkte fra hovedsiden din der filene er lenket
-                const response = await fetch('https://larsgimse.github.io/topptur/');
-                const html = await response.text();
-                
-                // Finn alle elementer som slutter på .gpx
-                const regex = /href=["']([^"']+\.gpx)["']/g;
-                let match;
-                const gpxFiles = [];
-                
-                while ((match = regex.exec(html)) !== null) {
-                    let fileUrl = match[1];
+        if (totalFiles === 0) {
+            document.getElementById('loading-status').textContent = "Ingen GPX-filer funnet.";
+        }
+
+        // Loop gjennom og last alle filene parallelt
+        gpxFiler.forEach(url => {
+            new L.GPX(url, gpxOptions)
+                .on('loaded', function(e) {
+                    loadedCount++;
+                    document.getElementById('progress').textContent = loadedCount;
                     
-                    // Hvis lenken er relativ (f.eks. "spor1.gpx"), gjør den om til full URL
-                    if (!fileUrl.startsWith('http')) {
-                        fileUrl = fileUrl.startsWith('/') 
-                            ? 'https://larsgimse.github.io' + fileUrl 
-                            : 'https://larsgimse.github.io/topptur/' + fileUrl;
+                    // Utvid kartutsnittet slik at det passer til sporet
+                    const gpxBounds = e.target.getBounds();
+                    if (gpxBounds.isValid()) {
+                        bounds.extend(gpxBounds);
                     }
-                    
-                    if (!gpxFiles.includes(fileUrl)) {
-                        gpxFiles.push(fileUrl);
-                    }
-                }
 
-                if (gpxFiles.length === 0) {
-                    loader.innerText = "Kunne ikke finne noen .gpx-lenker på nettsiden.";
-                    return;
-                }
+                    // Valgfritt: Legg til en enkel popup med navn hvis man klikker på en strek
+                    const trackName = e.target.get_name() || url.split('/').pop().replace('.gpx', '');
+                    e.target.bindPopup(`<strong style="color:#000;">${trackName}</strong>`);
 
-                loader.innerText = `Laster inn ${gpxFiles.length} spor...`;
-                
-                // Last inn koordinater fra hver GPX-fil
-                for (const fileUrl of gpxFiles) {
-                    try {
-                        const gpxRes = await fetch(fileUrl);
-                        const gpxText = await gpxRes.text();
-                        
-                        const parser = new DOMParser();
-                        const xmlDoc = parser.parseFromString(gpxText, "text/xml");
-                        const trkpts = xmlDoc.getElementsByTagName("trkpt");
-                        
-                        const points = [];
-                        for (let i = 0; i < trkpts.length; i++) {
-                            const lat = parseFloat(trkpts[i].getAttribute("lat"));
-                            const lon = parseFloat(trkpts[i].getAttribute("lon"));
-                            
-                            if (!isNaN(lat) && !isNaN(lon)) {
-                                points.push([lon, lat]);
-                                
-                                if (lon < minX) minX = lon;
-                                if (lon > maxX) maxX = lon;
-                                if (lat < minY) minY = lat;
-                                if (lat > maxY) maxY = lat;
-                            }
+                    // Når siste fil er lastet, tilpasser vi kartvisningen og skjuler statuslinjen
+                    if (loadedCount === totalFiles) {
+                        if (bounds.isValid()) {
+                            map.fitBounds(bounds, { padding: [30, 30] });
                         }
-                        
-                        if (points.length > 0) {
-                            tracks.push(points);
-                        }
-                    } catch (err) {
-                        console.error(`Feil ved lasting av fil: ${fileUrl}`, err);
+                        const statusEl = document.getElementById('loading-status');
+                        statusEl.style.opacity = '0';
+                        setTimeout(() => statusEl.remove(), 500);
                     }
-                }
-
-                if (tracks.length > 0) {
-                    centerX = (minX + maxX) / 2;
-                    centerY = (minY + maxY) / 2;
-                    scaleYFactor = 1 / Math.cos((centerY * Math.PI) / 180);
-
-                    loader.innerText = `${tracks.length} spor lastet inn. Scroll for å zoome / dra for å flytte.`;
-                    initView();
-                    resize();
-                } else {
-                    loader.innerText = "Klarte ikke å lese koordinater fra filene.";
-                }
-
-            } catch (error) {
-                loader.innerText = "Nettverksfeil: Klarte ikke å skanne nettsiden.";
-                console.error(error);
-            }
-        }
-
-        // 2. Sentrer visningen automatisk
-        function initView() {
-            const mapWidth = (maxX - minX);
-            const mapHeight = (maxY - minY) * scaleYFactor;
-            
-            const zoomX = (window.innerWidth * 0.85) / mapWidth;
-            const zoomY = (window.innerHeight * 0.85) / mapHeight;
-            
-            zoom = Math.min(zoomX, zoomY);
-            offsetX = window.innerWidth / 2;
-            offsetY = window.innerHeight / 2;
-        }
-
-        // 3. Tegnefunksjon
-        function draw() {
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            if (tracks.length === 0) return;
-
-            ctx.save();
-            ctx.translate(offsetX, offsetY);
-            ctx.scale(zoom, -zoom); 
-            ctx.translate(-centerX, -centerY);
-
-            // Stil: Tynn hvit strek
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-            ctx.lineWidth = 1.2 / zoom; 
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-
-            tracks.forEach(track => {
-                ctx.beginPath();
-                ctx.moveTo(track[0][0], (track[0][1] - centerY) * scaleYFactor + centerY);
-                
-                for (let i = 1; i < track.length; i++) {
-                    ctx.lineTo(track[i][0], (track[i][1] - centerY) * scaleYFactor + centerY);
-                }
-                ctx.stroke();
-            });
-
-            ctx.restore();
-        }
-
-        function resize() {
-            canvas.width = window.innerWidth * window.devicePixelRatio;
-            canvas.height = window.innerHeight * window.devicePixelRatio;
-            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-            draw();
-        }
-
-        // 4. Interaksjon
-        window.addEventListener('mousedown', e => {
-            isDragging = true;
-            startX = e.clientX - offsetX;
-            startY = e.clientY - offsetY;
+                })
+                .on('error', function(e) {
+                    console.error("Kunne ikke laste fil: " + url, e.err);
+                    loadedCount++;
+                    if (loadedCount === totalFiles && bounds.isValid()) {
+                        map.fitBounds(bounds);
+                    }
+                })
+                .addTo(map);
         });
-
-        window.addEventListener('mousemove', e => {
-            if (!isDragging) return;
-            offsetX = e.clientX - startX;
-            offsetY = e.clientY - startY;
-            draw();
-        });
-
-        window.addEventListener('mouseup', () => isDragging = false);
-
-        window.addEventListener('wheel', e => {
-            e.preventDefault();
-            const zoomFactor = 1.15;
-            const mouseX = e.clientX;
-            const mouseY = e.clientY;
-
-            const currentX = (mouseX - offsetX) / zoom;
-            const currentY = (mouseY - offsetY) / zoom;
-
-            if (e.deltaY < 0) {
-                zoom *= zoomFactor;
-            } else {
-                zoom /= zoomFactor;
-            }
-
-            offsetX = mouseX - currentX * zoom;
-            offsetY = mouseY - currentY * zoom;
-            
-            draw();
-        }, { passive: false });
-
-        window.addEventListener('resize', resize);
-        window.onload = loadAllTracks;
     </script>
 </body>
 </html>
