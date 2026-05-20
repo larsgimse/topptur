@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toppturer - Oversiktskart</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --bg-color: #111111;
+            --panel-bg: #1a1a1a;
+            --text-color: #eeeeee;
+            --highlight-orange: #fc4c02; /* Strava-oransje for hovring */
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--panel-bg);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #222;
+            z-index: 1000;
+        }
+
+        h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+        
+        .nav-buttons { display: flex; gap: 10px; }
+        .btn {
+            padding: 8px 14px;
+            border-radius: 6px;
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #333;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #3a3a3a; }
+
+        #map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color);
+        }
+
+        /* Statusindikator mens filer lastes inn */
+        #loading-status {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(26, 26, 26, 0.9);
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            font-size: 0.85rem;
+            z-index: 1000;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Stil på tooltip som følger musa */
+        .track-tooltip {
+            background: rgba(26, 26, 26, 0.95) !important;
+            border: 1px solid var(--highlight-orange) !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            font-size: 13px;
+            border-radius: 4px;
+            padding: 4px 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .track-tooltip:before {
+            border-top-color: rgba(26, 26, 26, 0.95) !important;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Toppturer - Alle Spor</h1>
+        <div class="nav-buttons">
+            <a href="vinter.html" class="btn">❄️ Vinter</a>
+            <a href="sommer.html" class="btn">☀️ Sommer</a>
+        </div>
+    </header>
+
+    <div id="map-container">
+        <div id="map"></div>
+        <div id="loading-status">Laster GPX-spor... <span id="progress">0</span>/<span id="total">0</span></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet-gpx plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
+
+    <script>
+        // 1. Array med objekter hentet direkte fra vinter.html for å sikre 100% riktige filnavn
+        const topper = [
+            { navn: "884", fil: "2026_03_27.gpx" },
+            { navn: "Bentsjordtinden", fil: "2026_04_03.gpx" },
+            { navn: "Buren", fil: "2026_01_10.gpx" },
+            { navn: "Burshammeren", fil: "2026_03_26.gpx" },
+            { navn: "Fagerfjellet", fil: "2025_04_22.gpx" },
+            { navn: "Gabrielfjellet", fil: "2025_05_25.gpx" },
+            { navn: "Gorzelvtinden", fil: "2025_12_06.gpx" },
+            { navn: "Gråtinden", fil: "2026_04_06.gpx" },
+            { navn: "Klemmartindan", fil: "2024_04_28.gpx" },
+            { navn: "Langfjellaksla", fil: "2026_04_08.gpx" },
+            { navn: "Middagstinden", fil: "2024_04_21.gpx" },
+            { navn: "Rema 1000", fil: "2026_03_28.gpx" },
+            { navn: "Skittentinden", fil: "2026_03_15.gpx" },
+            { navn: "Sollidalsaksla", fil: "2026_03_16.gpx" },
+            { navn: "Steinskartinden", fil: "2026_03_08.gpx" },
+            { navn: "Stormheimfjellet", fil: "2024_04_06.gpx" },
+            { navn: "Storstolpan", fil: "2025_05_08.gpx" },
+            { navn: "Stortinden", fil: "2024_03_26.gpx" },
+            { navn: "Straumsaksla", fil: "2025_05_24.gpx" },
+            { navn: "Svartnestinden", fil: "2026_04_05.gpx" },
+            { navn: "Tromsdalstinden", fil: "2026_05_14.gpx" },
+            { navn: "Tverrfjellet", fil: "2023_12_29.gpx" }
+        ];
+
+        // 2. Initialiser kartet med mørk bakgrunn
+        const map = L.map('map', {
+            zoomControl: true,
+            maxZoom: 18
+        }).setView([69.65, 18.95], 9);
+
+        // Stilrent mørkt bakgrunnskart (CartoDB Dark Matter)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        // 3. Innstillinger for tynne, hvite linjer uten start/stopp-ikoner
+        const gpxOptions = {
+            async: true,
+            polyline_options: {
+                color: '#ffffff',     // Hvit farge på sporene til vanlig
+                opacity: 0.4,         // Gir en lekker heatmap-effekt der stier møtes
+                weight: 1.2,         // Tynn, stilren strek
+                lineCap: 'round'
+            },
+            marker_options: {
+                startIconUrl: null,  // Skjuler start-markør
+                endIconUrl: null,    // Skjuler stopp-markør
+                shadowUrl: null
+            }
+        };
+
+        // 4. Håndtering av fremdrift og automatisk samling av kartgrenser
+        let loadedCount = 0;
+        const totalFiles = topper.length;
+        const bounds = L.latLngBounds();
+        
+        document.getElementById('total').textContent = totalFiles;
+
+        function sjekkFremdrift() {
+            loadedCount++;
+            document.getElementById('progress').textContent = loadedCount;
+
+            if (loadedCount === totalFiles) {
+                if (bounds.isValid()) {
+                    // Zoomer ut/inn slik at absolutt alle turer rammes inn perfekt på skjermen
+                    map.fitBounds(bounds, { padding: [40, 40] });
+                }
+                // Skjul og fjern statuslinjen jevnt når alt er klart
+                const statusEl = document.getElementById('loading-status');
+                statusEl.style.opacity = '0';
+                setTimeout(() => statusEl.remove(), 500);
+            }
+        }
+
+        // 5. Loop gjennom listen fra vinter.html og tegn sporene med hovringseffekter
+        topper.forEach(topp => {
+            const track = new L.GPX(topp.fil, gpxOptions);
+            
+            // Suksess: Sporet er lastet inn
+            track.on('loaded', function(e) {
+                const layer = e.target;
+                const gpxBounds = layer.getBounds();
+                if (gpxBounds.isValid()) {
+                    bounds.extend(gpxBounds);
+                }
+                
+                // Knytt en flytende tooltip til sporet som dukker opp ved hovring
+                layer.bindTooltip(topp.navn, {
+                    sticky: true,            // Gjør at tooltipen følger musepekeren stabilt
+                    className: 'track-tooltip',
+                    direction: 'top',
+                    offset: [0, -10]
+                });
+
+                // HOVER-EFFEKT: Mus inn på sporet
+                layer.on('mouseover', function() {
+                    layer.setStyle({
+                        color: 'var(--highlight-orange)', // Lyser opp i oransje
+                        weight: 3.5,                      // Blir betydelig tykkere og enklere å se
+                        opacity: 1.0
+                    });
+                    layer.bringToFront();                 // Legger sporet over alle de andre hvite sporene
+                });
+
+                // HOVER-EFFEKT: Mus ut av sporet
+                layer.on('mouseout', function() {
+                    layer.setStyle({
+                        color: '#ffffff',                 // Tilbake til standard hvit tynn linje
+                        weight: 1.2,
+                        opacity: 0.4
+                    });
+                });
+
+                // Bevarer klikk-funksjonaliteten for popups i tillegg om man ønsker å låse den fast
+                layer.bindPopup(`<strong style="color:#111; font-family:sans-serif; font-size:13px;">${topp.navn}</strong>`);
+                
+                sjekkFremdrift();
+            });
+
+            // Sikring hvis en enkelt fil skulle feile underveis
+            track.on('error', function(e) {
+                console.warn("Kunne ikke laste filen: " + topp.fil);
+                sjekkFremdrift();
+            });
+
+            track.addTo(map);
+        });
+    </script>
+</body>
+</html>
