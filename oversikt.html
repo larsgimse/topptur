@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toppturer - Oversiktskart</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --bg-color: #111111;
+            --panel-bg: #1a1a1a;
+            --text-color: #eeeeee;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--panel-bg);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #222;
+            z-index: 1000;
+        }
+
+        h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+        
+        .nav-buttons { display: flex; gap: 10px; }
+        .btn {
+            padding: 8px 14px;
+            border-radius: 6px;
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #333;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #3a3a3a; }
+
+        #map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color);
+        }
+
+        /* Statusindikator mens filer lastes inn */
+        #loading-status {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(26, 26, 26, 0.9);
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            font-size: 0.85rem;
+            z-index: 1000;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Toppturer - Alle Spor</h1>
+        <div class="nav-buttons">
+            <a href="vinter.html" class="btn">❄️ Vinter</a>
+            <a href="sommer.html" class="btn">☀️ Sommer</a>
+        </div>
+    </header>
+
+    <div id="map-container">
+        <div id="map"></div>
+        <div id="loading-status">Laster GPX-spor... <span id="progress">0</span>/<span id="total">0</span></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet-gpx plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
+
+    <script>
+        // 1. Liste over alle GPX-filene dine. 
+        // Tilpass disse navnenene slik at de matcher filene i gpx-mappen din 100%.
+        const gpxFiler = [
+            'gpx/Blatinden.gpx',
+            'gpx/Buren.gpx',
+            'gpx/Fastdalstinden.gpx',
+            'gpx/Kjostinden.gpx',
+            'gpx/Rundfjellet.gpx',
+            'gpx/Sofiatinden.gpx',
+            'gpx/Storsteintestinden.gpx'
+        ];
+
+        // 2. Initialiser kartet sentrert rundt Tromsø med mørk bakgrunn
+        const map = L.map('map', {
+            zoomControl: true,
+            maxZoom: 18
+        }).setView([69.65, 18.95], 9);
+
+        // Stilrent mørkt bakgrunnskart (CartoDB Dark Matter)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        // 3. Innstillinger for tynne, hvite linjer uten start/stopp-ikoner
+        const gpxOptions = {
+            async: true,
+            polyline_options: {
+                color: '#ffffff',     // Hvit farge på sporet
+                opacity: 0.5,        // Delvis gjennomsiktig for en "heatmap"-effekt der spor overlapper
+                weight: 1.5,         // Tynn, lekker strek
+                lineCap: 'round'
+            },
+            marker_options: {
+                startIconUrl: null,  // Fjerner start-flagget
+                endIconUrl: null,    // Fjerner topp-flagget
+                shadowUrl: null
+            }
+        };
+
+        // 4. Håndtering av loading og automatisk kartutsnitt
+        let loadedCount = 0;
+        const totalFiles = gpxFiler.length;
+        const bounds = L.latLngBounds();
+        
+        document.getElementById('total').textContent = totalFiles;
+
+        if (totalFiles === 0) {
+            document.getElementById('loading-status').textContent = "Ingen GPX-filer funnet i listen.";
+        }
+
+        // Funksjon som sjekker fremdrift og tilpasser kartet til slutt
+        function sjekkFremdrift() {
+            loadedCount++;
+            document.getElementById('progress').textContent = loadedCount;
+
+            // Når alle filer er prosessert (enten de suksessfullt lastet eller feilet)
+            if (loadedCount === totalFiles) {
+                if (bounds.isValid()) {
+                    // Zoom ut/inn slik at absolutt alle spor treffer skjermen perfekt
+                    map.fitBounds(bounds, { padding: [40, 40] });
+                }
+                
+                // Gjør loading-indikatoren usynlig og fjern den
+                const statusEl = document.getElementById('loading-status');
+                statusEl.style.opacity = '0';
+                setTimeout(() => statusEl.remove(), 500);
+            }
+        }
+
+        // Loop gjennom listen og fyr av alle forespørslene parallelt
+        gpxFiler.forEach(url => {
+            const track = new L.GPX(url, gpxOptions);
+            
+            // Suksess: Sporet ble lastet inn fint
+            track.on('loaded', function(e) {
+                const gpxBounds = e.target.getBounds();
+                if (gpxBounds.isValid()) {
+                    bounds.extend(gpxBounds);
+                }
+                
+                // Gir deg navnet på toppen i en liten popup om du klikker på linjen
+                const trackName = e.target.get_name() || url.split('/').pop().replace('.gpx', '');
+                e.target.bindPopup(`<strong style="color:#111; font-family:sans-serif;">${trackName}</strong>`);
+                
+                sjekkFremdrift();
+            });
+
+            // Feilhåndtering: Hvis en fil mangler, hopper vi bare elegant videre
+            track.on('error', function(e) {
+                console.error("Klarte ikke å hente filen: " + url + ". Sjekk om filnavnet er riktig stavet.");
+                sjekkFremdrift();
+            });
+
+            track.addTo(map);
+        });
+    </script>
+</body>
+</html>
