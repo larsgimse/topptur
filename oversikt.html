@@ -99,19 +99,33 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        // 1. Liste over alle GPX-filene dine. 
-        // Tilpass disse navnenene slik at de matcher filene i gpx-mappen din 100%.
-        const gpxFiler = [
-            'gpx/Blatinden.gpx',
-            'gpx/Buren.gpx',
-            'gpx/Fastdalstinden.gpx',
-            'gpx/Kjostinden.gpx',
-            'gpx/Rundfjellet.gpx',
-            'gpx/Sofiatinden.gpx',
-            'gpx/Storsteintestinden.gpx'
+        // 1. Array med objekter hentet direkte fra vinter.html for å sikre 100% riktige filnavn
+        const topper = [
+            { navn: "884", fil: "2026_03_27.gpx" },
+            { navn: "Bentsjordtinden", fil: "2026_04_03.gpx" },
+            { navn: "Buren", fil: "2026_01_10.gpx" },
+            { navn: "Burshammeren", fil: "2026_03_26.gpx" },
+            { navn: "Fagerfjellet", fil: "2025_04_22.gpx" },
+            { navn: "Gabrielfjellet", fil: "2025_05_25.gpx" },
+            { navn: "Gorzelvtinden", fil: "2025_12_06.gpx" },
+            { navn: "Gråtinden", fil: "2026_04_06.gpx" },
+            { navn: "Klemmartindan", fil: "2024_04_28.gpx" },
+            { navn: "Langfjellaksla", fil: "2026_04_08.gpx" },
+            { navn: "Middagstinden", fil: "2024_04_21.gpx" },
+            { navn: "Rema 1000", fil: "2026_03_28.gpx" },
+            { navn: "Skittentinden", fil: "2026_03_15.gpx" },
+            { navn: "Sollidalsaksla", fil: "2026_03_16.gpx" },
+            { navn: "Steinskartinden", fil: "2026_03_08.gpx" },
+            { navn: "Stormheimfjellet", fil: "2024_04_06.gpx" },
+            { navn: "Storstolpan", fil: "2025_05_08.gpx" },
+            { navn: "Stortinden", fil: "2024_03_26.gpx" },
+            { navn: "Straumsaksla", fil: "2025_05_24.gpx" },
+            { navn: "Svartnestinden", fil: "2026_04_05.gpx" },
+            { navn: "Tromsdalstinden", fil: "2026_05_14.gpx" },
+            { navn: "Tverrfjellet", fil: "2023_12_29.gpx" }
         ];
 
-        // 2. Initialiser kartet sentrert rundt Tromsø med mørk bakgrunn
+        // 2. Initialiser kartet med mørk bakgrunn
         const map = L.map('map', {
             zoomControl: true,
             maxZoom: 18
@@ -128,69 +142,61 @@
         const gpxOptions = {
             async: true,
             polyline_options: {
-                color: '#ffffff',     // Hvit farge på sporet
-                opacity: 0.5,        // Delvis gjennomsiktig for en "heatmap"-effekt der spor overlapper
-                weight: 1.5,         // Tynn, lekker strek
+                color: '#ffffff',     // Hvit farge på sporene
+                opacity: 0.4,        // Gir en lekker heatmap-effekt der stier møtes
+                weight: 1.2,         // Tynn, stilren strek
                 lineCap: 'round'
             },
             marker_options: {
-                startIconUrl: null,  // Fjerner start-flagget
-                endIconUrl: null,    // Fjerner topp-flagget
+                startIconUrl: null,  // Skjuler start-markør
+                endIconUrl: null,    // Skjuler stopp-markør
                 shadowUrl: null
             }
         };
 
-        // 4. Håndtering av loading og automatisk kartutsnitt
+        // 4. Håndtering av fremdrift og automatisk samling av kartgrenser
         let loadedCount = 0;
-        const totalFiles = gpxFiler.length;
+        const totalFiles = topper.length;
         const bounds = L.latLngBounds();
         
         document.getElementById('total').textContent = totalFiles;
 
-        if (totalFiles === 0) {
-            document.getElementById('loading-status').textContent = "Ingen GPX-filer funnet i listen.";
-        }
-
-        // Funksjon som sjekker fremdrift og tilpasser kartet til slutt
         function sjekkFremdrift() {
             loadedCount++;
             document.getElementById('progress').textContent = loadedCount;
 
-            // Når alle filer er prosessert (enten de suksessfullt lastet eller feilet)
             if (loadedCount === totalFiles) {
                 if (bounds.isValid()) {
-                    // Zoom ut/inn slik at absolutt alle spor treffer skjermen perfekt
+                    // Zoomer ut/inn slik at absolutt alle turer rammes inn perfekt på skjermen
                     map.fitBounds(bounds, { padding: [40, 40] });
                 }
-                
-                // Gjør loading-indikatoren usynlig og fjern den
+                // Skjul og fjern statuslinjen jevnt når alt er klart
                 const statusEl = document.getElementById('loading-status');
                 statusEl.style.opacity = '0';
                 setTimeout(() => statusEl.remove(), 500);
             }
         }
 
-        // Loop gjennom listen og fyr av alle forespørslene parallelt
-        gpxFiler.forEach(url => {
-            const track = new L.GPX(url, gpxOptions);
+        // 5. Loop gjennom listen fra vinter.html og tegn sporene
+        topper.forEach(topp => {
+            const track = new L.GPX(topp.fil, gpxOptions);
             
-            // Suksess: Sporet ble lastet inn fint
+            // Suksess: Sporet er lastet inn
             track.on('loaded', function(e) {
                 const gpxBounds = e.target.getBounds();
                 if (gpxBounds.isValid()) {
                     bounds.extend(gpxBounds);
                 }
                 
-                // Gir deg navnet på toppen i en liten popup om du klikker på linjen
-                const trackName = e.target.get_name() || url.split('/').pop().replace('.gpx', '');
-                e.target.bindPopup(`<strong style="color:#111; font-family:sans-serif;">${trackName}</strong>`);
+                // Legg til en ren og pen popup som viser navnet på toppen ved klikk
+                e.target.bindPopup(`<strong style="color:#111; font-family:sans-serif; font-size:13px;">${topp.navn}</strong>`);
                 
                 sjekkFremdrift();
             });
 
-            // Feilhåndtering: Hvis en fil mangler, hopper vi bare elegant videre
+            // Sikring hvis en enkelt fil skulle feile underveis
             track.on('error', function(e) {
-                console.error("Klarte ikke å hente filen: " + url + ". Sjekk om filnavnet er riktig stavet.");
+                console.warn("Kunne ikke laste filen: " + topp.fil);
                 sjekkFremdrift();
             });
 
