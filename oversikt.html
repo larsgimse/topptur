@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topptur Oversiktskart</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+        }
+        canvas:active {
+            cursor: grabbing;
+        }
+        .status {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 14px;
+            border-radius: 2px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="status" id="loader">Søker etter GPX-spor...</div>
+    <canvas id="mapCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('mapCanvas');
+        const ctx = canvas.getContext('2d');
+        const loader = document.getElementById('loader');
+
+        let tracks = [];
+        let zoom = 1.0;
+        let offsetX = 0;
+        let offsetY = 0;
+        let isDragging = false;
+        let startX, startY;
+        
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        let centerX = 0, centerY = 0, scaleYFactor = 1;
+
+        // 1. Finn alle GPX-filer fra gjeldende mappe (GitHub Pages)
+        async function loadAllTracks() {
+            try {
+                // Henter index-siden til gjeldende mappe for å skanne etter filer
+                const response = await fetch('./');
+                const html = await response.text();
+                
+                // Regex for å finne alle filnavn som slutter på .gpx i HTML-koden
+                const regex = /href=["']([^"']+\.gpx)["']/g;
+                let match;
+                const gpxFiles = [];
+                
+                while ((match = regex.exec(html)) !== null) {
+                    // Unngå duplikater hvis filen er lenket flere steder
+                    if (!gpxFiles.includes(match[1])) {
+                        gpxFiles.push(match[1]);
+                    }
+                }
+
+                if (gpxFiles.length === 0) {
+                    loader.innerText = "Ingen .gpx-filer funnet i mappen.";
+                    return;
+                }
+
+                loader.innerText = `Laster inn ${gpxFiles.length} spor...`;
+                
+                // Last inn og analyser hver enkelt GPX-fil
+                for (const file of gpxFiles) {
+                    try {
+                        const gpxRes = await fetch(`./${file}`);
+                        const gpxText = await gpxRes.text();
+                        
+                        const parser = new DOMParser();
+                        const xmlDoc = parser.parseFromString(gpxText, "text/xml");
+                        const trkpts = xmlDoc.getElementsByTagName("trkpt");
+                        
+                        const points = [];
+                        for (let i = 0; i < trkpts.length; i++) {
+                            const lat = parseFloat(trkpts[i].getAttribute("lat"));
+                            const lon = parseFloat(trkpts[i].getAttribute("lon"));
+                            
+                            if (!isNaN(lat) && !isNaN(lon)) {
+                                points.push([lon, lat]); // [X, Y]
+                                
+                                // Oppdater globale grenser for kartet
+                                if (lon < minX) minX = lon;
+                                if (lon > maxX) maxX = lon;
+                                if (lat < minY) minY = lat;
+                                if (lat > maxY) maxY = lat;
+                            }
+                        }
+                        
+                        if (points.length > 0) {
+                            tracks.push(points);
+                        }
+                    } catch (err) {
+                        console.error(`Feil ved lasting av fil: ${file}`, err);
+                    }
+                }
+
+                if (tracks.length > 0) {
+                    // Beregn geografisk senter og Mercator-korreksjonsfaktor for Norge
+                    centerX = (minX + maxX) / 2;
+                    centerY = (minY + maxY) / 2;
+                    scaleYFactor = 1 / Math.cos((centerY * Math.PI) / 180);
+
+                    loader.innerText = `${tracks.length} spor lastet inn. Scroll for å zoome / dra for å flytte.`;
+                    initView();
+                    resize();
+                } else {
+                    loader.innerText = "Kunne ikke lese koordinater fra filene.";
+                }
+
+            } catch (error) {
+                loader.innerText = "Feil under skanning av mappe.";
+                console.error(error);
+            }
+        }
+
+        // 2. Sentrer visningen automatisk basert på sporene
+        function initView() {
+            const mapWidth = (maxX - minX);
+            const mapHeight = (maxY - minY) * scaleYFactor;
+            
+            const zoomX = (window.innerWidth * 0.85) / mapWidth;
+            const zoomY = (window.innerHeight * 0.85) / mapHeight;
+            
+            zoom = Math.min(zoomX, zoomY);
+            offsetX = window.innerWidth / 2;
+            offsetY = window.innerHeight / 2;
+        }
+
+        // 3. Tegnefunksjon (Visuell gjengivelse)
+        function draw() {
+            // Svart bakgrunn
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (tracks.length === 0) return;
+
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.scale(zoom, -zoom); // Snu Y-aksen slik at Nord peker oppover
+            ctx.translate(-centerX, -centerY);
+
+            // Stil: Tynn hvit strek
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx.lineWidth = 1.2 / zoom; // Holder streken konsekvent tynn under zooming
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // Tegn sporene på Canvas
+            tracks.forEach(track => {
+                ctx.beginPath();
+                ctx.moveTo(track[0][0], (track[0][1] - centerY) * scaleYFactor + centerY);
+                
+                for (let i = 1; i < track.length; i++) {
+                    ctx.lineTo(track[i][0], (track[i][1] - centerY) * scaleYFactor + centerY);
+                }
+                ctx.stroke();
+            });
+
+            ctx.restore();
+        }
+
+        // 4. Skalering for skjermer med høy oppløsning (Retina/4K)
+        function resize() {
+            canvas.width = window.innerWidth * window.devicePixelRatio;
+            canvas.height = window.innerHeight * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            draw();
+        }
+
+        // 5. Brukerinteraksjon (Panorering og zoom)
+        window.addEventListener('mousedown', e => {
+            isDragging = true;
+            startX = e.clientX - offsetX;
+            startY = e.clientY - offsetY;
+        });
+
+        window.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            offsetX = e.clientX - startX;
+            offsetY = e.clientY - startY;
+            draw();
+        });
+
+        window.addEventListener('mouseup', () => isDragging = false);
+
+        window.addEventListener('wheel', e => {
+            e.preventDefault();
+            const zoomFactor = 1.15;
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            const currentX = (mouseX - offsetX) / zoom;
+            const currentY = (mouseY - offsetY) / zoom;
+
+            if (e.deltaY < 0) {
+                zoom *= zoomFactor;
+            } else {
+                zoom /= zoomFactor;
+            }
+
+            offsetX = mouseX - currentX * zoom;
+            offsetY = mouseY - currentY * zoom;
+            
+            draw();
+        }, { passive: false });
+
+        window.addEventListener('resize', resize);
+
+        // Start skriptet når siden lastes
+        window.onload = loadAllTracks;
+    </script>
+</body>
+</html>
