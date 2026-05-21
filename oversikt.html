@@ -11,6 +11,9 @@
             --bg-color: #111111;
             --panel-bg: #1a1a1a;
             --text-color: #eeeeee;
+            --highlight-orange: #fc4c02; /* Strava-oransje for hovring */
+            --winter-blue: #0ea5e9;
+            --summer-green: #34a853;
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -37,7 +40,8 @@
 
         h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
         
-        .nav-buttons { display: flex; gap: 10px; }
+        .nav-buttons { display: flex; gap: 10px; align-items: center; }
+        
         .btn {
             padding: 8px 14px;
             border-radius: 6px;
@@ -47,9 +51,24 @@
             text-decoration: none;
             font-size: 0.9rem;
             font-weight: 500;
-            transition: background 0.2s;
+            transition: all 0.2s;
+            cursor: pointer;
         }
         .btn:hover { background: #3a3a3a; }
+        
+        .btn-reset {
+            background: #222;
+            border-color: #444;
+            color: #ccc;
+        }
+        .btn-reset:hover {
+            background: #2d2d2d;
+            border-color: var(--highlight-orange);
+            color: #fff;
+        }
+
+        .btn-winter.active { background: var(--winter-blue); border-color: #fff; font-weight: 700; }
+        .btn-summer.active { background: var(--summer-green); border-color: #fff; font-weight: 700; }
 
         #map-container {
             flex: 1;
@@ -62,7 +81,10 @@
             background: var(--bg-color);
         }
 
-        /* Statusindikator mens filer lastes inn */
+        .leaflet-interactive {
+            cursor: pointer;
+        }
+
         #loading-status {
             position: absolute;
             bottom: 20px;
@@ -76,6 +98,18 @@
             pointer-events: none;
             transition: opacity 0.5s ease;
         }
+
+        .track-tooltip {
+            background: rgba(26, 26, 26, 0.95) !important;
+            border: 1px solid var(--highlight-orange) !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            font-size: 13px;
+            border-radius: 4px;
+            padding: 4px 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            pointer-events: none; /* Sikrer at den ikke blokkerer musa */
+        }
     </style>
 </head>
 <body>
@@ -83,8 +117,9 @@
     <header>
         <h1>Toppturer - Alle Spor</h1>
         <div class="nav-buttons">
-            <a href="vinter.html" class="btn">❄️ Vinter</a>
-            <a href="sommer.html" class="btn">☀️ Sommer</a>
+            <button id="btn-reset" class="btn btn-reset">🔄 Vis alle / Nullstill</button>
+            <button id="btn-vinter" class="btn btn-winter">❄️ Vinter</button>
+            <button id="btn-sommer" class="btn btn-summer">☀️ Sommer</button>
         </div>
     </header>
 
@@ -99,108 +134,212 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        // 1. Array med objekter hentet direkte fra vinter.html for å sikre 100% riktige filnavn
+        // Samlet liste over turer (Både vinteren og sommeren din)
         const topper = [
-            { navn: "884", fil: "2026_03_27.gpx" },
-            { navn: "Bentsjordtinden", fil: "2026_04_03.gpx" },
-            { navn: "Buren", fil: "2026_01_10.gpx" },
-            { navn: "Burshammeren", fil: "2026_03_26.gpx" },
-            { navn: "Fagerfjellet", fil: "2025_04_22.gpx" },
-            { navn: "Gabrielfjellet", fil: "2025_05_25.gpx" },
-            { navn: "Gorzelvtinden", fil: "2025_12_06.gpx" },
-            { navn: "Gråtinden", fil: "2026_04_06.gpx" },
-            { navn: "Klemmartindan", fil: "2024_04_28.gpx" },
-            { navn: "Langfjellaksla", fil: "2026_04_08.gpx" },
-            { navn: "Middagstinden", fil: "2024_04_21.gpx" },
-            { navn: "Rema 1000", fil: "2026_03_28.gpx" },
-            { navn: "Skittentinden", fil: "2026_03_15.gpx" },
-            { navn: "Sollidalsaksla", fil: "2026_03_16.gpx" },
-            { navn: "Steinskartinden", fil: "2026_03_08.gpx" },
-            { navn: "Stormheimfjellet", fil: "2024_04_06.gpx" },
-            { navn: "Storstolpan", fil: "2025_05_08.gpx" },
-            { navn: "Stortinden", fil: "2024_03_26.gpx" },
-            { navn: "Straumsaksla", fil: "2025_05_24.gpx" },
-            { navn: "Svartnestinden", fil: "2026_04_05.gpx" },
-            { navn: "Tromsdalstinden", fil: "2026_05_14.gpx" },
-            { navn: "Tverrfjellet", fil: "2023_12_29.gpx" }
+            // VINTERTURER
+            { navn: "884", fil: "2026_03_27.gpx", type: "vinter" },
+            { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", type: "vinter" },
+            { navn: "Buren", fil: "2026_01_10.gpx", type: "vinter" },
+            { navn: "Burshammeren", fil: "2026_03_26.gpx", type: "vinter" },
+            { navn: "Fagerfjellet", fil: "2025_04_22.gpx", type: "vinter" },
+            { navn: "Gabrielfjellet", fil: "2025_05_25.gpx", type: "vinter" },
+            { navn: "Gorzelvtinden", fil: "2025_12_06.gpx", type: "vinter" },
+            { navn: "Gråtinden", fil: "2026_04_06.gpx", type: "vinter" },
+            { navn: "Klemmartindan", fil: "2024_04_28.gpx", type: "vinter" },
+            { navn: "Langfjellaksla", fil: "2026_04_08.gpx", type: "vinter" },
+            { navn: "Middagstinden", fil: "2024_04_21.gpx", type: "vinter" },
+            { navn: "Rema 1000", fil: "2026_03_28.gpx", type: "vinter" },
+            { navn: "Skittentinden", fil: "2026_03_15.gpx", type: "vinter" },
+            { navn: "Sollidalsaksla", fil: "2026_03_16.gpx", type: "vinter" },
+            { navn: "Steinskartinden", fil: "2026_03_08.gpx", type: "vinter" },
+            { navn: "Stormheimfjellet", fil: "2024_04_06.gpx", type: "vinter" },
+            { navn: "Storstolpan", fil: "2025_05_08.gpx", type: "vinter" },
+            { navn: "Stortinden", fil: "2024_03_26.gpx", type: "vinter" },
+            { navn: "Straumsaksla", fil: "2025_05_24.gpx", type: "vinter" },
+            { navn: "Svartnestinden", fil: "2026_04_05.gpx", type: "vinter" },
+            { navn: "Tromsdalstinden", fil: "2026_05_14.gpx", type: "vinter" },
+            { navn: "Tverrfjellet", fil: "2023_12_29.gpx", type: "vinter" },
+
+            // SOMMERTURER
+            { navn: "Buren (Sommer)", fil: "2025_10_06.gpx", type: "sommer" },
+            { navn: "Djeveltanna", fil: "2024_08_03.gpx", type: "sommer" },
+            { navn: "Djupdalgruver", fil: "2025_08_03.gpx", type: "sommer" },
+            { navn: "Hamperokken", fil: "2025_07_14.gpx", type: "sommer" },
+            { navn: "Hillesøy", fil: "2023_05_17.gpx", type: "sommer" },
+            { navn: "Kløftbakken", fil: "2025_02_28.gpx", type: "sommer" },
+            { navn: "Mjeldskartinden", fil: "2020_07_24.gpx", type: "sommer" },
+            { navn: "Orvasstinden", fil: "2025_09_25.gpx", type: "sommer" },
+            { navn: "Rødtinden", fil: "2025_08_11.gpx", type: "sommer" },
+            { navn: "Skamtinden", fil: "2020_08_21.gpx", type: "sommer" },
+            { navn: "Soria Moria traversen", fil: "2025_07_31.gpx", type: "sommer" },
+            { navn: "Steinskartinden (Sommer)", fil: "2023_09_24.gpx", type: "sommer" },
+            { navn: "Stor Blåmann", fil: "2024_10_19.gpx", type: "sommer" },
+            { navn: "Store Hollendaren", fil: "2021_10_03.gpx", type: "sommer" },
+            { navn: "Tromsdalstinden (Sommer)", fil: "2022_10_01.gpx", type: "sommer" },
+            { navn: "Vengsøytraversen", fil: "2021_09_19.gpx", type: "sommer" }
         ];
 
-        // 2. Initialiser kartet med mørk bakgrunn
         const map = L.map('map', {
             zoomControl: true,
             maxZoom: 18
         }).setView([69.65, 18.95], 9);
 
-        // Stilrent mørkt bakgrunnskart (CartoDB Dark Matter)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
             subdomains: 'abcd',
             maxZoom: 20
         }).addTo(map);
 
-        // 3. Innstillinger for tynne, hvite linjer uten start/stopp-ikoner
         const gpxOptions = {
             async: true,
             polyline_options: {
-                color: '#ffffff',     // Hvit farge på sporene
-                opacity: 0.4,        // Gir en lekker heatmap-effekt der stier møtes
-                weight: 1.2,         // Tynn, stilren strek
+                color: '#ffffff',
+                opacity: 0.4,
+                weight: 1.4,
                 lineCap: 'round'
             },
-            marker_options: {
-                startIconUrl: null,  // Skjuler start-markør
-                endIconUrl: null,    // Skjuler stopp-markør
-                shadowUrl: null
-            }
+            marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
         };
 
-        // 4. Håndtering av fremdrift og automatisk samling av kartgrenser
         let loadedCount = 0;
         const totalFiles = topper.length;
         const bounds = L.latLngBounds();
         
+        // Vi lagrer referanser til kartlagene her så vi kan skjule/vise dem kjapt
+        const lagredeSpor = [];
+
         document.getElementById('total').textContent = totalFiles;
+
+        function zoomTilAktiveSpor() {
+            const aktiveBounds = L.latLngBounds();
+            lagredeSpor.forEach(item => {
+                if (map.hasLayer(item.layer)) {
+                    aktiveBounds.extend(item.layer.getBounds());
+                }
+            });
+            if (aktiveBounds.isValid()) {
+                map.fitBounds(aktiveBounds, { padding: [40, 40] });
+            }
+        }
 
         function sjekkFremdrift() {
             loadedCount++;
             document.getElementById('progress').textContent = loadedCount;
 
             if (loadedCount === totalFiles) {
-                if (bounds.isValid()) {
-                    // Zoomer ut/inn slik at absolutt alle turer rammes inn perfekt på skjermen
-                    map.fitBounds(bounds, { padding: [40, 40] });
-                }
-                // Skjul og fjern statuslinjen jevnt når alt er klart
+                zoomTilAktiveSpor();
                 const statusEl = document.getElementById('loading-status');
                 statusEl.style.opacity = '0';
                 setTimeout(() => statusEl.remove(), 500);
             }
         }
 
-        // 5. Loop gjennom listen fra vinter.html og tegn sporene
         topper.forEach(topp => {
             const track = new L.GPX(topp.fil, gpxOptions);
             
-            // Suksess: Sporet er lastet inn
             track.on('loaded', function(e) {
-                const gpxBounds = e.target.getBounds();
+                const layer = e.target;
+                
+                // Lagre sporet i listen vår med info om type
+                lagredeSpor.push({ layer: layer, type: topp.type });
+
+                const gpxBounds = layer.getBounds();
                 if (gpxBounds.isValid()) {
                     bounds.extend(gpxBounds);
                 }
                 
-                // Legg til en ren og pen popup som viser navnet på toppen ved klikk
-                e.target.bindPopup(`<strong style="color:#111; font-family:sans-serif; font-size:13px;">${topp.navn}</strong>`);
+                // Flytende tooltip som følger musa og forsvinner umiddelbart ved mus ut
+                layer.bindTooltip(`${topp.navn} <span style="font-size:10px; font-weight:normal; color:#aaa;"><br>Klikk for å åpne</span>`, {
+                    sticky: true,
+                    className: 'track-tooltip',
+                    direction: 'top',
+                    offset: [0, -10]
+                });
+
+                // HOVER: Mus inn
+                layer.on('mouseover', function() {
+                    layer.setStyle({
+                        color: 'var(--highlight-orange)',
+                        weight: 4.0,
+                        opacity: 1.0
+                    });
+                    layer.bringToFront();
+                });
+
+                // HOVER: Mus ut (Fjerner alt fokus og lukker pop-up med en gang)
+                layer.on('mouseout', function() {
+                    layer.setStyle({
+                        color: '#ffffff',
+                        weight: 1.4,
+                        opacity: 0.4
+                    });
+                    layer.closeTooltip();
+                });
+
+                // KLIKK: Åpner undersiden basert på om det er sommer eller vinter
+                layer.on('click', function() {
+                    const målside = topp.type === "sommer" ? "sommer.html" : "vinter.html";
+                    // Vi trimmer bort eventuell "(Sommer)" tekst fra URLen for renere overføring
+                    const rentNavn = topp.navn.replace(" (Sommer)", "");
+                    window.location.href = `${målside}?fjell=${encodeURIComponent(rentNavn)}`;
+                });
                 
                 sjekkFremdrift();
             });
 
-            // Sikring hvis en enkelt fil skulle feile underveis
-            track.on('error', function(e) {
+            track.on('error', function() {
                 console.warn("Kunne ikke laste filen: " + topp.fil);
                 sjekkFremdrift();
             });
 
             track.addTo(map);
+        });
+
+        // FILTRERINGS-FUNKSJONALITET
+        const btnVinter = document.getElementById('btn-vinter');
+        const btnSommer = document.getElementById('btn-sommer');
+
+        function filtrerTurer(valgtType) {
+            btnVinter.classList.remove('active');
+            btnSommer.classList.remove('active');
+
+            if (valgtType === 'vinter') btnVinter.classList.add('active');
+            if (valgtType === 'sommer') btnSommer.classList.add('active');
+
+            lagredeSpor.forEach(item => {
+                if (item.type === valgtType) {
+                    if (!map.hasLayer(item.layer)) map.addLayer(item.layer);
+                } else {
+                    if (map.hasLayer(item.layer)) map.removeLayer(item.layer);
+                }
+            });
+
+            zoomTilAktiveSpor();
+        }
+
+        // Klikk på Vinter-knapp
+        btnVinter.addEventListener('click', () => filtrerTurer('vinter'));
+
+        // Klikk på Sommer-knapp
+        btnSommer.addEventListener('click', () => filtrerTurer('sommer'));
+
+        // Nullstill / Vis alle ruter
+        document.getElementById('btn-reset').addEventListener('click', function() {
+            btnVinter.classList.remove('active');
+            btnSommer.classList.remove('active');
+
+            lagredeSpor.forEach(item => {
+                if (!map.hasLayer(item.layer)) map.addLayer(item.layer);
+                item.layer.setStyle({
+                    color: '#ffffff',
+                    weight: 1.4,
+                    opacity: 0.4
+                });
+            });
+
+            if (bounds.isValid()) {
+                map.fitBounds(bounds, { padding: [40, 40] });
+            }
         });
     </script>
 </body>
