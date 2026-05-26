@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toppturer og Fjellturer</title>
+    <style>
+        :root {
+            --winter-blue: #0ea5e9;
+            --winter-dark: #0369a1;
+            --summer-green: #22c55e;
+            --summer-dark: #15803d;
+            --map-gray: #64748b;
+            --map-dark: #334155;
+            --bg-color: #f1f5f9;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            margin-top: 5vh; /* Justert litt opp for å gi plass til 3 knapper */
+            margin-bottom: 5vh;
+        }
+
+        h1 {
+            color: #1e293b;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            
+            width: 180px; 
+            height: 180px;
+            
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: none;
+            color: white;
+            border-radius: 15px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-bottom-width 0.1s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            border: none;
+            box-sizing: border-box;
+        }
+
+        .btn span.emoji {
+            font-size: 40px;
+            margin-top: 10px;
+        }
+
+        /* Stil for SVG-omrisset */
+        .btn svg.tromsoya-shape {
+            width: 50px;
+            height: 50px;
+            margin-top: 10px;
+            fill: none;
+            stroke: white;
+            stroke-width: 2;
+            stroke-linejoin: round;
+        }
+
+        .btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+            border-bottom-width: 0; 
+            margin-top: 4px;        
+        }
+
+        .btn:focus {
+            outline: 3px solid #94a3b8;
+            outline-offset: 4px;
+        }
+
+        .btn-winter {
+            background: linear-gradient(135deg, var(--winter-blue), var(--winter-dark));
+            border-bottom: 4px solid #075985;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .btn-summer {
+            background: linear-gradient(135deg, var(--summer-green), var(--summer-dark));
+            border-bottom: 4px solid #166534;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .btn-map {
+            background: linear-gradient(135deg, var(--map-gray), var(--map-dark));
+            border-bottom: 4px solid #1e293b;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        /* Mobil-tilpasning */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 24px;
+            }
+            .btn {
+                width: 150px;
+                height: 150px;
+                font-size: 16px;
+            }
+            .btn span.emoji {
+                font-size: 32px;
+            }
+            .btn svg.tromsoya-shape {
+                width: 40px;
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Velg sesong</h1>
+        
+        <a href="vinter.html" class="btn btn-winter">
+            <span>Toppturer vinter</span>
+            <span class="emoji">⛷️</span>
+        </a>
+
+        <a href="sommer.html" class="btn btn-summer">
+            <span>Fjellturer sommer</span>
+            <span class="emoji">⛰️</span>
+        </a>
+
+        <a href="oversikt.html" class="btn btn-map">
+            <span>Oversiktskart</span>
+            <svg class="tromsoya-shape" viewBox="0 0 100 100">
+                <polygon points="53,95 48,93 42,85 41,75 38,68 39,52 46,40 50,25 49,15 52,5 57,8 60,18 56,28 54,42 53,52 50,68 53,78 57,88" />
+            </svg>
+        </a>
+    </div>
+
+</body>
+</html>
