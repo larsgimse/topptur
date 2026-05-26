@@ -38,16 +38,26 @@
             background: var(--panel-bg);
             padding: 10px 14px;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end; /* Skyver knappene helt til høyre */
             align-items: center;
             border: 1px solid #222;
             border-radius: 8px;
             z-index: 1000;
             backdrop-filter: blur(8px); /* Gjør bakgrunnen litt glassaktig */
             -webkit-backdrop-filter: blur(8px);
+            min-height: 52px; /* Sikrer stabil høyde når h1 er absolutt posisjonert */
         }
 
-        h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.5px; }
+        /* Sentrerer overskriften perfekt i headeren uavhengig av knappene */
+        h1 { 
+            font-size: 1.1rem; 
+            font-weight: 700; 
+            letter-spacing: -0.5px; 
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none; /* Gjør at man kan klikke "igjennom" teksten om nødvendig */
+        }
         
         .nav-buttons { display: flex; gap: 6px; align-items: center; }
         
@@ -136,8 +146,15 @@
                 align-items: center;
                 background: rgba(20, 20, 20, 0.95);
                 box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+                min-height: auto;
             }
-            h1 { font-size: 0.9rem; }
+            /* Nullstiller den absolutte posisjoneringen på mobil så overskriften stables pent over knappene */
+            h1 { 
+                position: static; 
+                transform: none; 
+                font-size: 0.9rem; 
+                text-align: center;
+            }
             .nav-buttons {
                 width: 100%;
                 justify-content: space-between;
