@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Toppturer - Oversiktskart</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -29,29 +29,31 @@
 
         header {
             background: var(--panel-bg);
-            padding: 15px 20px;
+            padding: 12px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #222;
             z-index: 1000;
+            flex-shrink: 0; /* Hindrer headeren fra å bli klemt sammen */
         }
 
-        h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+        h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.5px; }
         
-        .nav-buttons { display: flex; gap: 10px; align-items: center; }
+        .nav-buttons { display: flex; gap: 8px; align-items: center; }
         
         .btn {
-            padding: 10px 16px; /* Litt større på mobil for bedre touch-target */
+            padding: 6px 12px;
             border-radius: 6px;
             background: #2a2a2a;
             color: #fff;
             border: 1px solid #333;
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 500;
             transition: all 0.2s;
             cursor: pointer;
+            white-space: nowrap; /* Hindrer at teksten i knappen brekker */
         }
         .btn:hover { background: #3a3a3a; }
         
@@ -72,6 +74,7 @@
         #map-container {
             flex: 1;
             position: relative;
+            height: 100%;
         }
 
         #map {
@@ -110,12 +113,13 @@
             pointer-events: none;
         }
 
-        /* Styling for popup på mobil så den matcher det mørke temaet */
+        /* Stilren mørk popup for mobil */
         .leaflet-popup-content-wrapper {
             background: #1a1a1a !important;
             color: #fff !important;
             border: 1px solid var(--highlight-orange);
             border-radius: 6px;
+            font-family: inherit;
         }
         .leaflet-popup-tip {
             background: #1a1a1a !important;
@@ -130,24 +134,34 @@
             border-radius: 4px;
             font-weight: bold;
             font-size: 12px;
+            text-align: center;
         }
 
-        /* Mobil-tilpasning for header */
+        /* Responsiv tilpasning for mindre mobilskjermer */
         @media (max-width: 600px) {
             header {
                 flex-direction: column;
-                gap: 10px;
+                gap: 8px;
                 padding: 10px;
+                align-items: flex-start;
             }
-            h1 { font-size: 1.1rem; }
-            .btn { padding: 8px 10px; font-size: 0.8rem; }
+            .nav-buttons {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .btn {
+                flex: 1;
+                text-align: center;
+                padding: 8px 5px;
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>Toppturer - Alle Spor</h1>
+        <h1>Toppturer</h1>
         <div class="nav-buttons">
             <button id="btn-reset" class="btn btn-reset">🔄 Nullstill</button>
             <button id="btn-vinter" class="btn btn-winter">❄️ Vinter</button>
@@ -208,14 +222,16 @@
             { navn: "Vengsøytraversen", fil: "2021_09_19.gpx", type: "sommer" }
         ];
 
-        // Sjekk om enheten bruker touch (mobil/nettbrett)
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+        // SMART TRIKK: Vi lager en spesiell Canvas-renderer for mobil.
+        // `tolerance` gjør at Leaflet registrerer klikk opptil 20 piksler unna den tynne streken!
+        const minRenderer = L.canvas({ tolerance: isTouchDevice ? 20 : 3 });
 
         const map = L.map('map', {
             zoomControl: true,
             maxZoom: 18,
-            // Øker klikktoleransen for hele kartet hvis det er mobil
-            tapTolerance: isTouchDevice ? 30 : 15 
+            renderer: minRenderer // Aktiverer klikktoleransen på kartet
         }).setView([69.65, 18.95], 9);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -224,17 +240,14 @@
             maxZoom: 20
         }).addTo(map);
 
+        // Nå beholdes dine originale tynne og elegante innstillinger (weight: 1.4)
         const gpxOptions = {
             async: true,
             polyline_options: {
                 color: '#ffffff',
                 opacity: 0.4,
                 weight: 1.4,
-                lineCap: 'round',
-                // TRYKKSKJERM-REVOLUSJONEN: Usynlig utvidelse av klikkflaten!
-                // Hvis mobil, settes en "vekt-toleranse" for klikk på 25 piksler
-                weight: 1.4,
-                className: 'gpx-track-line'
+                lineCap: 'round'
             },
             marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
         };
@@ -254,7 +267,7 @@
                 }
             });
             if (aktiveBounds.isValid()) {
-                map.fitBounds(aktiveBounds, { padding: [20, 20] });
+                map.fitBounds(aktiveBounds, { padding: [30, 30] });
             }
         }
 
@@ -282,8 +295,8 @@
                     bounds.extend(gpxBounds);
                 }
 
-                // Hvis det er en PC, bruk ditt gamle fine hover-tooltip
                 if (!isTouchDevice) {
+                    // DESKTOP: Hover-effekter
                     layer.bindTooltip(`${topp.navn} <span style="font-size:10px; font-weight:normal; color:#aaa;"><br>Klikk for å åpne</span>`, {
                         sticky: true,
                         className: 'track-tooltip',
@@ -305,36 +318,25 @@
                         åpneTurSide(topp);
                     });
                 } else {
-                    // MOBIL-STRATEGI:
-                    // Siden det er mobil, gjør vi selve klikk-målet (vekt/tykkelse) enormt i kulissene
-                    layer.setStyle({ weight: 12 }); // Gjør den fysisk tykkere så den er lett å trykke på.
-
-                    // Siden tykk 12 ser stygt ut, kan vi binde en popup i stedet for direkte klikk.
-                    // Dette gjør at du kan trykke "i nærheten" av sporet, få opp en boks, og trykke på knappen.
+                    // MOBIL: Strekene forblir helt tynne (1.4)! 
+                    // Men takket være `tolerance: 20` i rendereren over, fanger den opp trykk likevel.
                     const rentNavn = topp.navn.replace(" (Sommer)", "");
                     const målside = topp.type === "sommer" ? "sommer.html" : "vinter.html";
                     const url = `${målside}?fjell=${encodeURIComponent(rentNavn)}`;
 
                     layer.bindPopup(`
-                        <b style="font-size:14px;">${topp.navn}</b><br>
-                        <span style="color:#aaa; font-size:11px;">Type: ${topp.type}</span><br>
+                        <b style="font-size:14px; color:#fff;">${topp.navn}</b><br>
                         <a href="${url}" class="popup-link-btn">Se detaljer ➔</a>
-                    `, { closeButton: false });
+                    `, { closeButton: false, offset: [0, -5] });
 
-                    // Highlight sporet når popupen åpnes på mobil
                     layer.on('popupopen', function() {
-                        layer.setStyle({ color: 'var(--highlight-orange)', opacity: 1.0 });
+                        layer.setStyle({ color: 'var(--highlight-orange)', opacity: 1.0, weight: 3.0 });
                     });
                     layer.on('popupclose', function() {
-                        layer.setStyle({ color: '#ffffff', opacity: 0.4 });
+                        layer.setStyle({ color: '#ffffff', opacity: 0.4, weight: 1.4 });
                     });
                 }
                 
-                sjekkFremdrift();
-            });
-
-            track.on('error', function() {
-                console.warn("Kunne ikke laste filen: " + topp.fil);
                 sjekkFremdrift();
             });
 
@@ -347,7 +349,7 @@
             window.location.href = `${målside}?fjell=${encodeURIComponent(rentNavn)}`;
         }
 
-        // FILTRERINGS-FUNKSJONALITET
+        // FILTRERING
         const btnVinter = document.getElementById('btn-vinter');
         const btnSommer = document.getElementById('btn-sommer');
 
@@ -365,7 +367,6 @@
                     if (map.hasLayer(item.layer)) map.removeLayer(item.layer);
                 }
             });
-
             zoomTilAktiveSpor();
         }
 
@@ -378,15 +379,11 @@
 
             lagredeSpor.forEach(item => {
                 if (!map.hasLayer(item.layer)) map.addLayer(item.layer);
-                item.layer.setStyle({
-                    color: '#ffffff',
-                    weight: isTouchDevice ? 12 : 1.4,
-                    opacity: 0.4
-                });
+                item.layer.setStyle({ color: '#ffffff', weight: 1.4, opacity: 0.4 });
             });
 
             if (bounds.isValid()) {
-                map.fitBounds(bounds, { padding: [20, 20] });
+                map.fitBounds(bounds, { padding: [30, 30] });
             }
         });
     </script>
