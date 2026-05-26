@@ -28,7 +28,7 @@
             overflow: hidden;
         }
 
-        /* STANDARD DESKTOP HEADER (Ingen overlapping med zoom-knapper) */
+        /* STANDARD DESKTOP HEADER */
         header {
             background: var(--panel-bg);
             padding: 15px 20px;
@@ -112,29 +112,7 @@
             pointer-events: none;
         }
 
-        .leaflet-popup-content-wrapper {
-            background: #1a1a1a !important;
-            color: #fff !important;
-            border: 1px solid var(--highlight-orange);
-            border-radius: 6px;
-        }
-        .leaflet-popup-tip {
-            background: #1a1a1a !important;
-        }
-        .popup-link-btn {
-            display: inline-block;
-            margin-top: 8px;
-            padding: 6px 12px;
-            background: var(--highlight-orange);
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 12px;
-            text-align: center;
-        }
-
-        /* MOBIL-STYLING (Flyttes trygt til bunnen, unna Safari-adressefeltet) */
+        /* MOBIL-STYLING (Flyttes trygt til bunnen for Safari på iPhone) */
         @media (max-width: 600px) {
             header {
                 position: absolute;
@@ -169,6 +147,42 @@
                 top: 20px;
                 left: 50%;
                 transform: translateX(-50%);
+            }
+        }
+
+        /* Lekker mørk popup for mobil */
+        .leaflet-popup-content-wrapper {
+            background: #1a1a1a !important;
+            color: #fff !important;
+            border: 1px solid var(--highlight-orange);
+            border-radius: 6px;
+        }
+        .leaflet-popup-tip {
+            background: #1a1a1a !important;
+        }
+        .popup-link-btn {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 6px 12px;
+            background: var(--highlight-orange);
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        /* KODENS HEMMELIGE VÅPEN FOR MOBILKLIKK:
+           Vi tvinger nettleseren til å gi de tynne linjene en usynlig klikksone på 20px uten at de ser tykke ut! */
+        .leaflet-interactive {
+            stroke-width: 1.4px;
+            paint-order: stroke fill;
+        }
+        @media (pointer: coarse) {
+            .leaflet-interactive {
+                /* Lager en usynlig buffer rundt linjen som reagerer på touch */
+                outline: 20px solid transparent;
             }
         }
     </style>
@@ -239,16 +253,13 @@
 
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-        // Klikktoleranse-renderer
-        const minRenderer = L.canvas({ tolerance: isTouchDevice ? 22 : 3 });
-
+        // Vi går tilbake til standard stabil Leaflet-oppstart (ingen sær Canvas-overstyring)
         const map = L.map('map', {
             zoomControl: true,
-            maxZoom: 18,
-            renderer: minRenderer
+            maxZoom: 18
         }).setView([69.65, 18.95], 9);
 
-        // Hvis mobil, flytt zoomknappene opp til venstre så de ikke krasjer med bunnpanelet
+        // Hvis mobil, flytt zoomknappene til øverst til venstre så de ikke kræsjer med bunnpanelet
         if (isTouchDevice) {
             map.zoomControl.setPosition('topleft');
         }
@@ -259,5 +270,109 @@
             maxZoom: 20
         }).addTo(map);
 
+        // De originale tynne linjene dine
         const gpxOptions = {
             async: true,
+            polyline_options: {
+                color: '#ffffff',
+                opacity: 0.4,
+                weight: 1.4,
+                lineCap: 'round'
+            },
+            marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
+        };
+
+        let loadedCount = 0;
+        const totalFiles = topper.length;
+        const bounds = L.latLngBounds();
+        const lagredeSpor = [];
+
+        document.getElementById('total').textContent = totalFiles;
+
+        function zoomTilAktiveSpor() {
+            const aktiveBounds = L.latLngBounds();
+            lagredeSpor.forEach(item => {
+                if (map.hasLayer(item.layer)) {
+                    aktiveBounds.extend(item.layer.getBounds());
+                }
+            });
+            if (aktiveBounds.isValid()) {
+                map.fitBounds(aktiveBounds, { padding: isTouchDevice ? [40, 100] : [40, 40] });
+            }
+        }
+
+        function sjekkFremdrift() {
+            loadedCount++;
+            document.getElementById('progress').textContent = loadedCount;
+
+            if (loadedCount === totalFiles) {
+                zoomTilAktiveSpor();
+                const statusEl = document.getElementById('loading-status');
+                statusEl.style.opacity = '0';
+                setTimeout(() => statusEl.remove(), 500);
+            }
+        }
+
+        topper.forEach(topp => {
+            const track = new L.GPX(topp.fil, gpxOptions);
+            
+            track.on('loaded', function(e) {
+                const layer = e.target;
+                lagredeSpor.push({ layer: layer, type: topp.type });
+
+                const gpxBounds = layer.getBounds();
+                if (gpxBounds.isValid()) {
+                    bounds.extend(gpxBounds);
+                }
+
+                if (!isTouchDevice) {
+                    // DESKTOP HOVER-FUNKSJONER
+                    layer.bindTooltip(`${topp.navn} <span style="font-size:10px; font-weight:normal; color:#aaa;"><br>Klikk for å åpne</span>`, {
+                        sticky: true,
+                        className: 'track-tooltip',
+                        direction: 'top',
+                        offset: [0, -10]
+                    });
+
+                    layer.on('mouseover', function() {
+                        layer.setStyle({ color: 'var(--highlight-orange)', weight: 4.0, opacity: 1.0 });
+                        layer.bringToFront();
+                    });
+
+                    layer.on('mouseout', function() {
+                        layer.setStyle({ color: '#ffffff', weight: 1.4, opacity: 0.4 });
+                        layer.closeTooltip();
+                    });
+
+                    layer.on('click', function() {
+                        åpneTurSide(topp);
+                    });
+                } else {
+                    // MOBIL: Linjene forblir tynne og fine, men reagerer trygt på trykk
+                    const rentNavn = topp.navn.replace(" (Sommer)", "");
+                    const målside = topp.type === "sommer" ? "sommer.html" : "vinter.html";
+                    const url = `${målside}?fjell=${encodeURIComponent(rentNavn)}`;
+
+                    layer.bindPopup(`
+                        <b style="font-size:14px; color:#fff;">${topp.navn}</b><br>
+                        <a href="${url}" class="popup-link-btn">Se detaljer ➔</a>
+                    `, { closeButton: false, offset: [0, -5] });
+
+                    layer.on('popupopen', function() {
+                        layer.setStyle({ color: 'var(--highlight-orange)', opacity: 1.0, weight: 3.0 });
+                    });
+                    layer.on('popupclose', function() {
+                        layer.setStyle({ color: '#ffffff', opacity: 0.4, weight: 1.4 });
+                    });
+                }
+                
+                sjekkFremdrift();
+            });
+
+            track.addTo(map);
+        });
+
+        function åpneTurSide(topp) {
+            const målside = topp.type === "sommer" ? "sommer.html" : "vinter.html";
+            const rentNavn = topp.navn.replace(" (Sommer)", "");
+            window.location.href = `${målside}?fjell
