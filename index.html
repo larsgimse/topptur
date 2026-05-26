@@ -10,8 +10,6 @@
             --winter-dark: #0369a1;
             --summer-green: #22c55e;
             --summer-dark: #15803d;
-            --map-orange: #f97316;
-            --map-dark: #c2410c;
             --bg-color: #f1f5f9;
         }
 
@@ -72,8 +70,8 @@
 
         /* Container for det genererte SVG-omrisset */
         .btn .map-container {
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             margin-top: 10px;
             display: flex;
             align-items: center;
@@ -87,8 +85,8 @@
 
         .btn svg path {
             fill: none;
-            stroke: white;
-            stroke-width: 2;
+            stroke: white; /* Hvitt omriss på øya */
+            stroke-width: 2.5;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
@@ -121,10 +119,11 @@
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
+        /* NY STIL: Svart knapp med hvit 3D-kant nederst */
         .btn-map {
-            background: linear-gradient(135deg, var(--map-orange), var(--map-dark));
-            border-bottom: 4px solid #9a3412;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            background: linear-gradient(135deg, #1e293b, #0f172a); /* Mørkegrå / Svart */
+            border-bottom: 4px solid #334155; /* Litt lysere kant i bunnen for 3D-effekt */
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
         }
 
         @media (max-width: 480px) {
@@ -136,10 +135,12 @@
                 height: 150px;
                 font-size: 16px;
             }
-            .btn span.emoji, .btn .map-container {
+            .btn span.emoji {
                 font-size: 32px;
-                width: 50px;
-                height: 50px;
+            }
+            .btn .map-container {
+                width: 55px;
+                height: 55px;
             }
         }
     </style>
@@ -162,87 +163,70 @@
         <a href="oversikt.html" class="btn btn-map">
             <span>Omriss Tromsøya</span>
             <div class="map-container" id="tromso-map">
-                <span class="emoji" id="fallback-emoji">🗺️</span>
-            </div>
+                </div>
         </a>
     </div>
 
     <script>
-        // Henter GeoJSON-dataene og tegner omrisset som en SVG
+        // En enkel, innebygd versjon av Tromsøyas omriss (koordinater) 
+        // Dette sikrer at kartet vises selv om nettleseren din blokkerer lokal .geojson-fil.
+        const backupGeoJSON = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[
+                    [18.91, 69.69], [18.94, 69.71], [18.98, 69.70], [19.03, 69.67], 
+                    [19.02, 69.64], [18.97, 69.62], [18.92, 69.62], [18.89, 69.64], 
+                    [18.88, 69.67], [18.91, 69.69]
+                ]]
+            }
+        };
+
+        function drawMap(geojson) {
+            let coords = geojson.geometry ? geojson.geometry.coordinates : geojson.coordinates;
+            let allPoints = Array.isArray(coords[0][0]) ? coords[0] : coords;
+
+            const lons = allPoints.map(p => p[0]);
+            const lats = allPoints.map(p => p[1]);
+            const minLon = Math.min(...lons);
+            const maxLon = Math.max(...lons);
+            const minLat = Math.min(...lats);
+            const maxLat = Math.max(...lats);
+
+            const width = maxLon - minLon;
+            const height = maxLat - minLat;
+
+            const viewBoxWidth = 100;
+            const viewBoxHeight = 100;
+
+            function toSvgX(lon) { return ((lon - minLon) / width) * viewBoxWidth; }
+            function toSvgY(lat) { return (1 - (lat - minLat) / height) * viewBoxHeight; }
+
+            let pathData = "";
+            allPoints.forEach((p, index) => {
+                pathData += (index === 0 ? "M" : "L") + ` ${toSvgX(p[0])} ${toSvgY(p[1])} `;
+            });
+            pathData += "Z";
+
+            document.getElementById('tromso-map').innerHTML = `
+                <svg viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}">
+                    <path d="${pathData}" />
+                </svg>
+            `;
+        }
+
+        // Prøv først å hente den ekte filen
         fetch('tromsoya.geojson')
             .then(response => response.json())
-            .then(geojson => {
-                // Henter ut alle koordinatene (støtter Polygon og MultiPolygon)
-                let coords = [];
-                if (geojson.type === "FeatureCollection") {
-                    coords = geojson.features[0].geometry.coordinates;
-                } else if (geojson.type === "Feature") {
-                    coords = geojson.geometry.coordinates;
-                } else {
-                    coords = geojson.coordinates;
-                }
-
-                // Flater ut koordinatene for å finne min/maks verdier (for skalering)
-                let allPoints = [];
-                if (Array.isArray(coords[0][0][0])) {
-                    // MultiPolygon
-                    coords.forEach(poly => poly[0].forEach(p => allPoints.push(p)));
-                } else {
-                    // Enkelt Polygon
-                    coords[0].forEach(p => allPoints.push(p)));
-                }
-
-                // Finn ytterpunktene for å regne ut bounding box (BBox)
-                const lons = allPoints.map(p => p[0]);
-                const lats = allPoints.map(p => p[1]);
-                const minLon = Math.min(...lons);
-                const maxLon = Math.max(...lons);
-                const minLat = Math.min(...lats);
-                const maxLat = Math.max(...lats);
-
-                const width = maxLon - minLon;
-                const height = maxLat - minLat;
-
-                // Definerer størrelsen på SVG-vinduet (f.eks 100x100 enheter)
-                const viewBoxWidth = 100;
-                const viewBoxHeight = 100;
-
-                // Funksjon for å konvertere kartkoordinater til SVG-piksler
-                // Merk: Kart-Y (nord) speiles fordi SVG har 0,0 øverst til venstre
-                function toSvgX(lon) { return ((lon - minLon) / width) * viewBoxWidth; }
-                function toSvgY(lat) { return (1 - (lat - minLat) / height) * viewBoxHeight; }
-
-                // Generer SVG 'path'-strengen
-                let pathData = "";
-                
-                if (Array.isArray(coords[0][0][0])) {
-                    // MultiPolygon-håndtering
-                    coords.forEach(polygon => {
-                        polygon[0].forEach((p, index) => {
-                            pathData += (index === 0 ? "M" : "L") + ` ${toSvgX(p[0])} ${toSvgY(p[1])} `;
-                        });
-                        pathData += "Z ";
-                    });
-                } else {
-                    // Enkelt Polygon-håndtering
-                    coords[0].forEach((p, index) => {
-                        pathData += (index === 0 ? "M" : "L") + ` ${toSvgX(p[0])} ${toSvgY(p[1])} `;
-                    });
-                    pathData += "Z";
-                }
-
-                // Lag det ferdige SVG-elementet
-                const svgHtml = `
-                    <svg viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}">
-                        <path d="${pathData}" />
-                    </svg>
-                `;
-
-                // Erstatt kart-emojien med det ekte omrisset
-                document.getElementById('tromso-map').innerHTML = svgHtml;
+            .then(data => {
+                // Hvis filen ble lastet suksessfullt, bruk dataene i den:
+                let feature = data.type === "FeatureCollection" ? data.features[0] : data;
+                drawMap(feature);
             })
             .catch(error => {
-                console.error("Kunne ikke laste tromsoya.geojson, bruker emoji som fallback:", error);
+                console.log("Kjører lokalt eller fant ikke filen. Bruker innebygd omriss-data.");
+                // Tegner opp backup-kartet umiddelbart i stedet for et emoji-ikon
+                drawMap(backupGeoJSON);
             });
     </script>
 </body>
