@@ -10,8 +10,8 @@
             --winter-dark: #0369a1;
             --summer-green: #22c55e;
             --summer-dark: #15803d;
-            --map-gray: #64748b;
-            --map-dark: #334155;
+            --map-orange: #f97316;
+            --map-dark: #c2410c;
             --bg-color: #f1f5f9;
         }
 
@@ -28,13 +28,13 @@
         .container {
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: center; 
             gap: 25px;
             width: 90%;
             max-width: 400px;
             text-align: center;
-            margin-top: 5vh; /* Justert for å gi plass til 3 knapper uten scrolling */
-            margin-bottom: 5vh;
+            margin-top: 5vh; 
+            padding-bottom: 50px;
         }
 
         h1 {
@@ -44,11 +44,11 @@
         }
 
         .btn {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 0;
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 0; 
             
             width: 180px; 
             height: 180px;
@@ -58,28 +58,39 @@
             text-decoration: none;
             color: white;
             border-radius: 15px;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-bottom-width 0.1s ease;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-bottom-width 0.1s ease; 
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             cursor: pointer;
             border: none;
-            box-sizing: border-box;
+            box-sizing: border-box; 
         }
 
         .btn span.emoji {
-            font-size: 40px;
+            font-size: 40px; 
             margin-top: 10px;
         }
 
-        /* Stil for det ekte Tromsøya-omrisset */
-        .btn svg.tromsoya-shape {
-            width: 65px;  /* Litt større for å vise de flotte detaljene */
-            height: 65px;
-            margin-top: 8px;
-            fill: rgba(255, 255, 255, 0.15); /* Svakt fyll innvendig for dybde */
+        /* Container for det genererte SVG-omrisset */
+        .btn .map-container {
+            width: 60px;
+            height: 60px;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .btn svg path {
+            fill: none;
             stroke: white;
             stroke-width: 2;
-            stroke-linejoin: round;
             stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         .btn:hover {
@@ -87,14 +98,10 @@
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
         }
 
-        .btn:hover svg.tromsoya-shape {
-            fill: rgba(255, 255, 255, 0.3); /* Lyser litt opp ved hover */
-        }
-
         .btn:active {
-            transform: scale(0.98);
-            border-bottom-width: 0; 
-            margin-top: 4px;        
+            transform: scale(0.98); 
+            border-bottom-width: 0;  
+            margin-top: 4px;         
         }
 
         .btn:focus {
@@ -115,12 +122,11 @@
         }
 
         .btn-map {
-            background: linear-gradient(135deg, var(--map-gray), var(--map-dark));
-            border-bottom: 4px solid #1e293b;
+            background: linear-gradient(135deg, var(--map-orange), var(--map-dark));
+            border-bottom: 4px solid #9a3412;
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
-        /* Mobil-tilpasning */
         @media (max-width: 480px) {
             h1 {
                 font-size: 24px;
@@ -130,10 +136,8 @@
                 height: 150px;
                 font-size: 16px;
             }
-            .btn span.emoji {
+            .btn span.emoji, .btn .map-container {
                 font-size: 32px;
-            }
-            .btn svg.tromsoya-shape {
                 width: 50px;
                 height: 50px;
             }
@@ -143,7 +147,7 @@
 <body>
 
     <div class="container">
-        <h1>Velg sesong</h1>
+        <h1>Velg visning</h1>
         
         <a href="vinter.html" class="btn btn-winter">
             <span>Toppturer vinter</span>
@@ -156,12 +160,90 @@
         </a>
 
         <a href="oversikt.html" class="btn btn-map">
-            <span>Oversiktskart</span>
-            <svg class="tromsoya-shape" viewBox="0 0 100 100">
-                <polygon points="76,27 77,28 78,28 79,29 80,30 84,32 87,34 90,36 92,38 94,39 96,40 97,41 98,42 98,42 99,43 100,44 100,45 99,45 97,46 92,48 91,48 92,49 95,51 98,53 100,55 100,56 100,56 99,57 97,58 95,59 93,60 92,60 92,61 91,61 91,62 89,62 85,64 84,65 82,65 79,64 77,63 76,62 76,63 77,65 77,66 76,68 76,71 76,75 76,77 77,78 77,81 78,85 79,87 79,90 80,94 80,97 81,100 76,100 77,97 76,96 75,94 73,93 72,93 70,93 69,94 65,92 59,88 56,88 56,87 53,85 53,82 54,82 55,83 55,84 55,83 55,80 54,77 53,74 53,72 53,69 54,64 54,61 54,58 55,54 54,51 52,50 50,47 49,46 48,46 45,46 44,46 43,45 42,44 41,43 38,39 36,34 32,29 32,29 32,28 32,27 33,26 33,25 33,25 33,24 33,24 35,24 36,25 37,25 38,25 43,26 47,27 49,27 51,27 52,27 53,27 53,28 53,28 54,29 54,29 54,30 54,31 54,31 55,30 55,29 55,28 54,27 54,26 53,25 51,21 49,17 48,12 47,8 46,3 44,0 43,0 42,0 42,0 41,1 41,2 41,3 40,4 40,4 39,5 39,7 39,12 39,15 39,20 39,24 39,26 39,27 38,28 37,30 35,31 34,32 31,33 29,33 27,33 24,32 23,32 21,32 21,32 21,33 21,34 21,34 21,35 22,35 22,35 23,35 23,36 24,37 25,38 25,39 25,40 25,41 24,41 24,42 22,43 21,44 20,44 19,45 19,45 18,45 18,44 17,44 14,42 12,39 12,37 12,34 12,32 12,29 11,26 11,25 11,21 11,18 10,13 10,10 10,7 10,5 10,2 10,0 8,2 7,3 6,5 5,7 4,9 4,11 3,15 2,19 1,22 1,25 1,28 1,32 0,37 0,42 0,47 0,33 0,22 1,18 2,13 2,7 3,2 4,0 4,1 5,2 5,3 6,4 6,5 6,6 6,7 7,7 7,8 8,8 8,9 9,9 9,12 10,16 10,19 11,22 11,23 11,25 11,26 12,27 12,27 12,26 13,24 13,23 14,21 14,20 14,19 15,18 16,16 16,15 17,14 18,13 19,13 22,12 25,11 26,10 27,10 28,10 32,9 33,9 35,8 37,7 39,5 42,3 44,2 45,2 48,1 52,1 53,1 56,1 58,1 61,1 64,2 67,2 69,3 70,3 71,4 72,5 72,5 73,7 74,10 74,12 74,14 74,17 74,21 75,23" />
-            </svg>
+            <span>Omriss Tromsøya</span>
+            <div class="map-container" id="tromso-map">
+                <span class="emoji" id="fallback-emoji">🗺️</span>
+            </div>
         </a>
     </div>
 
+    <script>
+        // Henter GeoJSON-dataene og tegner omrisset som en SVG
+        fetch('tromsoya.geojson')
+            .then(response => response.json())
+            .then(geojson => {
+                // Henter ut alle koordinatene (støtter Polygon og MultiPolygon)
+                let coords = [];
+                if (geojson.type === "FeatureCollection") {
+                    coords = geojson.features[0].geometry.coordinates;
+                } else if (geojson.type === "Feature") {
+                    coords = geojson.geometry.coordinates;
+                } else {
+                    coords = geojson.coordinates;
+                }
+
+                // Flater ut koordinatene for å finne min/maks verdier (for skalering)
+                let allPoints = [];
+                if (Array.isArray(coords[0][0][0])) {
+                    // MultiPolygon
+                    coords.forEach(poly => poly[0].forEach(p => allPoints.push(p)));
+                } else {
+                    // Enkelt Polygon
+                    coords[0].forEach(p => allPoints.push(p)));
+                }
+
+                // Finn ytterpunktene for å regne ut bounding box (BBox)
+                const lons = allPoints.map(p => p[0]);
+                const lats = allPoints.map(p => p[1]);
+                const minLon = Math.min(...lons);
+                const maxLon = Math.max(...lons);
+                const minLat = Math.min(...lats);
+                const maxLat = Math.max(...lats);
+
+                const width = maxLon - minLon;
+                const height = maxLat - minLat;
+
+                // Definerer størrelsen på SVG-vinduet (f.eks 100x100 enheter)
+                const viewBoxWidth = 100;
+                const viewBoxHeight = 100;
+
+                // Funksjon for å konvertere kartkoordinater til SVG-piksler
+                // Merk: Kart-Y (nord) speiles fordi SVG har 0,0 øverst til venstre
+                function toSvgX(lon) { return ((lon - minLon) / width) * viewBoxWidth; }
+                function toSvgY(lat) { return (1 - (lat - minLat) / height) * viewBoxHeight; }
+
+                // Generer SVG 'path'-strengen
+                let pathData = "";
+                
+                if (Array.isArray(coords[0][0][0])) {
+                    // MultiPolygon-håndtering
+                    coords.forEach(polygon => {
+                        polygon[0].forEach((p, index) => {
+                            pathData += (index === 0 ? "M" : "L") + ` ${toSvgX(p[0])} ${toSvgY(p[1])} `;
+                        });
+                        pathData += "Z ";
+                    });
+                } else {
+                    // Enkelt Polygon-håndtering
+                    coords[0].forEach((p, index) => {
+                        pathData += (index === 0 ? "M" : "L") + ` ${toSvgX(p[0])} ${toSvgY(p[1])} `;
+                    });
+                    pathData += "Z";
+                }
+
+                // Lag det ferdige SVG-elementet
+                const svgHtml = `
+                    <svg viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}">
+                        <path d="${pathData}" />
+                    </svg>
+                `;
+
+                // Erstatt kart-emojien med det ekte omrisset
+                document.getElementById('tromso-map').innerHTML = svgHtml;
+            })
+            .catch(error => {
+                console.error("Kunne ikke laste tromsoya.geojson, bruker emoji som fallback:", error);
+            });
+    </script>
 </body>
 </html>
