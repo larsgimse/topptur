@@ -8,7 +8,7 @@
     <style>
         :root {
             --bg-color: #111111;
-            --panel-bg: rgba(26, 26, 26, 0.9);
+            --panel-bg: #1a1a1a;
             --text-color: #eeeeee;
             --highlight-orange: #fc4c02;
             --winter-blue: #0ea5e9;
@@ -21,54 +21,53 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background: var(--bg-color);
             color: var(--text-color);
-            /* LØSNING FOR SAFARI: Bruker dvh (dynamic viewport height) */
             height: 100vh;
-            height: 100dvh; 
+            height: 100dvh; /* Safari iPhone-fiks */
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
-        /* En mer kompakt header som flyter øverst på kartet */
+        /* STANDARD DESKTOP HEADER (Ingen overlapping med zoom-knapper) */
         header {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
             background: var(--panel-bg);
-            padding: 10px 14px;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border: 1px solid #222;
-            border-radius: 8px;
+            border-bottom: 1px solid #222;
             z-index: 1000;
-            backdrop-filter: blur(8px); /* Gjør bakgrunnen litt glassaktig */
-            -webkit-backdrop-filter: blur(8px);
+            flex-shrink: 0;
         }
 
-        h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.5px; }
+        h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
         
-        .nav-buttons { display: flex; gap: 6px; align-items: center; }
+        .nav-buttons { display: flex; gap: 10px; align-items: center; }
         
         .btn {
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 6px;
             background: #2a2a2a;
             color: #fff;
             border: 1px solid #333;
             text-decoration: none;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             font-weight: 500;
             transition: all 0.2s;
             cursor: pointer;
             white-space: nowrap;
         }
+        .btn:hover { background: #3a3a3a; }
         
         .btn-reset {
             background: #222;
             border-color: #444;
             color: #ccc;
+        }
+        .btn-reset:hover {
+            background: #2d2d2d;
+            border-color: var(--highlight-orange);
+            color: #fff;
         }
 
         .btn-winter.active { background: var(--winter-blue); border-color: #fff; font-weight: 700; }
@@ -76,9 +75,9 @@
 
         #map-container {
             flex: 1;
+            position: relative;
             width: 100%;
             height: 100%;
-            position: relative;
         }
 
         #map {
@@ -89,21 +88,30 @@
 
         #loading-status {
             position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%); /* Sentrert på bunnen av mobil */
-            background: rgba(26, 26, 26, 0.95);
-            padding: 8px 14px;
-            border-radius: 20px;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(26, 26, 26, 0.9);
+            padding: 10px 15px;
+            border-radius: 6px;
             border: 1px solid #333;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             z-index: 1000;
             pointer-events: none;
             transition: opacity 0.5s ease;
-            white-space: nowrap;
         }
 
-        /* Stilren mørk popup for mobil */
+        .track-tooltip {
+            background: rgba(26, 26, 26, 0.95) !important;
+            border: 1px solid var(--highlight-orange) !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            font-size: 13px;
+            border-radius: 4px;
+            padding: 4px 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+
         .leaflet-popup-content-wrapper {
             background: #1a1a1a !important;
             color: #fff !important;
@@ -126,16 +134,24 @@
             text-align: center;
         }
 
-        /* Skreddersydd for iPhone og trange mobilskjermer */
+        /* MOBIL-STYLING (Flyttes trygt til bunnen, unna Safari-adressefeltet) */
         @media (max-width: 600px) {
             header {
+                position: absolute;
                 top: auto;
-                bottom: 20px; /* Flytter hele menyen til bunnen, trygt over adressefeltet */
-                flex-direction: column;
-                gap: 8px;
-                align-items: center;
+                bottom: 20px;
+                left: 10px;
+                right: 10px;
+                border: 1px solid #222;
+                border-radius: 8px;
                 background: rgba(20, 20, 20, 0.95);
                 box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+                flex-direction: column;
+                gap: 8px;
+                padding: 10px;
+                align-items: center;
             }
             h1 { font-size: 0.9rem; }
             .nav-buttons {
@@ -145,15 +161,15 @@
             .btn {
                 flex: 1;
                 text-align: center;
-                padding: 10px 5px; /* Deilig og store touchflater for tommelen */
+                padding: 10px 5px;
                 font-size: 0.8rem;
             }
             #loading-status {
                 bottom: auto;
-                top: 20px; /* Flytter laste-status til toppen når menyen er nede */
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
             }
-            /* Flytter de originale Leaflet-zoomknappene opp så de ikke kræsjer med menyen */
-            .leaflet-bottom { bottom: 110px !important; }
         }
     </style>
 </head>
@@ -223,7 +239,7 @@
 
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-        // Toleranse for klikk (usynlig tykkelse)
+        // Klikktoleranse-renderer
         const minRenderer = L.canvas({ tolerance: isTouchDevice ? 22 : 3 });
 
         const map = L.map('map', {
@@ -232,7 +248,7 @@
             renderer: minRenderer
         }).setView([69.65, 18.95], 9);
 
-        // Flytt de innebygde zoom-knappene til øverst til venstre på mobil så de ikke krasjer med menyen
+        // Hvis mobil, flytt zoomknappene opp til venstre så de ikke krasjer med bunnpanelet
         if (isTouchDevice) {
             map.zoomControl.setPosition('topleft');
         }
@@ -243,150 +259,5 @@
             maxZoom: 20
         }).addTo(map);
 
-        // De vakre tynne linjene dine beholdes uendret
         const gpxOptions = {
             async: true,
-            polyline_options: {
-                color: '#ffffff',
-                opacity: 0.4,
-                weight: 1.4,
-                lineCap: 'round'
-            },
-            marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
-        };
-
-        let loadedCount = 0;
-        const totalFiles = topper.length;
-        const bounds = L.latLngBounds();
-        const lagredeSpor = [];
-
-        document.getElementById('total').textContent = totalFiles;
-
-        function zoomTilAktiveSpor() {
-            const aktiveBounds = L.latLngBounds();
-            lagredeSpor.forEach(item => {
-                if (map.hasLayer(item.layer)) {
-                    aktiveBounds.extend(item.layer.getBounds());
-                }
-            });
-            if (aktiveBounds.isValid()) {
-                // Ekstra god margin på mobil siden vi har knapper i bunnen
-                map.fitBounds(aktiveBounds, { padding: isTouchDevice ? [40, 100] : [40, 40] });
-            }
-        }
-
-        function sjekkFremdrift() {
-            loadedCount++;
-            document.getElementById('progress').textContent = loadedCount;
-
-            if (loadedCount === totalFiles) {
-                zoomTilAktiveSpor();
-                const statusEl = document.getElementById('loading-status');
-                statusEl.style.opacity = '0';
-                setTimeout(() => statusEl.remove(), 500);
-            }
-        }
-
-        topper.forEach(topp => {
-            const track = new L.GPX(topp.fil, gpxOptions);
-            
-            track.on('loaded', function(e) {
-                const layer = e.target;
-                lagredeSpor.push({ layer: layer, type: topp.type });
-
-                const gpxBounds = layer.getBounds();
-                if (gpxBounds.isValid()) {
-                    bounds.extend(gpxBounds);
-                }
-
-                if (!isTouchDevice) {
-                    layer.bindTooltip(`${topp.navn} <span style="font-size:10px; font-weight:normal; color:#aaa;"><br>Klikk for å åpne</span>`, {
-                        sticky: true,
-                        className: 'track-tooltip',
-                        direction: 'top',
-                        offset: [0, -10]
-                    });
-
-                    layer.on('mouseover', function() {
-                        layer.setStyle({ color: 'var(--highlight-orange)', weight: 4.0, opacity: 1.0 });
-                        layer.bringToFront();
-                    });
-
-                    layer.on('mouseout', function() {
-                        layer.setStyle({ color: '#ffffff', weight: 1.4, opacity: 0.4 });
-                        layer.closeTooltip();
-                    });
-
-                    layer.on('click', function() {
-                        åpneTurSide(topp);
-                    });
-                } else {
-                    const rentNavn = topp.navn.replace(" (Sommer)", "");
-                    const målside = topp.type === "sommer" ? "sommer.html" : "vinter.html";
-                    const url = `${målside}?fjell=${encodeURIComponent(rentNavn)}`;
-
-                    layer.bindPopup(`
-                        <b style="font-size:14px; color:#fff;">${topp.navn}</b><br>
-                        <a href="${url}" class="popup-link-btn">Se detaljer ➔</a>
-                    `, { closeButton: false, offset: [0, -5] });
-
-                    layer.on('popupopen', function() {
-                        layer.setStyle({ color: 'var(--highlight-orange)', opacity: 1.0, weight: 3.0 });
-                    });
-                    layer.on('popupclose', function() {
-                        layer.setStyle({ color: '#ffffff', opacity: 0.4, weight: 1.4 });
-                    });
-                }
-                
-                sjekkFremdrift();
-            });
-
-            track.addTo(map);
-        });
-
-        function åpneTurSide(topp) {
-            const målside = topp.type === "sommer" ? "sommer.html" : "vinter.html";
-            const rentNavn = topp.navn.replace(" (Sommer)", "");
-            window.location.href = `${målside}?fjell=${encodeURIComponent(rentNavn)}`;
-        }
-
-        // FILTRERING
-        const btnVinter = document.getElementById('btn-vinter');
-        const btnSommer = document.getElementById('btn-sommer');
-
-        function filtrerTurer(valgtType) {
-            btnVinter.classList.remove('active');
-            btnSommer.classList.remove('active');
-
-            if (valgtType === 'vinter') btnVinter.classList.add('active');
-            if (valgtType === 'sommer') btnSommer.classList.add('active');
-
-            lagredeSpor.forEach(item => {
-                if (item.type === valgtType) {
-                    if (!map.hasLayer(item.layer)) map.addLayer(item.layer);
-                } else {
-                    if (map.hasLayer(item.layer)) map.removeLayer(item.layer);
-                }
-            });
-            zoomTilAktiveSpor();
-        }
-
-        btnVinter.addEventListener('click', () => filtrerTurer('vinter'));
-        btnSommer.addEventListener('click', () => filtrerTurer('sommer'));
-
-        document.getElementById('btn-reset').addEventListener('click', function() {
-            btnVinter.classList.remove('active');
-            btnSommer.classList.remove('active');
-
-            lagredeSpor.forEach(item => {
-                if (!map.hasLayer(item.layer)) map.addLayer(item.layer);
-                item.layer.setStyle({ color: '#ffffff', weight: 1.4, opacity: 0.4 });
-            });
-
-            if (bounds.isValid()) {
-                map.fitBounds(bounds, { padding: isTouchDevice ? [40, 100] : [40, 40] });
-            }
-        });
-    </script>
-</body>
-</html>
