@@ -146,20 +146,19 @@
         let gruvePins = [];
 
         function opprettGruvePinner() {
-            // Definerer data for de tre pinnene
+            // Definerer data for de tre pinnene med oppdaterte URL-er
             const pinsData = [
                 { coords: [69.585841, 19.006101], url: 'https://www.google.com/maps/place/Gruve+1+Djupdalen/@69.585841,18.9340032,13z/data=!4m6!3m5!1s0x45c4cf0c646a91eb:0x436845c3c2393ba8!8m2!3d69.585841!4d19.006101!16s%2Fg%2F11hh4tny9_?entry=ttu&g_ep=EgoyMDI2MDUyNy4wIKXMDSoASAFQAw%3D%3D', tittel: 'Gruve 1' },
-                { coords: [69.584100, 19.012500], url: 'https://www.google.com/maps/place/Djupdalen+gruve+2/@69.5866416,18.928048,12z/data=!4m6!3m5!1s0x45c4cf003b417efb:0x5bb626ac00f41d93!8m2!3d69.5866389!4d19.0121112!16s%2Fg%2F11w4jw9h1x?entry=ttu&g_ep=EgoyMDI2MDUyNy4wIKXMDSoASAFQAw%3D%3D', tittel: 'Gruve 2' },
-                { coords: [69.582300, 19.019000], url: 'https://www.google.com/maps/place/Djupdalen+Gruve+3/@69.5866416,18.928048,12z/data=!4m6!3m5!1s0x45c4cf57be95adb1:0xaaaa4cfde888cc4!8m2!3d69.5915559!4d19.0087274!16s%2Fg%2F11v4n2j6d9?entry=ttu&g_ep=EgoyMDI2MDUyNy4wIKXMDSoASAFQAw%3D%3D', tittel: 'Gruve 3' }
+                { coords: [69.584100, 19.012500], url: 'https://maps.app.goo.gl/KK1poWGMzH4SgGSAA', tittel: 'Gruve 2' },
+                { coords: [69.582300, 19.019000], url: 'https://maps.app.goo.gl/Mfnksxf7hAkLasen7', tittel: 'Gruve 3' }
             ];
 
             pinsData.forEach(data => {
                 const marker = L.marker(data.coords);
-                // Valgfritt: viser tekst når man holder over pinnen
                 marker.bindTooltip(data.tittel, { permanent: false, direction: 'top' });
                 
                 marker.on('click', (e) => {
-                    L.DomEvent.stopPropagation(e); // Hindrer at kartet/sporet trigges samtidig
+                    L.DomEvent.stopPropagation(e);
                     window.open(data.url, '_blank');
                 });
                 gruvePins.push(marker);
@@ -176,7 +175,6 @@
             });
         }
 
-        // Initialiserer pinnene i minnet med en gang
         opprettGruvePinner();
         // ----------------------------------------------------
 
@@ -327,13 +325,11 @@
                     allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.1, weight: 1, color: 'var(--summer-green)'}));
                     l.setStyle({opacity: 1, weight: 3, color: 'var(--strava-orange)'}).bringToFront(); 
 
-                    // --- SJEKK FOR Å VISE/SKJULE GRUVEPINNER VED KLIKK ---
                     if (topp.navn === "Djupdalgruver") {
                         visGruvePinner(true);
                     } else {
                         visGruvePinner(false);
                     }
-                    // ----------------------------------------------------
 
                     videoContainer.innerHTML = ''; videoContainer.classList.remove('ui-hidden');
                     const hb = document.createElement('button'); hb.className = 'toggle-ui-btn'; hb.innerText = 'Skjul meny';
@@ -398,9 +394,7 @@
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
             map.closePopup(); aktiveEkstraSporLayers.forEach(l => map.removeLayer(l));
             
-            // --- SKJULER PINNER VED NULLSTILLING ---
             visGruvePinner(false);
-            // ---------------------------------------
 
             allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.6, weight:1.5, color: 'var(--summer-green)'}); });
             map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]});
