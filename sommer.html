@@ -142,41 +142,6 @@
             else { map.addLayer(norgeLayer); map.removeLayer(osmLayer); }
         };
 
-        // --- EN DRIFT AV DJUPDALSGRUVER SPESIFIKKE PINNER ---
-        let gruvePins = [];
-
-        function opprettGruvePinner() {
-            const pinsData = [
-                { coords: [69.585841, 19.006101], url: 'https://www.google.com/maps/place/Gruve+1+Djupdalen/@69.585841,18.9340032,13z/data=!4m6!3m5!1s0x45c4cf0c646a91eb:0x436845c3c2393ba8!8m2!3d69.585841!4d19.006101!16s%2Fg%2F11hh4tny9_?entry=ttu&g_ep=EgoyMDI2MDUyNy4wIKXMDSoASAFQAw%3D%3D', tittel: 'Gruve 1' },
-                { coords: [69.5866389, 19.0121112], url: 'https://www.google.com/maps/place/Djupdalen+gruve+2/@69.5870662,18.9966363,14.38z/data=!4m6!3m5!1s0x45c4cf003b417efb:0x5bb626ac00f41d93!8m2!3d69.5866389!4d19.0121112!16s%2Fg%2F11w4jw9h1x?entry=ttu&g_ep=EgoyMDI2MDUyNy4wIKXMDSoASAFQAw%3D%3D', tittel: 'Gruve 2' },
-                { coords: [69.5870662, 18.9966363], url: 'https://maps.app.goo.gl/Mfnksxf7hAkLasen7', tittel: 'Gruve 3' }
-            ];
-
-            pinsData.forEach(data => {
-                const marker = L.marker(data.coords);
-                marker.bindTooltip(data.tittel, { permanent: false, direction: 'top' });
-                
-                marker.on('click', (e) => {
-                    L.DomEvent.stopPropagation(e);
-                    window.open(data.url, '_blank');
-                });
-                gruvePins.push(marker);
-            });
-        }
-
-        function visGruvePinner(vis) {
-            gruvePins.forEach(pin => {
-                if (vis) {
-                    pin.addTo(map);
-                } else {
-                    map.removeLayer(pin);
-                }
-            });
-        }
-
-        opprettGruvePinner();
-        // ----------------------------------------------------
-
         const topper = [
             { navn: "Buren", fil: "2025_10_06.gpx", overrideAar: "2020", video: [{ url: "https://youtu.be/-m3sEIIIUHg", tittel: "Se video", dato: "2020_08_23" }] },
             { navn: "Djeveltanna", fil: "2024_08_03.gpx", video: [{ url: "https://www.instagram.com/p/C-dPqdWM4Ku/", tittel: "Se video" }] },
@@ -324,12 +289,6 @@
                     allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.1, weight: 1, color: 'var(--summer-green)'}));
                     l.setStyle({opacity: 1, weight: 3, color: 'var(--strava-orange)'}).bringToFront(); 
 
-                    if (topp.navn === "Djupdalgruver") {
-                        visGruvePinner(true);
-                    } else {
-                        visGruvePinner(false);
-                    }
-
                     videoContainer.innerHTML = ''; videoContainer.classList.remove('ui-hidden');
                     const hb = document.createElement('button'); hb.className = 'toggle-ui-btn'; hb.innerText = 'Skjul meny';
                     hb.onclick = () => hb.innerText = videoContainer.classList.toggle('ui-hidden') ? 'Vis meny' : 'Skjul meny';
@@ -393,8 +352,6 @@
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
             map.closePopup(); aktiveEkstraSporLayers.forEach(l => map.removeLayer(l));
             
-            visGruvePinner(false);
-
             allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.6, weight:1.5, color: 'var(--summer-green)'}); });
             map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]});
             setTimeout(() => isReseting = false, 300);
