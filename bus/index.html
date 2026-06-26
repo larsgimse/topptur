@@ -15,21 +15,17 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Initialiser kart sentrert på Tromsøya
         const map = L.map('map', { zoomControl: false }).setView([69.65, 18.95], 13);
         
-        // Legg til mørkt kartlag
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap & CARTO'
-        }).addTo(map);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // Objekt for å holde styr på markører
         let markers = {}; 
 
         async function fetchBuses() {
+            // Vi bruker "TROM:Operator" som ID for Troms fylkestrafikk
             const query = `
             {
-              vehiclePositions(filters: {operatorIds: ["TROM"]}) {
+              vehiclePositions(filters: {operatorIds: ["TROM:Operator"]}) {
                 vehicle { id }
                 position { latitude longitude }
               }
@@ -46,23 +42,26 @@
                 });
 
                 const result = await response.json();
-                const buses = result.data.vehiclePositions;
                 
-                // Lag en liste over alle ID-er vi fikk i siste oppdatering
+                if (!result.data || !result.data.vehiclePositions) {
+                    console.error("Ingen data returnert fra API-et:", result);
+                    return;
+                }
+
+                const buses = result.data.vehiclePositions;
                 let activeIds = [];
 
                 buses.forEach(v => {
                     const id = v.vehicle.id;
-                    const lat = v.position.latitude;
-                    const lng = v.position.longitude;
+                    const pos = v.position;
+                    if (!pos) return;
+                    
                     activeIds.push(id);
 
                     if (markers[id]) {
-                        // Oppdater eksisterende posisjon
-                        markers[id].setLatLng([lat, lng]);
+                        markers[id].setLatLng([pos.latitude, pos.longitude]);
                     } else {
-                        // Lag ny markør
-                        markers[id] = L.circleMarker([lat, lng], {
+                        markers[id] = L.circleMarker([pos.latitude, pos.longitude], {
                             radius: 4,
                             color: 'white',
                             fillColor: 'white',
@@ -71,20 +70,17 @@
                     }
                 });
 
-                // Fjern busser som ikke lenger finnes i dataene
                 Object.keys(markers).forEach(id => {
                     if (!activeIds.includes(id)) {
                         map.removeLayer(markers[id]);
                         delete markers[id];
                     }
                 });
-
             } catch (error) {
-                console.error("Kunne ikke hente bussdata:", error);
+                console.error("Feil ved henting:", error);
             }
         }
         
-        // Hent data hvert 5. sekund
         fetchBuses();
         setInterval(fetchBuses, 5000);
     </script>
