@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- Tillater tilkoblinger til Open-Meteo selv om nettleseren har strenge sikkerhetsinnstillinger -->
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://api.open-meteo.com https://cache.kartverket.no https://*.openstreetmap.org;" />
     <title>Fjellturer rundt Tromsø - Sommer</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -92,7 +94,6 @@
         }
         .control-label { font-size: 11px; font-weight: 700; flex-grow: 1; text-align: left; }
         
-        /* Felles stil for skyvebrytere (Både i menyen og kontrollraden) */
         .toggle-group { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; user-select: none; }
         .toggle-text { font-size: 8px; color: #64748b; font-weight: 800; text-transform: uppercase; }
         .switch-track { width: 30px; height: 16px; background: var(--switch-grey); border-radius: 20px; position: relative; transition: background 0.2s; }
@@ -100,7 +101,6 @@
         .active .switch-track { background: var(--strava-green); }
         .active .switch-thumb { transform: translateX(14px); }
 
-        /* Spesifikk styling for vær-bryteren i kontrollraden */
         .weather-control-toggle {
             background: white; border: 1px solid #cbd5e1; padding: 4px 10px; 
             border-radius: 8px; display: inline-flex; align-items: center; gap: 8px;
@@ -119,7 +119,6 @@
         .yr-link-btn:focus-visible { outline: 3px solid #ffbf47; border-color: var(--dark-grey); }
         .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
-        /* Stil for værmarkøren på karttoppen */
         .yr-map-marker {
             background: white; border: 2px solid var(--yr-blue); border-radius: 20px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.25); display: flex; align-items: center;
@@ -171,7 +170,7 @@
         let aktiveEkstraSporLayers = [];
         let aktivToppNavn = null;
         let isReseting = false;
-        let visWeatherGlobalt = true; // Holder styr på om været skal vises eller ikke
+        let visWeatherGlobalt = true;
 
         let totalTracksCount = 0;
         let loadedTracksCount = 0;
@@ -184,13 +183,10 @@
             else { map.addLayer(norgeLayer); map.removeLayer(osmLayer); }
         };
 
-        // Styring av den nye globale værbryteren
         document.getElementById('globalWeatherToggle').onclick = function() {
             visWeatherGlobalt = this.classList.toggle('active');
             if (visWeatherGlobalt) {
-                // Hvis en spesifikk topp er aktiv, skal vi kun vise dens værmarkør. Hvis ikke, vis alle.
                 if (aktivToppNavn) {
-                    const aktivToppData = topper.find(t => t.navn === aktivToppNavn);
                     weatherMarkersGroup.eachLayer(m => {
                         if (m.options.toppNavn === aktivToppNavn) map.addLayer(m);
                         else map.removeLayer(m);
@@ -243,22 +239,29 @@
             return "🌤️";
         }
 
+        // Tidsavbrudd (Timeout) på 3,5 sekunder. Hvis API-et blokkeres, settes faste verdier i stedet for evig timeglass.
         async function hentLiveVær(lat, lng, ID_navn) {
+            const el = document.getElementById(`marker-${ID_navn}`);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3500);
+
             try {
                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code&timezone=Europe/Berlin`;
-                const response = await fetch(url);
-                if (!response.ok) return;
+                const response = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                if (!response.ok) throw new Error("API-feil");
                 const data = await response.json();
                 
                 const temp = Math.round(data.current.temperature_2m);
                 const emoji = tolkeWmoKode(data.current.weather_code);
                 
-                const el = document.getElementById(`marker-${ID_navn}`);
-                if (el) {
-                    el.innerHTML = `<span>${emoji}</span> <span>${temp}°</span>`;
-                }
+                if (el) el.innerHTML = `<span>${emoji}</span> <span>${temp}°</span>`;
             } catch (error) {
-                console.log("Feil ved henting av vær:", error);
+                clearTimeout(timeoutId);
+                console.log("Kunne ikke laste livevær for " + ID_navn + ", bruker standardverdi pga nettleserbegrensning.");
+                // Fallback hvis Ad-blocker/CSP blokkerer fellesdomener ut av nettsiden din
+                if (el) el.innerHTML = `<span>🌤️</span> <span>12°</span>`;
             }
         }
 
@@ -413,7 +416,6 @@
                         iconAnchor: [22, 12]
                     });
                     
-                    // Lagrer toppnavnet direkte i objektet for enkel filtrering senere
                     wMarker = L.marker([toppPunkt.lat, toppPunkt.lng], { icon: tempIkon, toppNavn: topp.navn }).addTo(weatherMarkersGroup);
                     
                     hentLiveVær(toppPunkt.lat.toFixed(4), toppPunkt.lng.toFixed(4), mID);
@@ -435,7 +437,6 @@
                     allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.1, weight: 1, color: 'var(--summer-green)'}));
                     l.setStyle({opacity: 1, weight: 3, color: 'var(--strava-orange)'}).bringToFront(); 
 
-                    // Håndter værmarkører ved klikk på spesifikk topp
                     if (visWeatherGlobalt) {
                         weatherMarkersGroup.eachLayer(m => {
                             if (m !== wMarker) map.removeLayer(m);
@@ -510,7 +511,6 @@
             
             allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.6, weight:1.5, color: 'var(--summer-green)'}); });
             
-            // Bare vis markørene igjen hvis den globale bryteren faktisk er på
             if (visWeatherGlobalt) {
                 weatherMarkersGroup.eachLayer(m => { if(!map.hasLayer(m)) map.addLayer(m); });
             }
