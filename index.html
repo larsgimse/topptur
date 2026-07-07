@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toppturer og Fjellturer</title>
+    <style>
+        :root {
+            --winter-blue: #0ea5e9;
+            --winter-dark: #0369a1;
+            --summer-green: #22c55e;
+            --summer-dark: #15803d;
+            --bg-color: #f1f5f9;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center; 
+            gap: 25px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            margin-top: 5vh; 
+            padding-bottom: 50px;
+        }
+
+        h1 {
+            color: #1e293b;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 0; 
+            
+            width: 180px; 
+            height: 180px;
+            
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: none;
+            color: white;
+            border-radius: 15px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-bottom-width 0.1s ease; 
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            border: none;
+            box-sizing: border-box; 
+        }
+
+        /* Container og styling for SVG-omrisset */
+        .btn .map-icon {
+            width: 70px;
+            height: 70px;
+            margin-top: 10px;
+            object-fit: contain;
+            /* Gjør omrisset i SVG-filen helt hvitt */
+            filter: brightness(0) invert(1); 
+        }
+
+        .btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: scale(0.98); 
+            border-bottom-width: 0;  
+            margin-top: 4px;         
+        }
+
+        .btn:focus {
+            outline: 3px solid #94a3b8;
+            outline-offset: 4px;
+        }
+
+        .btn-winter {
+            background: linear-gradient(135deg, var(--winter-blue), var(--winter-dark));
+            border-bottom: 4px solid #075985;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .btn-summer {
+            background: linear-gradient(135deg, var(--summer-green), var(--summer-dark));
+            border-bottom: 4px solid #166534;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        /* Svart knapp med lys mørkegrå kant i bunnen for 3D-effekt */
+        .btn-map {
+            background: linear-gradient(135deg, #1e293b, #0f172a); 
+            border-bottom: 4px solid #334155; 
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+
+        /* Enkel styling for trafikktelleren */
+        .visitor-counter {
+            margin-top: 20px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .visitor-counter:hover {
+            opacity: 1;
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 24px;
+            }
+            .btn {
+                width: 150px;
+                height: 150px;
+                font-size: 16px;
+            }
+            .btn .map-icon {
+                width: 55px;
+                height: 55px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Velg visning</h1>
+        
+        <a href="vinter.html" class="btn btn-winter">
+            <span>Toppturer vinter</span>
+            <span class="emoji">⛷️</span>
+        </a>
+
+        <a href="sommer.html" class="btn btn-summer">
+            <span>Fjellturer sommer</span>
+            <span class="emoji">⛰️</span>
+        </a>
+
+        <a href="oversikt.html" class="btn btn-map">
+            <span>Oversikt turer</span>
+            <img src="tromso.svg" alt="Omriss" class="map-icon">
+        </a>
+
+        <div class="visitor-counter">
+            <a href="https://hits.seeyoufarm.com">
+                <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2FDITT_GITHUB_BRUKERNAVN.github.io%2FDITT_REPO_NAVN&count_bg=%231E293B&title_bg=%2394A3B8&icon=&icon_color=%23E1E1E1&title=Bes%C3%B8k&edge_flat=false"/>
+            </a>
+        </div>
+        </div>
+
+</body>
+</html>
