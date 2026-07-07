@@ -47,8 +47,17 @@
         .ui-hidden .video-link-btn, .ui-hidden .control-row-container, .ui-hidden .search-link-btn, .ui-hidden .download-area { display: none !important; }
 
         @media (max-width: 768px) {
-            #buttons { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding: 10px 15px; }
-            #buttons::-webkit-scrollbar { display: none; }
+            #buttons, #controls-row { 
+                justify-content: flex-start; 
+                flex-wrap: nowrap; 
+                overflow-x: auto; 
+                padding: 10px 20px 10px 15px;
+                -webkit-overflow-scrolling: touch;
+                mask-image: linear-gradient(to right, rgba(0,0,0,1) 85%, rgba(0,0,0,0) 100%);
+                -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 85%, rgba(0,0,0,0) 100%);
+            }
+            #buttons::-webkit-scrollbar, #controls-row::-webkit-scrollbar { display: none; }
+            #controls-row > * { flex-shrink: 0; }
             #video-buttons-container { width: 220px; }
             #map { height: 100vw; min-height: unset; width: 100%; }
         }
@@ -57,6 +66,7 @@
             position: relative; background-color: var(--summer-green); color: white; border: none; 
             border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 600; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; transition: all 0.2s ease-in-out;
+            flex-shrink: 0;
         }
         .top-btn:hover { transform: scale(1.05); }
         .top-btn.active { background-color: var(--hover-blue); transform: scale(1.05); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
@@ -100,13 +110,15 @@
         .active .switch-track { background: var(--strava-green); }
         .active .switch-thumb { transform: translateX(14px); }
 
+        /* BRYTEREKKERETNING OPPDATERT: Bryter først, tekst etterpå */
         .weather-control-toggle {
             background: white; border: 1px solid #cbd5e1; padding: 0 12px; 
-            border-radius: 8px; display: inline-flex; align-items: center; gap: 10px;
+            border-radius: 8px; display: inline-flex; align-items: center; gap: 8px;
             height: 35px; box-sizing: border-box; cursor: pointer; user-select: none;
+            flex-direction: row; /* Sikrer horisontal rekkefølge */
         }
         .weather-control-toggle .toggle-text { font-size: 12px; color: var(--dark-grey); font-weight: 600; text-transform: none; }
-        .weather-control-toggle .switch-track { width: 32px; height: 18px; }
+        .weather-control-toggle .switch-track { width: 32px; height: 18px; order: -1; } /* Bryteren først */
         .weather-control-toggle .switch-thumb { width: 14px; height: 14px; }
         .weather-control-toggle.active .switch-track { background: var(--strava-green); }
         .weather-control-toggle.active .switch-thumb { transform: translateX(14px); }
@@ -119,10 +131,8 @@
             border: 2px solid transparent;
         }
         .yr-link-btn:hover { background: #004b79; text-decoration: underline; }
-        .yr-link-btn:focus-visible { outline: 3px solid #ffbf47; border-color: var(--dark-grey); }
         .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
-        /* Stil for kart-markøren som nå også er en klikkbar lenke */
         .yr-map-marker {
             background: white; border: 2px solid var(--yr-blue); border-radius: 20px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.25); display: flex; align-items: center;
@@ -149,8 +159,8 @@
         <button id="resetBtn" style="padding:0 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer; height:35px;">Nullstill kart</button>
         
         <div class="weather-control-toggle active" id="globalWeatherToggle">
-            <span class="toggle-text">Vær på kart 🌤️</span>
             <div class="switch-track"><div class="switch-thumb"></div></div>
+            <span class="toggle-text">Vær på kart 🌤️</span>
         </div>
 
         <button onclick="window.location.href='vinter.html'" style="padding:0 15px; border-radius:8px; background:var(--download-blue); color:white; border:none; font-weight:600; cursor:pointer; height:35px;">Vinter ⛷️</button>
@@ -165,6 +175,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
+        // ... (Resten av logikken forblir lik)
         const map = L.map('map', { zoomSnap: 0.5 }).setView([69.65, 18.95], 10);
         const allTracksGroup = L.featureGroup().addTo(map);
         const weatherMarkersGroup = L.featureGroup().addTo(map);
@@ -245,7 +256,6 @@
             return "🌤️";
         }
 
-        // Oppdatert: HTML-strukturen her inkluderer nå en fungerende <a> tag med Yr-urlen direkte på kartknappen
         async function hentLiveVær(lat, lng, markerObjekt, ID_navn) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 2000);
@@ -270,7 +280,6 @@
                 }));
             } catch (error) {
                 clearTimeout(timeoutId);
-                console.log("Bruker standardverdi for " + ID_navn);
                 markerObjekt.setIcon(L.divIcon({
                     className: 'custom-div-icon',
                     html: `<a href="${yrUrl}" target="_blank" class="yr-map-marker" id="marker-${ID_navn}"><span>🌤️</span> <span>12°</span></a>`,
@@ -432,10 +441,7 @@
                     });
                     
                     wMarker = L.marker([toppPunkt.lat, toppPunkt.lng], { icon: tempIkon, toppNavn: topp.navn }).addTo(weatherMarkersGroup);
-                    
                     hentLiveVær(toppPunkt.lat.toFixed(4), toppPunkt.lng.toFixed(4), wMarker, mID);
-
-                    // Endret: klikk på værikon vil trigge fjellfokus (og nettleseren håndterer lenke-åpningen samtidig)
                     wMarker.on('click', (ev) => { aktiver(); });
                 }
                 
@@ -517,11 +523,8 @@
             isReseting = true; aktivToppNavn = null; videoContainer.innerHTML = '';
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
             map.closePopup(); aktiveEkstraSporLayers.forEach(l => map.removeLayer(l));
-            
             allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.6, weight:1.5, color: 'var(--summer-green)'}); });
-            
             oppdaterWeatherMarkers();
-            
             map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]});
             setTimeout(() => isReseting = false, 300);
         };
