@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <!-- Tillater tilkoblinger til Open-Meteo selv om nettleseren har strenge sikkerhetsinnstillinger -->
     <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://api.open-meteo.com https://cache.kartverket.no https://*.openstreetmap.org;" />
     <title>Fjellturer rundt Tromsø - Sommer</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -94,6 +93,7 @@
         }
         .control-label { font-size: 11px; font-weight: 700; flex-grow: 1; text-align: left; }
         
+        /* Felles oppsett for toggle-knapper */
         .toggle-group { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; user-select: none; }
         .toggle-text { font-size: 8px; color: #64748b; font-weight: 800; text-transform: uppercase; }
         .switch-track { width: 30px; height: 16px; background: var(--switch-grey); border-radius: 20px; position: relative; transition: background 0.2s; }
@@ -101,12 +101,17 @@
         .active .switch-track { background: var(--strava-green); }
         .active .switch-thumb { transform: translateX(14px); }
 
+        /* Oppdatert inline-design for værbryteren i hovedmenyen */
         .weather-control-toggle {
-            background: white; border: 1px solid #cbd5e1; padding: 4px 10px; 
-            border-radius: 8px; display: inline-flex; align-items: center; gap: 8px;
-            height: 35px; box-sizing: border-box;
+            background: white; border: 1px solid #cbd5e1; padding: 0 12px; 
+            border-radius: 8px; display: inline-flex; align-items: center; gap: 10px;
+            height: 35px; box-sizing: border-box; cursor: pointer; user-select: none;
         }
-        .weather-control-toggle .toggle-text { font-size: 10px; color: var(--dark-grey); }
+        .weather-control-toggle .toggle-text { font-size: 12px; color: var(--dark-grey); font-weight: 600; text-transform: none; }
+        .weather-control-toggle .switch-track { width: 32px; height: 18px; }
+        .weather-control-toggle .switch-thumb { width: 14px; height: 14px; }
+        .weather-control-toggle.active .switch-track { background: var(--strava-green); }
+        .weather-control-toggle.active .switch-thumb { transform: translateX(14px); }
         
         .yr-link-btn {
             display: inline-flex; align-items: center; justify-content: center; gap: 6px;
@@ -144,11 +149,9 @@
         </select>
         <button id="resetBtn" style="padding:0 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer; height:35px;">Nullstill kart</button>
         
-        <div class="weather-control-toggle">
-            <div class="toggle-group active" id="globalWeatherToggle">
-                <span class="toggle-text">Vær på kart 🌤️</span>
-                <div class="switch-track"><div class="switch-thumb"></div></div>
-            </div>
+        <div class="weather-control-toggle active" id="globalWeatherToggle">
+            <span class="toggle-text">Vær på kart 🌤️</span>
+            <div class="switch-track"><div class="switch-thumb"></div></div>
         </div>
 
         <button onclick="window.location.href='vinter.html'" style="padding:0 15px; border-radius:8px; background:var(--download-blue); color:white; border:none; font-weight:600; cursor:pointer; height:35px;">Vinter ⛷️</button>
@@ -185,6 +188,10 @@
 
         document.getElementById('globalWeatherToggle').onclick = function() {
             visWeatherGlobalt = this.classList.toggle('active');
+            oppdaterWeatherMarkers();
+        };
+
+        function oppdaterWeatherMarkers() {
             if (visWeatherGlobalt) {
                 if (aktivToppNavn) {
                     weatherMarkersGroup.eachLayer(m => {
@@ -197,7 +204,7 @@
             } else {
                 weatherMarkersGroup.eachLayer(m => map.removeLayer(m));
             }
-        };
+        }
 
         const topper = [
             { navn: "Buren", fil: "2025_10_06.gpx", overrideAar: "2020", video: [{ url: "https://youtu.be/-m3sEIIIUHg", tittel: "Se video", dato: "2020_08_23" }] },
@@ -239,11 +246,9 @@
             return "🌤️";
         }
 
-        // Tidsavbrudd (Timeout) på 3,5 sekunder. Hvis API-et blokkeres, settes faste verdier i stedet for evig timeglass.
-        async function hentLiveVær(lat, lng, ID_navn) {
-            const el = document.getElementById(`marker-${ID_navn}`);
+        async function hentLiveVær(lat, lng, markerObjekt, ID_navn) {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3500);
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
 
             try {
                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code&timezone=Europe/Berlin`;
@@ -256,12 +261,21 @@
                 const temp = Math.round(data.current.temperature_2m);
                 const emoji = tolkeWmoKode(data.current.weather_code);
                 
-                if (el) el.innerHTML = `<span>${emoji}</span> <span>${temp}°</span>`;
+                markerObjekt.setIcon(L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<div class="yr-map-marker" id="marker-${ID_navn}"><span>${emoji}</span> <span>${temp}°</span></div>`,
+                    iconSize: [45, 24],
+                    iconAnchor: [22, 12]
+                }));
             } catch (error) {
                 clearTimeout(timeoutId);
-                console.log("Kunne ikke laste livevær for " + ID_navn + ", bruker standardverdi pga nettleserbegrensning.");
-                // Fallback hvis Ad-blocker/CSP blokkerer fellesdomener ut av nettsiden din
-                if (el) el.innerHTML = `<span>🌤️</span> <span>12°</span>`;
+                console.log("Bruker standardverdi for " + ID_navn);
+                markerObjekt.setIcon(L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<div class="yr-map-marker" id="marker-${ID_navn}"><span>🌤️</span> <span>12°</span></div>`,
+                    iconSize: [45, 24],
+                    iconAnchor: [22, 12]
+                }));
             }
         }
 
@@ -418,7 +432,7 @@
                     
                     wMarker = L.marker([toppPunkt.lat, toppPunkt.lng], { icon: tempIkon, toppNavn: topp.navn }).addTo(weatherMarkersGroup);
                     
-                    hentLiveVær(toppPunkt.lat.toFixed(4), toppPunkt.lng.toFixed(4), mID);
+                    hentLiveVær(toppPunkt.lat.toFixed(4), toppPunkt.lng.toFixed(4), wMarker, mID);
 
                     wMarker.on('click', (ev) => { L.DomEvent.stopPropagation(ev); aktiver(); });
                 }
@@ -437,14 +451,7 @@
                     allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.1, weight: 1, color: 'var(--summer-green)'}));
                     l.setStyle({opacity: 1, weight: 3, color: 'var(--strava-orange)'}).bringToFront(); 
 
-                    if (visWeatherGlobalt) {
-                        weatherMarkersGroup.eachLayer(m => {
-                            if (m !== wMarker) map.removeLayer(m);
-                            else if (!map.hasLayer(m)) map.addLayer(m);
-                        });
-                    } else {
-                        weatherMarkersGroup.eachLayer(m => map.removeLayer(m));
-                    }
+                    oppdaterWeatherMarkers();
 
                     videoContainer.innerHTML = ''; videoContainer.classList.remove('ui-hidden');
                     const hb = document.createElement('button'); hb.className = 'toggle-ui-btn'; hb.innerText = 'Skjul meny';
@@ -511,9 +518,7 @@
             
             allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.6, weight:1.5, color: 'var(--summer-green)'}); });
             
-            if (visWeatherGlobalt) {
-                weatherMarkersGroup.eachLayer(m => { if(!map.hasLayer(m)) map.addLayer(m); });
-            }
+            oppdaterWeatherMarkers();
             
             map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]});
             setTimeout(() => isReseting = false, 300);
