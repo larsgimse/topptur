@@ -19,79 +19,37 @@
             --bg-color: #f1f5f9;
         }
 
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            text-align: center; margin: 0; padding: 10px 5px; 
-            background: var(--bg-color); color: var(--dark-grey);
-            overflow-x: hidden; display: flex; flex-direction: column;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; margin: 0; padding: 10px 5px; background: var(--bg-color); color: var(--dark-grey); overflow-x: hidden; display: flex; flex-direction: column; }
 
         h1 { margin: 15px 0 5px 0; font-size: 26px; order: 1; }
         .subtitle { font-size: 15px; font-weight: 600; margin: 0; color: #475569; order: 2; }
         .info-text { font-size: 13px; font-weight: 400; margin: 4px 0 15px 0; color: #64748b; order: 3; }
 
-        /* Felles stil for scrollbare elementer med skygge på høyre side */
-        .scroll-container {
-            position: relative;
-            width: 100%;
-            order: 4;
-            margin-bottom: 15px;
-        }
-        .scroll-container::after {
-            content: '';
-            position: absolute;
-            top: 0; right: 0; bottom: 0;
-            width: 40px;
-            pointer-events: none;
-            z-index: 2;
-            background: linear-gradient(to right, rgba(241, 245, 249, 0), rgba(241, 245, 249, 1));
-        }
+        /* Ny container-struktur for å håndtere skygge uten at den henger på knapper */
+        .scroll-wrapper { position: relative; width: 100%; order: 4; margin-bottom: 15px; }
+        .scroll-container { display: flex; justify-content: flex-start; gap: 8px; flex-wrap: nowrap; overflow-x: auto; padding: 10px 15px; -webkit-overflow-scrolling: touch; }
+        .scroll-container::-webkit-scrollbar { display: none; }
+        .shadow-overlay { position: absolute; top: 0; right: 0; bottom: 0; width: 50px; pointer-events: none; background: linear-gradient(to right, rgba(241, 245, 249, 0), rgba(241, 245, 249, 1)); z-index: 5; }
 
-        #buttons { 
-            display: flex; justify-content: flex-start; gap: 8px; flex-wrap: nowrap; 
-            overflow-x: auto; padding: 10px 15px; -webkit-overflow-scrolling: touch;
-        }
-        #buttons::-webkit-scrollbar { display: none; }
-
-        /* Kontrollrad med skygge på høyre side */
-        #controls-row { 
-            display: flex; align-items: center; gap: 8px; margin-bottom: 15px; 
-            order: 5; white-space: nowrap; overflow-x: auto; padding: 5px 15px;
-            position: relative; width: 100%; box-sizing: border-box;
-        }
+        #controls-row { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; order: 5; white-space: nowrap; overflow-x: auto; padding: 5px 15px; width: 100%; box-sizing: border-box; }
         #controls-row::-webkit-scrollbar { display: none; }
         
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; width: 100%; order: 7; }
         #map { height: 65vh; min-height: 450px; width: 100%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); background: #e5e7eb; }
 
-        #video-buttons-container { 
-            position: absolute; top: 10px; right: 10px; z-index: 1000; 
-            display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
-            width: 240px;
-        }
-
+        #video-buttons-container { position: absolute; top: 10px; right: 10px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; width: 240px; }
         .toggle-ui-btn { background: var(--dark-grey); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; margin-bottom: 4px; opacity: 0.8; }
         .ui-hidden .video-link-btn, .ui-hidden .control-row-container, .ui-hidden .search-link-btn, .ui-hidden .download-area { display: none !important; }
 
-        @media (max-width: 768px) {
-            #video-buttons-container { width: 220px; }
-            #map { height: 100vw; min-height: unset; width: 100%; }
-        }
-
-        .top-btn { 
-            position: relative; background-color: var(--summer-green); color: white; border: none; 
-            border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 600; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; transition: all 0.2s ease-in-out;
-        }
+        .top-btn { position: relative; background-color: var(--summer-green); color: white; border: none; border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; transition: all 0.2s ease-in-out; }
         .top-btn:hover { transform: scale(1.05); }
         .top-btn.active { background-color: var(--hover-blue); transform: scale(1.05); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
 
-        .badge-label {
-            position: absolute; top: -6px; right: -6px; color: white; font-size: 8px;
-            padding: 1px 4px; border-radius: 8px; border: 1.5px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; font-weight: bold; pointer-events: none;
-            background: var(--year-grey);
-        }
+        .badge-label { position: absolute; top: -6px; right: -6px; color: white; font-size: 8px; padding: 1px 4px; border-radius: 8px; border: 1.5px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; font-weight: bold; pointer-events: none; background: var(--year-grey); }
+
+        .control-btn { padding: 8px 15px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+        .btn-vinter { background: var(--download-blue); color: white; }
+        .btn-oversikt { background: var(--strava-green); color: white; }
 
         .video-link-btn, .search-link-btn { background: rgba(255, 255, 255, 0.95); padding: 8px 12px; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 12px; border: 2.5px solid var(--insta-pink); display: flex; align-items: center; gap: 5px; color: var(--insta-pink); width: 100%; box-sizing: border-box; backdrop-filter: blur(4px); cursor: pointer; }
         .search-link-btn { border-color: var(--strava-green); color: var(--strava-green); }
@@ -115,18 +73,20 @@
     <p class="subtitle">Sommer-sesongen ⛰️☀️</p>
     <p class="info-text">Hold over knapper eller kartspor for å se ruten, klikk for detaljer og video.</p>
 
-    <div class="scroll-container">
-        <div id="buttons"></div>
+    <div class="scroll-wrapper">
+        <div class="shadow-overlay"></div>
+        <div id="buttons" class="scroll-container"></div>
     </div>
 
-    <div id="controls-row" class="scroll-container">
+    <div id="controls-row">
         <a href="http://gimse.info" style="font-size: 11px; text-decoration: none; color: #64748b; font-weight: 700; flex-shrink: 0; padding: 0 5px;">➡️ gimse.info</a>
         <select id="mapSelect" style="padding:8px; border-radius:8px; font-weight:600; flex-shrink:0;">
             <option value="norge">Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
         </select>
-        <button id="resetBtn" style="padding:8px 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer; flex-shrink:0;">Nullstill</button>
-        <button onclick="window.location.href='vinter.html'" style="padding:8px 15px; border-radius:8px; background:var(--download-blue); color:white; border:none; font-weight:600; cursor:pointer; flex-shrink:0;">Vinter ⛷️</button>
+        <button id="resetBtn" class="control-btn" style="background:var(--dark-grey); color:white;">Nullstill</button>
+        <button onclick="window.location.href='vinter.html'" class="control-btn btn-vinter">Vinter ⛷️</button>
+        <button onclick="window.location.href='https://larsgimse.github.io/topptur/oversikt.html'" class="control-btn btn-oversikt">Oversikt alle turer</button>
     </div>
 
     <div id="map-container">
