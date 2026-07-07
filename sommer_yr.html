@@ -16,7 +16,7 @@
             --switch-grey: #cbd5e1;
             --download-blue: #0ea5e9;
             --hover-blue: #0076ff;
-            --yr-blue: #00609a; /* Mørkere blå for bedre UU/kontrast mot hvit tekst */
+            --yr-blue: #00609a;
         }
 
         body { 
@@ -98,7 +98,6 @@
         .active .switch-track { background: var(--strava-green); }
         .active .switch-thumb { transform: translateX(14px); }
         
-        /* Oppdatert Yr-knapp med UU-fokus */
         .yr-link-btn {
             display: inline-flex; align-items: center; justify-content: center; gap: 6px;
             margin-top: 8px; width: 100%; background: var(--yr-blue); color: #ffffff;
@@ -164,7 +163,7 @@
             { navn: "Kløftbakken", fil: "2025_02_28.gpx", video: [{ url: "https://www.instagram.com/p/DGoaEMTsPop/", tittel: "Se video" }] },
             { navn: "Mjeldskartinden", fil: "2020_07_24.gpx", video: [{ url: "https://www.instagram.com/p/CDEWTcXFfNq", tittel: "Se bilder", type: "photo" }] },
             { navn: "Orvasstinden", fil: "2025_09_25.gpx", video: [{ url: "https://www.instagram.com/p/DPKU6TiCH9y/", tittel: "Se video" }] },
-            { navn: "Rødtinden", fil: "2025_08_11.gpx", video: [{ url: "https://www.instagram.com/p/DNQt9aPsjSt/", tittel: "Se video" }] },
+            { navn: "Rødtinden 776", fil: "2025_08_11.gpx", video: [{ url: "https://www.instagram.com/p/DNQt9aPsjSt/", tittel: "Se video" }] },
             { navn: "Skamtinden", fil: "2020_08_21.gpx", video: [{ url: "https://youtu.be/iC2wVCNLIT0", tittel: "Se video" }] },
             { 
                 navn: "Soria Moria traversen", 
@@ -232,14 +231,16 @@
             }
 
             let yrLenkeHtml = '';
-            if (tittel) {
-                const yrUrl = `https://www.yr.no/nb/søk?q=${encodeURIComponent(tittel)}`;
-                // Oppdatert lenke med skjermleservennlig tekst og aria-label for universell utforming
+            if (toppKoordinat) {
+                const lat = toppKoordinat.lat.toFixed(5);
+                const lng = toppKoordinat.lng.toFixed(5);
+                const yrUrl = `https://www.yr.no/nb/søk?q=${lat},${lng}`;
+                
                 yrLenkeHtml = `
                     <a href="${yrUrl}" 
                        target="_blank" 
                        class="yr-link-btn" 
-                       aria-label="Søk etter værvarsel for ${tittel} på Yr.no (åpnes i ny fane)">
+                       aria-label="Værvarsel for koordinatene til ${tittel} på Yr.no (åpnes i ny fane)">
                        <span id="yr-icon" aria-hidden="true">🌤️</span> Se værvarsel på Yr
                        <span class="sr-only">(åpnes i ny fane)</span>
                     </a>`;
