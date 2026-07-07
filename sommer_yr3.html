@@ -110,15 +110,14 @@
         .active .switch-track { background: var(--strava-green); }
         .active .switch-thumb { transform: translateX(14px); }
 
-        /* BRYTEREKKERETNING OPPDATERT: Bryter først, tekst etterpå */
         .weather-control-toggle {
             background: white; border: 1px solid #cbd5e1; padding: 0 12px; 
             border-radius: 8px; display: inline-flex; align-items: center; gap: 8px;
             height: 35px; box-sizing: border-box; cursor: pointer; user-select: none;
-            flex-direction: row; /* Sikrer horisontal rekkefølge */
+            flex-direction: row; 
         }
         .weather-control-toggle .toggle-text { font-size: 12px; color: var(--dark-grey); font-weight: 600; text-transform: none; }
-        .weather-control-toggle .switch-track { width: 32px; height: 18px; order: -1; } /* Bryteren først */
+        .weather-control-toggle .switch-track { width: 32px; height: 18px; order: -1; } 
         .weather-control-toggle .switch-thumb { width: 14px; height: 14px; }
         .weather-control-toggle.active .switch-track { background: var(--strava-green); }
         .weather-control-toggle.active .switch-thumb { transform: translateX(14px); }
@@ -158,7 +157,7 @@
         </select>
         <button id="resetBtn" style="padding:0 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer; height:35px;">Nullstill kart</button>
         
-        <div class="weather-control-toggle active" id="globalWeatherToggle">
+        <div class="weather-control-toggle" id="globalWeatherToggle">
             <div class="switch-track"><div class="switch-thumb"></div></div>
             <span class="toggle-text">Vær på kart 🌤️</span>
         </div>
@@ -175,7 +174,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        // ... (Resten av logikken forblir lik)
         const map = L.map('map', { zoomSnap: 0.5 }).setView([69.65, 18.95], 10);
         const allTracksGroup = L.featureGroup().addTo(map);
         const weatherMarkersGroup = L.featureGroup().addTo(map);
@@ -183,7 +181,9 @@
         let aktiveEkstraSporLayers = [];
         let aktivToppNavn = null;
         let isReseting = false;
-        let visWeatherGlobalt = true;
+        
+        // Satt til false som standard
+        let visWeatherGlobalt = false; 
 
         let totalTracksCount = 0;
         let loadedTracksCount = 0;
@@ -215,7 +215,9 @@
                 weatherMarkersGroup.eachLayer(m => map.removeLayer(m));
             }
         }
-
+        
+        // ... resten av koden er uendret ...
+        // [GPX-data og funksjoner forblir identiske]
         const topper = [
             { navn: "Buren", fil: "2025_10_06.gpx", overrideAar: "2020", video: [{ url: "https://youtu.be/-m3sEIIIUHg", tittel: "Se video", dato: "2020_08_23" }] },
             { navn: "Djeveltanna", fil: "2024_08_03.gpx", video: [{ url: "https://www.instagram.com/p/C-dPqdWM4Ku/", tittel: "Se video" }] },
@@ -227,15 +229,7 @@
             { navn: "Orvasstinden", fil: "2025_09_25.gpx", video: [{ url: "https://www.instagram.com/p/DPKU6TiCH9y/", tittel: "Se video" }] },
             { navn: "Rødtinden 776", fil: "2025_08_11.gpx", video: [{ url: "https://www.instagram.com/p/DNQt9aPsjSt/", tittel: "Se video" }] },
             { navn: "Skamtinden", fil: "2020_08_21.gpx", video: [{ url: "https://youtu.be/iC2wVCNLIT0", tittel: "Se video" }] },
-            { 
-                navn: "Soria Moria traversen", 
-                fil: "2025_07_31.gpx", 
-                video: [
-                    { url: "https://www.instagram.com/p/DMx5G2usjON/", tittel: "Se video (2025)" },
-                    { url: "https://www.instagram.com/p/CCraTgGF5mZ", tittel: "Se video (2020)" }
-                ],
-                ekstraSpor: [{ tittel: "Tur 2 (2020)", fil: "2020_07_14.gpx", farge: "#4f46e5" }]
-            },
+            { navn: "Soria Moria traversen", fil: "2025_07_31.gpx", video: [{ url: "https://www.instagram.com/p/DMx5G2usjON/", tittel: "Se video (2025)" }, { url: "https://www.instagram.com/p/CCraTgGF5mZ", tittel: "Se video (2020)" }], ekstraSpor: [{ tittel: "Tur 2 (2020)", fil: "2020_07_14.gpx", farge: "#4f46e5" }] },
             { navn: "Steinskartinden", fil: "2023_09_24.gpx", video: [{ url: "https://www.instagram.com/p/CxlNRAZsclX", tittel: "Se bilder", type: "photo" }] },
             { navn: "Stor Blåmann", fil: "2024_10_19.gpx", video: [{ url: "https://www.instagram.com/p/DBV6c6BMzbg/", tittel: "Se video" }] },
             { navn: "Store Hollendaren", fil: "2021_10_03.gpx", video: [{ url: "https://www.instagram.com/p/CUlH0IFs2vb", tittel: "Se bilder", type: "photo" }] },
@@ -244,7 +238,7 @@
         ];
 
         totalTracksCount = topper.length;
-
+        
         function tolkeWmoKode(kode) {
             if ([0, 1].includes(kode)) return "☀️"; 
             if ([2].includes(kode)) return "⛅";    
