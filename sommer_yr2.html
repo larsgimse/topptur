@@ -31,7 +31,7 @@
         .info-text { font-size: 13px; font-weight: 400; margin: 4px 0 15px 0; color: #64748b; order: 3; }
 
         #buttons { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; padding: 5px; order: 4; }
-        #controls-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; order: 5; }
+        #controls-row { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; order: 5; }
         
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; width: 100%; order: 7; }
         #map { height: 65vh; min-height: 450px; width: 100%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); background: #e5e7eb; }
@@ -91,12 +91,22 @@
             box-sizing: border-box; backdrop-filter: blur(4px); gap: 8px;
         }
         .control-label { font-size: 11px; font-weight: 700; flex-grow: 1; text-align: left; }
-        .toggle-group { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
+        
+        /* Felles stil for skyvebrytere (Både i menyen og kontrollraden) */
+        .toggle-group { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; user-select: none; }
         .toggle-text { font-size: 8px; color: #64748b; font-weight: 800; text-transform: uppercase; }
-        .switch-track { width: 30px; height: 16px; background: var(--switch-grey); border-radius: 20px; position: relative; }
-        .switch-thumb { width: 12px; height: 12px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; }
+        .switch-track { width: 30px; height: 16px; background: var(--switch-grey); border-radius: 20px; position: relative; transition: background 0.2s; }
+        .switch-thumb { width: 12px; height: 12px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: transform 0.2s; }
         .active .switch-track { background: var(--strava-green); }
         .active .switch-thumb { transform: translateX(14px); }
+
+        /* Spesifikk styling for vær-bryteren i kontrollraden */
+        .weather-control-toggle {
+            background: white; border: 1px solid #cbd5e1; padding: 4px 10px; 
+            border-radius: 8px; display: inline-flex; align-items: center; gap: 8px;
+            height: 35px; box-sizing: border-box;
+        }
+        .weather-control-toggle .toggle-text { font-size: 10px; color: var(--dark-grey); }
         
         .yr-link-btn {
             display: inline-flex; align-items: center; justify-content: center; gap: 6px;
@@ -113,8 +123,8 @@
         .yr-map-marker {
             background: white; border: 2px solid var(--yr-blue); border-radius: 20px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.25); display: flex; align-items: center;
-            justify-content: center; gap: 3px; padding: 2px 6px; font-weight: bold;
-            font-size: 11px; color: var(--dark-grey); white-space: nowrap;
+            justify-content: center; gap: 3px; padding: 3px 7px; font-weight: bold;
+            font-size: 12px; color: var(--dark-grey); white-space: nowrap;
             transition: transform 0.2s;
         }
         .yr-map-marker:hover { transform: scale(1.15); z-index: 9999 !important; cursor: pointer; }
@@ -129,12 +139,20 @@
     <div id="buttons"></div>
 
     <div id="controls-row">
-        <select id="mapSelect" style="padding:8px; border-radius:8px; font-weight:600;">
+        <select id="mapSelect" style="padding:8px; border-radius:8px; font-weight:600; height:35px;">
             <option value="norge">Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
         </select>
-        <button id="resetBtn" style="padding:8px 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer;">Nullstill kart</button>
-        <button onclick="window.location.href='vinter.html'" style="padding:8px 15px; border-radius:8px; background:var(--download-blue); color:white; border:none; font-weight:600; cursor:pointer;">Vinter ⛷️</button>
+        <button id="resetBtn" style="padding:0 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer; height:35px;">Nullstill kart</button>
+        
+        <div class="weather-control-toggle">
+            <div class="toggle-group active" id="globalWeatherToggle">
+                <span class="toggle-text">Vær på kart 🌤️</span>
+                <div class="switch-track"><div class="switch-thumb"></div></div>
+            </div>
+        </div>
+
+        <button onclick="window.location.href='vinter.html'" style="padding:0 15px; border-radius:8px; background:var(--download-blue); color:white; border:none; font-weight:600; cursor:pointer; height:35px;">Vinter ⛷️</button>
     </div>
 
     <div id="map-container">
@@ -148,11 +166,12 @@
     <script>
         const map = L.map('map', { zoomSnap: 0.5 }).setView([69.65, 18.95], 10);
         const allTracksGroup = L.featureGroup().addTo(map);
-        const weatherMarkersGroup = L.featureGroup().addTo(map); // Egen gruppe for værikoner på toppen
+        const weatherMarkersGroup = L.featureGroup().addTo(map);
         const videoContainer = document.getElementById('video-buttons-container');
         let aktiveEkstraSporLayers = [];
         let aktivToppNavn = null;
         let isReseting = false;
+        let visWeatherGlobalt = true; // Holder styr på om været skal vises eller ikke
 
         let totalTracksCount = 0;
         let loadedTracksCount = 0;
@@ -163,6 +182,25 @@
         document.getElementById('mapSelect').onchange = (e) => {
             if (e.target.value === "osm") { map.addLayer(osmLayer); map.removeLayer(norgeLayer); }
             else { map.addLayer(norgeLayer); map.removeLayer(osmLayer); }
+        };
+
+        // Styring av den nye globale værbryteren
+        document.getElementById('globalWeatherToggle').onclick = function() {
+            visWeatherGlobalt = this.classList.toggle('active');
+            if (visWeatherGlobalt) {
+                // Hvis en spesifikk topp er aktiv, skal vi kun vise dens værmarkør. Hvis ikke, vis alle.
+                if (aktivToppNavn) {
+                    const aktivToppData = topper.find(t => t.navn === aktivToppNavn);
+                    weatherMarkersGroup.eachLayer(m => {
+                        if (m.options.toppNavn === aktivToppNavn) map.addLayer(m);
+                        else map.removeLayer(m);
+                    });
+                } else {
+                    weatherMarkersGroup.eachLayer(m => map.addLayer(m));
+                }
+            } else {
+                weatherMarkersGroup.eachLayer(m => map.removeLayer(m));
+            }
         };
 
         const topper = [
@@ -194,39 +232,33 @@
 
         totalTracksCount = topper.length;
 
-        // Enkel oversetter fra Yr-symbolkoder til emojier for enkel integrasjon uten bildefiler
-        function hentVærSymbol(symbolKode) {
-            if (!symbolKode) return "🌤️";
-            const kode = symbolKode.split('_')[0]; 
-            if (["clearsky", "fair"].includes(kode)) return "☀️";
-            if (["partlycloudy"].includes(kode)) return "⛅";
-            if (["cloudy"].includes(kode)) return "☁️";
-            if (["rainshowers", "rain"].includes(kode)) return "🌧️";
-            if (["heavyrain", "thunder"].includes(kode)) return "⛈️";
-            if (["snow", "snowshowers", "sleet"].includes(kode)) return "❄️";
-            if (["fog"].includes(kode)) return "🌫️";
+        function tolkeWmoKode(kode) {
+            if ([0, 1].includes(kode)) return "☀️"; 
+            if ([2].includes(kode)) return "⛅";    
+            if ([3].includes(kode)) return "☁️";    
+            if ([45, 48].includes(kode)) return "🌫️"; 
+            if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(kode)) return "🌧️"; 
+            if ([71, 73, 75, 77, 85, 86].includes(kode)) return "❄️"; 
+            if ([95, 96, 99].includes(kode)) return "⛈️"; 
             return "🌤️";
         }
 
-        // Henter sanntids værdata fra MET/Yr via en åpen CORS-proxy (siden nettlesere blokkerer direkte API-kall uten spesifikk User-Agent)
-        async function hentLiveVær(lat, lng, markerId, callback) {
+        async function hentLiveVær(lat, lng, ID_navn) {
             try {
-                const url = `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lng}`;
-                // Bruker allorigins.win proxy for å omgå CORS-restriksjoner i ren frontend-HTML
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-                
-                const response = await fetch(proxyUrl);
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code&timezone=Europe/Berlin`;
+                const response = await fetch(url);
                 if (!response.ok) return;
-                const wrapper = await response.json();
-                const data = JSON.parse(wrapper.contents);
+                const data = await response.json();
                 
-                const timeseries = data.properties.timeseries[0];
-                const temp = Math.round(timeseries.data.instant.details.air_temperature);
-                const symbolKode = timeseries.data.next_1_hours?.summary?.symbol_code || timeseries.data.next_6_hours?.summary?.symbol_code;
+                const temp = Math.round(data.current.temperature_2m);
+                const emoji = tolkeWmoKode(data.current.weather_code);
                 
-                callback(temp, symbolKode);
+                const el = document.getElementById(`marker-${ID_navn}`);
+                if (el) {
+                    el.innerHTML = `<span>${emoji}</span> <span>${temp}°</span>`;
+                }
             } catch (error) {
-                console.log("Kunne ikke hente værdata i sanntid:", error);
+                console.log("Feil ved henting av vær:", error);
             }
         }
 
@@ -362,6 +394,8 @@
             btn.appendChild(lagBadge(topp.fil, topp.overrideAar));
             document.getElementById('buttons').appendChild(btn);
 
+            const mID = topp.navn.replace(/[^a-zA-Z0-9]/g, '-');
+
             const track = new L.GPX(topp.fil, {
                 async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
                 polyline_options: { color: 'var(--summer-green)', weight: 1.5, opacity: 0.6 }
@@ -370,28 +404,20 @@
                 const hMax = l.get_elevation_max();
                 const toppPunkt = finnTopppunkt(l, hMax);
 
-                // Lag en standard værmarkør som oppdateres når dataene kommer inn
                 let wMarker = null;
                 if (toppPunkt) {
                     const tempIkon = L.divIcon({
                         className: 'custom-div-icon',
-                        html: `<div class="yr-map-marker" id="marker-${topp.navn.replace(/\s+/g, '-')}">⏳ <span style="font-size:9px;">Henter...</span></div>`,
-                        iconSize: [50, 24],
-                        iconAnchor: [25, 12]
+                        html: `<div class="yr-map-marker" id="marker-${mID}">⏳</div>`,
+                        iconSize: [45, 24],
+                        iconAnchor: [22, 12]
                     });
                     
-                    wMarker = L.marker([toppPunkt.lat, toppPunkt.lng], { icon: tempIkon }).addTo(weatherMarkersGroup);
+                    // Lagrer toppnavnet direkte i objektet for enkel filtrering senere
+                    wMarker = L.marker([toppPunkt.lat, toppPunkt.lng], { icon: tempIkon, toppNavn: topp.navn }).addTo(weatherMarkersGroup);
                     
-                    // Trigger asynkron henting av ekte data fra Yr
-                    hentLiveVær(toppPunkt.lat.toFixed(4), toppPunkt.lng.toFixed(4), topp.navn, (temp, symbolKode) => {
-                        const el = document.getElementById(`marker-${topp.navn.replace(/\s+/g, '-')}`);
-                        if (el) {
-                            const symbol = hentVærSymbol(symbolKode);
-                            el.innerHTML = `<span>${symbol}</span> <span>${temp}°</span>`;
-                        }
-                    });
+                    hentLiveVær(toppPunkt.lat.toFixed(4), toppPunkt.lng.toFixed(4), mID);
 
-                    // Gjør værmarkøren klikkbar slik at den også åpner fjellets detaljer
                     wMarker.on('click', (ev) => { L.DomEvent.stopPropagation(ev); aktiver(); });
                 }
                 
@@ -409,11 +435,15 @@
                     allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.1, weight: 1, color: 'var(--summer-green)'}));
                     l.setStyle({opacity: 1, weight: 3, color: 'var(--strava-orange)'}).bringToFront(); 
 
-                    // Skjul alle andre værmarkører unntatt denne aktive toppen
-                    weatherMarkersGroup.eachLayer(m => {
-                        if (m !== wMarker) map.removeLayer(m);
-                        else if (!map.hasLayer(m)) map.addLayer(m);
-                    });
+                    // Håndter værmarkører ved klikk på spesifikk topp
+                    if (visWeatherGlobalt) {
+                        weatherMarkersGroup.eachLayer(m => {
+                            if (m !== wMarker) map.removeLayer(m);
+                            else if (!map.hasLayer(m)) map.addLayer(m);
+                        });
+                    } else {
+                        weatherMarkersGroup.eachLayer(m => map.removeLayer(m));
+                    }
 
                     videoContainer.innerHTML = ''; videoContainer.classList.remove('ui-hidden');
                     const hb = document.createElement('button'); hb.className = 'toggle-ui-btn'; hb.innerText = 'Skjul meny';
@@ -478,9 +508,12 @@
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
             map.closePopup(); aktiveEkstraSporLayers.forEach(l => map.removeLayer(l));
             
-            // Vis alle spor og alle værmarkører igjen ved nullstilling
             allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.6, weight:1.5, color: 'var(--summer-green)'}); });
-            weatherMarkersGroup.eachLayer(m => { if(!map.hasLayer(m)) map.addLayer(m); });
+            
+            // Bare vis markørene igjen hvis den globale bryteren faktisk er på
+            if (visWeatherGlobalt) {
+                weatherMarkersGroup.eachLayer(m => { if(!map.hasLayer(m)) map.addLayer(m); });
+            }
             
             map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]});
             setTimeout(() => isReseting = false, 300);
