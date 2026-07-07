@@ -157,23 +157,33 @@
         </a>
 
         <div class="visitor-counter">
-            Antall besøk: <span id="count">Laster...</span>
+            Unike besøk: <span id="count">Laster...</span>
         </div>
     </div>
 
     <script>
-        fetch('https://countapi.mileshilliard.com/api/v1/hit/larsgimse-topptur')
-            .then(res => res.json())
-            .then(data => {
-                if (data && data.value) {
-                    document.getElementById('count').innerText = data.value;
-                } else {
-                    document.getElementById('count').innerText = "1";
-                }
-            })
-            .catch(() => {
-                document.getElementById('count').innerText = "1";
-            });
+        const namespace = 'larsgimse-topptur-unike';
+        const storageKey = 'has_visited_topptur';
+
+        // Sjekk om denne nettleseren har besøkt siden før
+        if (localStorage.getItem(storageKey)) {
+            // Hvis brukeren HAR besøkt før: Bare hent det nåværende tallet uten å øke det (bruk 'get')
+            fetch(`https://countapi.mileshilliard.com/api/v1/get/${namespace}`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('count').innerText = data.value || "1";
+                })
+                .catch(() => { document.getElementById('count').innerText = "—"; });
+        } else {
+            // Hvis det er et NYTT besøk: Øk telleren (bruk 'hit') og sett merke i nettleseren
+            fetch(`https://countapi.mileshilliard.com/api/v1/hit/${namespace}`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('count').innerText = data.value || "1";
+                    localStorage.setItem(storageKey, 'true'); // Lagre at de har vært her
+                })
+                .catch(() => { document.getElementById('count').innerText = "1"; });
+        }
     </script>
 
 </body>
