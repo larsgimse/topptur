@@ -25,14 +25,14 @@
         .subtitle { font-size: 15px; font-weight: 600; margin: 0; color: #475569; order: 2; }
         .info-text { font-size: 13px; font-weight: 400; margin: 4px 0 15px 0; color: #64748b; order: 3; }
 
-        /* Scroll-container med skygge-effekt */
+        /* Felles container for scrollbare rader med fast skygge-effekt */
         .scroll-container {
             position: relative;
             width: 100%;
             order: 4;
             margin-bottom: 15px;
         }
-        .scroll-container::after, #controls-row::after {
+        .scroll-container::after {
             content: '';
             position: absolute;
             top: 0; right: 0; bottom: 0;
@@ -45,7 +45,7 @@
         #buttons { display: flex; justify-content: flex-start; gap: 8px; flex-wrap: nowrap; overflow-x: auto; padding: 10px 15px; -webkit-overflow-scrolling: touch; }
         #buttons::-webkit-scrollbar { display: none; }
 
-        #controls-row { position: relative; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; order: 5; white-space: nowrap; overflow-x: auto; padding: 5px 15px; width: 100%; box-sizing: border-box; }
+        #controls-row { display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow-x: auto; padding: 5px 15px; width: 100%; box-sizing: border-box; }
         #controls-row::-webkit-scrollbar { display: none; }
         
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; width: 100%; order: 7; }
@@ -92,15 +92,17 @@
         <div id="buttons"></div>
     </div>
 
-    <div id="controls-row">
-        <a href="http://gimse.info" style="font-size: 11px; text-decoration: none; color: #64748b; font-weight: 700; flex-shrink: 0; padding: 0 5px;">➡️ gimse.info</a>
-        <select id="mapSelect" style="padding:8px; border-radius:8px; font-weight:600; flex-shrink:0;">
-            <option value="norge">Norgeskart</option>
-            <option value="osm">OpenStreetMap</option>
-        </select>
-        <button id="resetBtn" style="padding:8px 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer; flex-shrink:0;">Nullstill</button>
-        <button onclick="window.location.href='vinter.html'" style="padding:8px 15px; border-radius:8px; background:var(--download-blue); color:white; border:none; font-weight:600; cursor:pointer; flex-shrink:0;">Vinter ⛷️</button>
-        <button onclick="window.location.href='https://larsgimse.github.io/topptur/oversikt.html'" style="padding:8px 15px; border-radius:8px; background:var(--strava-green); color:white; border:none; font-weight:600; cursor:pointer; flex-shrink:0;">Oversikt alle turer</button>
+    <div class="scroll-container" style="order: 5;">
+        <div id="controls-row">
+            <a href="http://gimse.info" style="font-size: 11px; text-decoration: none; color: #64748b; font-weight: 700; flex-shrink: 0; padding: 0 5px;">➡️ gimse.info</a>
+            <select id="mapSelect" style="padding:8px; border-radius:8px; font-weight:600; flex-shrink:0;">
+                <option value="norge">Norgeskart</option>
+                <option value="osm">OpenStreetMap</option>
+            </select>
+            <button id="resetBtn" style="padding:8px 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer; flex-shrink:0;">Nullstill</button>
+            <button onclick="window.location.href='vinter.html'" style="padding:8px 15px; border-radius:8px; background:var(--download-blue); color:white; border:none; font-weight:600; cursor:pointer; flex-shrink:0;">Vinter ⛷️</button>
+            <button onclick="window.location.href='https://larsgimse.github.io/topptur/oversikt.html'" style="padding:8px 15px; border-radius:8px; background:var(--strava-green); color:white; border:none; font-weight:600; cursor:pointer; flex-shrink:0;">Oversikt alle turer</button>
+        </div>
     </div>
 
     <div id="map-container">
@@ -112,7 +114,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        // (Javascript-koden forblir uendret)
         const map = L.map('map', { zoomSnap: 0.5 }).setView([69.65, 18.95], 10);
         const allTracksGroup = L.featureGroup().addTo(map);
         const videoContainer = document.getElementById('video-buttons-container');
@@ -159,7 +160,6 @@
 
         totalTracksCount = topper.length;
 
-        // ... [Resten av JS-funksjonene er uendret]
         function lagBadge(fil, override) { const s = document.createElement('span'); s.className = 'badge-label'; s.innerText = override || (fil ? fil.split('_')[0] : "2020"); return s; }
         function lastNedGPX(filsti, filnavn) { const link = document.createElement('a'); link.href = filsti; link.download = filnavn.endsWith('.gpx') ? filnavn : filnavn + ".gpx"; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
         function parseDatoFraFil(gpxFil) { const match = (gpxFil || '').match(/(\d{4})_(\d{2})_(\d{2})/); return match ? `${match[3]}.${match[2]}.${match[1]}` : ''; }
