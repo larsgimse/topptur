@@ -232,9 +232,9 @@
 
             let yrLenkeHtml = '';
             if (toppKoordinat) {
-                const lat = toppKoordinat.lat.toFixed(5);
-                const lng = toppKoordinat.lng.toFixed(5);
-                const yrUrl = `https://www.yr.no/nb/søk?q=${lat},${lng}`;
+                const lat = toppKoordinat.lat.toFixed(3);
+                const lng = toppKoordinat.lng.toFixed(3);
+                const yrUrl = `https://www.yr.no/nb/værvarsel/daglig-tabell/${lat},%20${lng}/Norge/${lat},%20${lng}`;
                 
                 yrLenkeHtml = `
                     <a href="${yrUrl}" 
