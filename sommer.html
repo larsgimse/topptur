@@ -147,6 +147,7 @@
             { navn: "Buren", fil: "2025_10_06.gpx", overrideAar: "2020", video: [{ url: "https://youtu.be/-m3sEIIIUHg", tittel: "Se video", dato: "2020_08_23" }] },
             { navn: "Djeveltanna", fil: "2024_08_03.gpx", video: [{ url: "https://www.instagram.com/p/C-dPqdWM4Ku/", tittel: "Se video" }] },
             { navn: "Djupdalgruver", fil: "2025_08_03.gpx", video: [{ url: "https://www.instagram.com/p/DNBr-heMfba/", tittel: "Se video" }] },
+            { navn: "Fløya - Sherpatrappa", fil: "floya.gpx", overrideAar: "2022", video: [{ url: "https://www.instagram.com/p/CfZtWgOslWb", tittel: "Se bilder", type: "photo" }] },
             { navn: "Hamperokken", fil: "2025_07_14.gpx", video: [{ url: "https://www.instagram.com/p/DMcEC9dIb6M/", tittel: "Se video" }] },
             { navn: "Hillesøy", fil: "2023_05_17.gpx", video: [{ url: "https://www.instagram.com/p/CsWlAnBMV5f", tittel: "Se bilder", type: "photo" }] },
             { navn: "Kløftbakken", fil: "2025_02_28.gpx", video: [{ url: "https://www.instagram.com/p/DGoaEMTsPop/", tittel: "Se video" }] },
@@ -287,6 +288,7 @@
                     isReseting = false; aktivToppNavn = topp.navn;
                     document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
+                    get_aktiveEkstraSporLayers = () => aktiveEkstraSporLayers; // Helper placeholder if code needs context
                     aktiveEkstraSporLayers.forEach(layer => map.removeLayer(layer)); aktiveEkstraSporLayers = [];
                     allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.1, weight: 1, color: 'var(--summer-green)'}));
                     l.setStyle({opacity: 1, weight: 3, color: 'var(--strava-orange)'}).bringToFront(); 
@@ -299,7 +301,7 @@
                     topp.video?.forEach(v => {
                         const a = document.createElement('a'); a.href = v.url; a.target = "_blank"; a.className = 'video-link-btn';
                         a.innerHTML = `<span>${v.type === "photo" ? "📷" : "🎬"}</span> ${v.tittel}`;
-                        a.appendChild(lagBadge(v.dato || topp.fil));
+                        a.appendChild(lagBadge(v.dato || topp.fil, topp.overrideAar));
                         videoContainer.appendChild(a);
                     });
 
