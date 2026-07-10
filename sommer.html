@@ -66,7 +66,6 @@
             background: var(--year-grey);
         }
         
-        /* Unik farge for 2026-merker */
         .badge-2026 {
             background: var(--strava-orange) !important;
         }
@@ -103,7 +102,8 @@
         .active .switch-track { background: var(--strava-green); }
         .active .switch-thumb { transform: translateX(14px); }
 
-        #visitor-counter { order: 8; margin-top: 25px; font-size: 12px; color: #64748b; font-weight: 600; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        #visitor-counter { order: 8; margin-top: 25px; font-size: 12px; color: #64748b; font-weight: 600; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        #visitor-counter img { height: 16px; vertical-align: middle; filter: hue-rotate(45deg); }
     </style>
 </head>
 <body>
@@ -129,9 +129,10 @@
         <div id="video-buttons-container"></div>
     </div>
 
+    <!-- Oppdatert teller som bruker en ren grønn tall-stil (rule34) i stedet for de rare emojitallene -->
     <div id="visitor-counter">
         <span>Antall besøk:</span>
-        <img src="https://count.getloli.com/get/@larsgimse-topptur-sommer?theme=asoul" alt="Besøksteller" style="height: 24px; vertical-align: middle;" />
+        <img src="https://count.getloli.com/get/@larsgimse-topptur-sommer?theme=rule34" alt="Besøksteller" />
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -192,9 +193,8 @@
         function lagBadge(fil, override) {
             const s = document.createElement('span');
             s.className = 'badge-label';
-            const aar = override || (fil ? fil.split('_')[0] : "2020");
+            let aar = override || (fil ? fil.split('_')[0] : "2020");
             
-            // Sjekker om filnavnet bruker DD_MM_YYYY format i stedet for YYYY_MM_DD
             if (!override && fil && fil.includes('_')) {
                 const deler = fil.split('_');
                 if (deler[2] && deler[2].startsWith('20')) {
