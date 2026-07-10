@@ -65,6 +65,11 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; font-weight: bold; pointer-events: none;
             background: var(--year-grey);
         }
+        
+        /* Unik farge for 2026-merker */
+        .badge-2026 {
+            background: var(--strava-orange) !important;
+        }
 
         .video-link-btn, .search-link-btn {
             background: rgba(255, 255, 255, 0.95); padding: 8px 12px; border-radius: 8px; 
@@ -98,7 +103,7 @@
         .active .switch-track { background: var(--strava-green); }
         .active .switch-thumb { transform: translateX(14px); }
 
-        #visitor-counter { order: 8; margin-top: 25px; font-size: 11px; color: #94a3b8; font-weight: 500; }
+        #visitor-counter { order: 8; margin-top: 25px; font-size: 12px; color: #64748b; font-weight: 600; display: flex; justify-content: center; align-items: center; gap: 5px; }
     </style>
 </head>
 <body>
@@ -125,7 +130,8 @@
     </div>
 
     <div id="visitor-counter">
-        <script data-goatcounter="https://larsgimse.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+        <span>Antall besøk:</span>
+        <img src="https://count.getloli.com/get/@larsgimse-topptur-sommer?theme=asoul" alt="Besøksteller" style="height: 24px; vertical-align: middle;" />
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -162,7 +168,7 @@
             { navn: "Orvasstinden", fil: "2025_09_25.gpx", video: [{ url: "https://www.instagram.com/p/DPKU6TiCH9y/", tittel: "Se video" }] },
             { navn: "Rødtinden", fil: "2025_08_11.gpx", video: [{ url: "https://www.instagram.com/p/DNQt9aPsjSt/", tittel: "Se video" }] },
             { navn: "Skamtinden", fil: "2020_08_21.gpx", video: [{ url: "https://youtu.be/iC2wVCNLIT0", tittel: "Se video" }] },
-            { navn: "Skittentinden", fil: "08_07_2026.gpx", video: [{ url: "https://www.instagram.com/p/DaltSLfoqMD/", tittel: "Se video" }], strava: "https://www.strava.com/activities/19231777586" },
+            { navn: "Skittentinden", fil: "08_07_2026.gpx", overrideAar: "2026", video: [{ url: "https://www.instagram.com/p/DaltSLfoqMD/", tittel: "Se video" }], strava: "https://www.strava.com/activities/19231777586" },
             { 
                 navn: "Soria Moria traversen", 
                 fil: "2025_07_31.gpx", 
@@ -186,7 +192,20 @@
         function lagBadge(fil, override) {
             const s = document.createElement('span');
             s.className = 'badge-label';
-            s.innerText = override || (fil ? fil.split('_')[0] : "2020");
+            const aar = override || (fil ? fil.split('_')[0] : "2020");
+            
+            // Sjekker om filnavnet bruker DD_MM_YYYY format i stedet for YYYY_MM_DD
+            if (!override && fil && fil.includes('_')) {
+                const deler = fil.split('_');
+                if (deler[2] && deler[2].startsWith('20')) {
+                    aar = deler[2].split('.')[0];
+                }
+            }
+            
+            s.innerText = aar;
+            if (aar === "2026") {
+                s.classList.add('badge-2026');
+            }
             return s;
         }
 
