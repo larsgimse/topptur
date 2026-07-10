@@ -53,11 +53,7 @@
         }
         #visitor-counter { 
             font-size: 13px; color: #64748b; font-weight: 600; 
-            display: flex; align-items: center; gap: 5px; 
-        }
-        #count-number { 
-            background: #e2e8f0; padding: 2px 6px; border-radius: 4px; 
-            color: var(--dark-grey); font-family: monospace; font-size: 14px; 
+            display: flex; align-items: center; gap: 8px; 
         }
 
         @media (max-width: 768px) {
@@ -149,11 +145,10 @@
         <div id="video-buttons-container"></div>
     </div>
 
-    <!-- Ny samlet rad for teller og lenkeknappen -->
     <div class="footer-row">
         <div id="visitor-counter">
             <span>Antall besøk totalt:</span>
-            <span id="count-number">...</span>
+            <a href='https://www.counter12.com'><img src='https://www.counter12.com/img-bcCwd4d9ZZ6BZ758-45.gif' border='0' alt='conter12'></a><script type='text/javascript' src='https://www.counter12.com/ad.js?id=bcCwd4d9ZZ6BZ758'></script>
         </div>
         <button onclick="window.location.href='http://gimse.info'" style="padding:8px 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer; font-size:13px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">➡️ gimse.info</button>
     </div>
@@ -174,26 +169,6 @@
                 buttonsWrapper.classList.remove('scrolled-end');
             }
         });
-
-        // Global teller
-        const namespace = "larsgimse-topptur-sommer";
-        const key = "visits";
-        
-        fetch(`https://api.countapi.xyz/hit/${namespace}/${key}`)
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('count-number').innerText = data.value || '1';
-            })
-            .catch(() => {
-                fetch(`https://api.moeounter.org/hit/${namespace}/${key}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        document.getElementById('count-number').innerText = data.count || '1 247';
-                    })
-                    .catch(() => {
-                        document.getElementById('count-number').innerText = '1 247';
-                    });
-            });
 
         const map = L.map('map', { zoomSnap: 0.5 }).setView([69.65, 18.95], 10);
         const allTracksGroup = L.featureGroup().addTo(map);
