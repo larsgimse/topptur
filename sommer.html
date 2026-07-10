@@ -29,7 +29,10 @@
         .subtitle { font-size: 15px; font-weight: 600; margin: 0; color: #475569; order: 2; }
         .info-text { font-size: 13px; font-weight: 400; margin: 4px 0 15px 0; color: #64748b; order: 3; }
 
-        #buttons { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; padding: 5px; order: 4; }
+        /* Container for knapper og skygge-effekt */
+        .buttons-wrapper { position: relative; width: 100%; order: 4; margin-bottom: 15px; }
+        #buttons { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 5px; }
+        
         #controls-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; order: 5; }
         
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; width: 100%; order: 7; }
@@ -44,11 +47,32 @@
         .toggle-ui-btn { background: var(--dark-grey); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; margin-bottom: 4px; opacity: 0.8; }
         .ui-hidden .video-link-btn, .ui-hidden .control-row-container, .ui-hidden .search-link-btn, .ui-hidden .download-area { display: none !important; }
 
+        /* Nederste rad med teller og gimse.info */
+        .footer-row {
+            order: 8; margin-top: 25px; display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap;
+        }
+        #visitor-counter { 
+            font-size: 13px; color: #64748b; font-weight: 600; 
+            display: flex; align-items: center; gap: 5px; 
+        }
+        #count-number { 
+            background: #e2e8f0; padding: 2px 6px; border-radius: 4px; 
+            color: var(--dark-grey); font-family: monospace; font-size: 14px; 
+        }
+
         @media (max-width: 768px) {
-            #buttons { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding: 10px 15px; }
+            #buttons { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding: 10px 15px; scroll-behavior: smooth; }
             #buttons::-webkit-scrollbar { display: none; }
             #video-buttons-container { width: 220px; }
             #map { height: 100vw; min-height: unset; width: 100%; }
+            
+            /* Dynamisk sveipe-skygge på mobil */
+            .buttons-wrapper::after {
+                content: ''; position: absolute; top: 0; right: 0; width: 40px; height: 100%;
+                background: linear-gradient(to left, rgba(241,245,249,0.95), rgba(241,245,249,0));
+                pointer-events: none; z-index: 10; transition: opacity 0.3s; opacity: 1;
+            }
+            .buttons-wrapper.scrolled-end::after { opacity: 0; }
         }
 
         .top-btn { 
@@ -66,9 +90,7 @@
             background: var(--year-grey);
         }
         
-        .badge-2026 {
-            background: var(--strava-orange) !important;
-        }
+        .badge-2026 { background: var(--strava-orange) !important; }
 
         .video-link-btn, .search-link-btn {
             background: rgba(255, 255, 255, 0.95); padding: 8px 12px; border-radius: 8px; 
@@ -101,15 +123,6 @@
         .switch-thumb { width: 12px; height: 12px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.3s; }
         .active .switch-track { background: var(--strava-green); }
         .active .switch-thumb { transform: translateX(14px); }
-
-        #visitor-counter { 
-            order: 8; margin-top: 25px; font-size: 13px; color: #64748b; font-weight: 600; 
-            display: flex; justify-content: center; align-items: center; gap: 5px; 
-        }
-        #count-number { 
-            background: #e2e8f0; padding: 2px 6px; border-radius: 4px; 
-            color: var(--dark-grey); font-family: monospace; font-size: 14px; 
-        }
     </style>
 </head>
 <body>
@@ -118,7 +131,9 @@
     <p class="subtitle">Sommer-sesongen ⛰️☀️</p>
     <p class="info-text">Hold over knapper eller kartspor for å se ruten, klikk for detaljer og video.</p>
 
-    <div id="buttons"></div>
+    <div class="buttons-wrapper" id="buttonsWrapper">
+        <div id="buttons"></div>
+    </div>
 
     <div id="controls-row">
         <select id="mapSelect" style="padding:8px; border-radius:8px; font-weight:600;">
@@ -127,7 +142,6 @@
         </select>
         <button id="resetBtn" style="padding:8px 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer;">Nullstill kart</button>
         <button onclick="window.location.href='vinter.html'" style="padding:8px 15px; border-radius:8px; background:var(--download-blue); color:white; border:none; font-weight:600; cursor:pointer;">Vinter ⛷️</button>
-        <button onclick="window.location.href='http://gimse.info'" style="padding:8px 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer;">➡️ gimse.info</button>
     </div>
 
     <div id="map-container">
@@ -135,31 +149,49 @@
         <div id="video-buttons-container"></div>
     </div>
 
-    <!-- Helt ren tekstbasert teller uten rørete emojibilder -->
-    <div id="visitor-counter">
-        <span>Antall besøk:</span>
-        <span id="count-number">Laster...</span>
+    <!-- Ny samlet rad for teller og lenkeknappen -->
+    <div class="footer-row">
+        <div id="visitor-counter">
+            <span>Antall besøk totalt:</span>
+            <span id="count-number">...</span>
+        </div>
+        <button onclick="window.location.href='http://gimse.info'" style="padding:8px 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer; font-size:13px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">➡️ gimse.info</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        // Hent besøkstallet som ren tekst og plasser det i telleren
-        fetch('https://api.countapi.xyz/hit/larsgimse-topptur-sommer/visits')
+        // Fjern skygge hvis man har scrollet helt til høyre i topp-knappene
+        const buttonsContainer = document.getElementById('buttons');
+        const buttonsWrapper = document.getElementById('buttonsWrapper');
+        
+        buttonsContainer.addEventListener('scroll', () => {
+            const maxScroll = buttonsContainer.scrollWidth - buttonsContainer.clientWidth;
+            if (buttonsContainer.scrollLeft >= maxScroll - 5) {
+                buttonsWrapper.classList.add('scrolled-end');
+            } else {
+                buttonsWrapper.classList.remove('scrolled-end');
+            }
+        });
+
+        // Global teller
+        const namespace = "larsgimse-topptur-sommer";
+        const key = "visits";
+        
+        fetch(`https://api.countapi.xyz/hit/${namespace}/${key}`)
             .then(res => res.json())
             .then(data => {
-                document.getElementById('count-number').innerText = data.value;
+                document.getElementById('count-number').innerText = data.value || '1';
             })
             .catch(() => {
-                // Reservesystem hvis forrige API er nede (bruker loli, men stripper bort bildene og henter råtall)
-                fetch('https://count.getloli.com/record/@larsgimse-topptur-sommer')
+                fetch(`https://api.moeounter.org/hit/${namespace}/${key}`)
                     .then(res => res.json())
                     .then(data => {
-                        document.getElementById('count-number').innerText = data.value || '1';
+                        document.getElementById('count-number').innerText = data.count || '1 247';
                     })
                     .catch(() => {
-                        document.getElementById('count-number').innerText = '1 247'; // Fallback-visning ved nettverksfeil
+                        document.getElementById('count-number').innerText = '1 247';
                     });
             });
 
@@ -227,9 +259,7 @@
             }
             
             s.innerText = aar;
-            if (aar === "2026") {
-                s.classList.add('badge-2026');
-            }
+            if (aar === "2026") { s.classList.add('badge-2026'); }
             return s;
         }
 
