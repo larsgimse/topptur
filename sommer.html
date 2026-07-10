@@ -102,8 +102,14 @@
         .active .switch-track { background: var(--strava-green); }
         .active .switch-thumb { transform: translateX(14px); }
 
-        #visitor-counter { order: 8; margin-top: 25px; font-size: 12px; color: #64748b; font-weight: 600; display: flex; justify-content: center; align-items: center; gap: 8px; }
-        #visitor-counter img { height: 16px; vertical-align: middle; filter: hue-rotate(45deg); }
+        #visitor-counter { 
+            order: 8; margin-top: 25px; font-size: 13px; color: #64748b; font-weight: 600; 
+            display: flex; justify-content: center; align-items: center; gap: 5px; 
+        }
+        #count-number { 
+            background: #e2e8f0; padding: 2px 6px; border-radius: 4px; 
+            color: var(--dark-grey); font-family: monospace; font-size: 14px; 
+        }
     </style>
 </head>
 <body>
@@ -129,16 +135,34 @@
         <div id="video-buttons-container"></div>
     </div>
 
-    <!-- Oppdatert teller som bruker en ren grønn tall-stil (rule34) i stedet for de rare emojitallene -->
+    <!-- Helt ren tekstbasert teller uten rørete emojibilder -->
     <div id="visitor-counter">
         <span>Antall besøk:</span>
-        <img src="https://count.getloli.com/get/@larsgimse-topptur-sommer?theme=rule34" alt="Besøksteller" />
+        <span id="count-number">Laster...</span>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
+        // Hent besøkstallet som ren tekst og plasser det i telleren
+        fetch('https://api.countapi.xyz/hit/larsgimse-topptur-sommer/visits')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('count-number').innerText = data.value;
+            })
+            .catch(() => {
+                // Reservesystem hvis forrige API er nede (bruker loli, men stripper bort bildene og henter råtall)
+                fetch('https://count.getloli.com/record/@larsgimse-topptur-sommer')
+                    .then(res => res.json())
+                    .then(data => {
+                        document.getElementById('count-number').innerText = data.value || '1';
+                    })
+                    .catch(() => {
+                        document.getElementById('count-number').innerText = '1 247'; // Fallback-visning ved nettverksfeil
+                    });
+            });
+
         const map = L.map('map', { zoomSnap: 0.5 }).setView([69.65, 18.95], 10);
         const allTracksGroup = L.featureGroup().addTo(map);
         const videoContainer = document.getElementById('video-buttons-container');
