@@ -187,14 +187,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        // ==========================================
-        //  FYLL INN DINE DETALJER FOR DIN GITHUB HER:
-        // ==========================================
-        const GITHUB_USER = "DITT_BRUKERNAVN"; // Erstatt med ditt brukernavn på GitHub
-        const GITHUB_REPO = "DITT_REPOSITORIE"; // Erstatt med navnet på prosjekt-mappen din på GitHub
+        // =========================================================
+        //  OPPDATERT MED DINE GITHUB-DETALJER:
+        // =========================================================
+        const GITHUB_USER = "larsgimse"; 
+        const GITHUB_REPO = "topptur"; 
 
-        // En tabell for å koble filnavnene dine mot fine visningsnavn og sesong (siden vi skanner råfiler)
-        // Koden bruker denne listen til å gi fine navn. Filer som ikke ligger i listen får filnavnet som tittel automatisk.
+        // Database for å koble filnavnene til fine navn og sesongtyper.
+        // Hvis du legger til en helt ny fil her, vil den fortsatt vises,
+        // men bruke filnavnet som navn og "vinter" som standard.
         const turDatabase = {
             "2026_03_27.gpx": { navn: "884", type: "vinter" },
             "2026_04_03.gpx": { navn: "Bentsjordtinden", type: "vinter" },
@@ -282,17 +283,17 @@
             
             try {
                 const response = await fetch(apiURL);
-                if (!response.ok) throw new Error("Klarte ikke å hente fillisten fra GitHub Pages API");
+                if (!response.ok) throw new Error("Klarte ikke å skanne GPX-mappen på GitHub.");
                 const filer = await response.json();
                 
-                // Filtrer ut bare .gpx-filer
+                // Henter kun ut filer som ender på .gpx
                 const gpxFiler = filer.filter(f => f.name.toLowerCase().endsWith('.gpx'));
                 totalFiles = gpxFiler.length;
                 document.getElementById('total').textContent = totalFiles;
                 document.getElementById('loading-status').innerHTML = `Laster GPX-spor... <span id="progress">0</span>/<span id="total">${totalFiles}</span>`;
 
                 if (totalFiles === 0) {
-                    document.getElementById('loading-status').textContent = "Ingen GPX-filer funnet i mappen.";
+                    document.getElementById('loading-status').textContent = "Fant ingen GPX-filer i /gpx-mappen.";
                     return;
                 }
 
@@ -301,18 +302,18 @@
                 });
 
             } catch (feil) {
-                console.error("Feil ved skanning av GitHub-mappe:", feil);
-                document.getElementById('loading-status').textContent = "Kunne ikke hente filer automatisk. Sjekk brukernavn og repo-navn i koden.";
+                console.error("Feil ved skanning av mappe:", feil);
+                document.getElementById('loading-status').textContent = "Kunne ikke skanne mappen automatisk. Sjekk at banen /gpx stemmer på GitHub.";
             }
         }
 
         function lastInnGPX(filnavn) {
             const filsti = './gpx/' + filnavn;
             
-            // Sjekk om filen er registrert i databasen vår, hvis ikke lager vi et generisk objekt
+            // Hvis filen ikke ligger i turDatabase, gjør vi "2026_03_27.gpx" om til "2026 03 27" som tittel på kartet
             const info = turDatabase[filnavn] || { 
-                navn: filnavn.replace('.gpx', '').replace(/_/g, ' '), // Gjør "2026_03_27" til "2026 03 27"
-                type: 'vinter' // Standard fall-back-type
+                navn: filnavn.replace('.gpx', '').replace(/_/g, ' '), 
+                type: 'vinter' // Standardtype for nye/uregistrerte spor
             };
 
             const track = new L.GPX(filsti, gpxOptions);
@@ -335,7 +336,7 @@
             });
 
             track.on('error', function() {
-                console.warn(`Feil under parsing av: ${filnavn}`);
+                console.warn(`Feil under lasting/parsing av GPX: ${filnavn}`);
                 sjekkFremdrift();
             });
 
@@ -358,7 +359,7 @@
             zoomTilAktiveSpor();
         }
 
-        // Start skanningen av GitHub-mappen automatisk når siden åpnes
+        // Fyrer i gang automatisk skanning med en gang siden åpnes
         skannGitHubMappe();
     </script>
 </body>
