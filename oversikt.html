@@ -180,53 +180,61 @@
 
     <div id="map-container">
         <div id="map"></div>
-        <div id="loading-status">Laster GPX-spor... <span id="progress">0</span>/<span id="total">0</span></div>
+        <div id="loading-status">Skanner GitHub for GPX-filer... <span id="progress">0</span>/<span id="total">0</span></div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        const topper = [
-            { navn: "884", fil: "2026_03_27.gpx", type: "vinter" },
-            { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", type: "vinter" },
-            { navn: "Buren", fil: "2026_01_10.gpx", type: "vinter" },
-            { navn: "Burshammeren", fil: "2026_03_26.gpx", type: "vinter" },
-            { navn: "Fagerfjellet", fil: "2025_04_22.gpx", type: "vinter" },
-            { navn: "Gabrielfjellet", fil: "2025_05_25.gpx", type: "vinter" },
-            { navn: "Gorzelvtinden", fil: "2025_12_06.gpx", type: "vinter" },
-            { navn: "Gråtinden", fil: "2026_04_06.gpx", type: "vinter" },
-            { navn: "Klemmartindan", fil: "2024_04_28.gpx", type: "vinter" },
-            { navn: "Langfjellaksla", fil: "2026_04_08.gpx", type: "vinter" },
-            { navn: "Middagstinden", fil: "2024_04_21.gpx", type: "vinter" },
-            { navn: "Rema 1000", fil: "2026_03_28.gpx", type: "vinter" },
-            { navn: "Skittentinden", fil: "2026_03_15.gpx", type: "vinter" },
-            { navn: "Sollidalsaksla", fil: "2026_03_16.gpx", type: "vinter" },
-            { navn: "Steinskartinden", fil: "2026_03_08.gpx", type: "vinter" },
-            { navn: "Stormheimfjellet", fil: "2024_04_06.gpx", type: "vinter" },
-            { navn: "Storstolpan", fil: "2025_05_08.gpx", type: "vinter" },
-            { navn: "Stortinden", fil: "2024_03_26.gpx", type: "vinter" },
-            { navn: "Straumsaksla", fil: "2025_05_24.gpx", type: "vinter" },
-            { navn: "Svartnestinden", fil: "2026_04_05.gpx", type: "vinter" },
-            { navn: "Tromsdalstinden", fil: "2026_05_14.gpx", type: "vinter" },
-            { navn: "Tverrfjellet", fil: "2023_12_29.gpx", type: "vinter" },
-            { navn: "Buren (Sommer)", fil: "2025_10_06.gpx", type: "sommer" },
-            { navn: "Djeveltanna", fil: "2024_08_03.gpx", type: "sommer" },
-            { navn: "Djupdalgruver", fil: "2025_08_03.gpx", type: "sommer" },
-            { navn: "Hamperokken", fil: "2025_07_14.gpx", type: "sommer" },
-            { navn: "Hillesøy", fil: "2023_05_17.gpx", type: "sommer" },
-            { navn: "Kløftbakken", fil: "2025_02_28.gpx", type: "sommer" },
-            { navn: "Mjeldskartinden", fil: "2020_07_24.gpx", type: "sommer" },
-            { navn: "Orvasstinden", fil: "2025_09_25.gpx", type: "sommer" },
-            { navn: "Rødtinden", fil: "2025_08_11.gpx", type: "sommer" },
-            { navn: "Skamtinden", fil: "2020_08_21.gpx", type: "sommer" },
-            { navn: "Soria Moria traversen", fil: "2025_07_31.gpx", type: "sommer" },
-            { navn: "Steinskartinden (Sommer)", fil: "2023_09_24.gpx", type: "sommer" },
-            { navn: "Stor Blåmann", fil: "2024_10_19.gpx", type: "sommer" },
-            { navn: "Store Hollendaren", fil: "2021_10_03.gpx", type: "sommer" },
-            { navn: "Tromsdalstinden (Sommer)", fil: "2022_10_01.gpx", type: "sommer" },
-            { navn: "Vengsøytraversen", fil: "2021_09_19.gpx", type: "sommer" }
-        ];
+        // ==========================================
+        //  FYLL INN DINE DETALJER FOR DIN GITHUB HER:
+        // ==========================================
+        const GITHUB_USER = "DITT_BRUKERNAVN"; // Erstatt med ditt brukernavn på GitHub
+        const GITHUB_REPO = "DITT_REPOSITORIE"; // Erstatt med navnet på prosjekt-mappen din på GitHub
+
+        // En tabell for å koble filnavnene dine mot fine visningsnavn og sesong (siden vi skanner råfiler)
+        // Koden bruker denne listen til å gi fine navn. Filer som ikke ligger i listen får filnavnet som tittel automatisk.
+        const turDatabase = {
+            "2026_03_27.gpx": { navn: "884", type: "vinter" },
+            "2026_04_03.gpx": { navn: "Bentsjordtinden", type: "vinter" },
+            "2026_01_10.gpx": { navn: "Buren", type: "vinter" },
+            "2026_03_26.gpx": { navn: "Burshammeren", type: "vinter" },
+            "2025_04_22.gpx": { navn: "Fagerfjellet", type: "vinter" },
+            "2025_05_25.gpx": { navn: "Gabrielfjellet", type: "vinter" },
+            "2025_12_06.gpx": { navn: "Gorzelvtinden", type: "vinter" },
+            "2026_04_06.gpx": { navn: "Gråtinden", type: "vinter" },
+            "2024_04_28.gpx": { navn: "Klemmartindan", type: "vinter" },
+            "2026_04_08.gpx": { navn: "Langfjellaksla", type: "vinter" },
+            "2024_04_21.gpx": { navn: "Middagstinden", type: "vinter" },
+            "2026_03_28.gpx": { navn: "Rema 1000", type: "vinter" },
+            "2026_03_15.gpx": { navn: "Skittentinden", type: "vinter" },
+            "2026_03_16.gpx": { navn: "Sollidalsaksla", type: "vinter" },
+            "2026_03_08.gpx": { navn: "Steinskartinden", type: "vinter" },
+            "2024_04_06.gpx": { navn: "Stormheimfjellet", type: "vinter" },
+            "2025_05_08.gpx": { navn: "Storstolpan", type: "vinter" },
+            "2024_03_26.gpx": { navn: "Stortinden", type: "vinter" },
+            "2025_05_24.gpx": { navn: "Straumsaksla", type: "vinter" },
+            "2026_04_05.gpx": { navn: "Svartnestinden", type: "vinter" },
+            "2026_05_14.gpx": { navn: "Tromsdalstinden", type: "vinter" },
+            "2023_12_29.gpx": { navn: "Tverrfjellet", type: "vinter" },
+            "2025_10_06.gpx": { navn: "Buren (Sommer)", type: "sommer" },
+            "2024_08_03.gpx": { navn: "Djeveltanna", type: "sommer" },
+            "2025_08_03.gpx": { navn: "Djupdalgruver", type: "sommer" },
+            "2025_07_14.gpx": { navn: "Hamperokken", type: "sommer" },
+            "2023_05_17.gpx": { navn: "Hillesøy", type: "sommer" },
+            "2025_02_28.gpx": { navn: "Kløftbakken", type: "sommer" },
+            "2020_07_24.gpx": { navn: "Mjeldskartinden", type: "sommer" },
+            "2025_09_25.gpx": { navn: "Orvasstinden", type: "sommer" },
+            "2025_08_11.gpx": { navn: "Rødtinden", type: "sommer" },
+            "2020_08_21.gpx": { navn: "Skamtinden", type: "sommer" },
+            "2025_07_31.gpx": { navn: "Soria Moria traversen", type: "sommer" },
+            "2023_09_24.gpx": { navn: "Steinskartinden (Sommer)", type: "sommer" },
+            "2024_10_19.gpx": { navn: "Stor Blåmann", type: "sommer" },
+            "2021_10_03.gpx": { navn: "Store Hollendaren", type: "sommer" },
+            "2022_10_01.gpx": { navn: "Tromsdalstinden (Sommer)", type: "sommer" },
+            "2021_09_19.gpx": { navn: "Vengsøytraversen", type: "sommer" }
+        };
 
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         const minRenderer = L.canvas({ tolerance: isTouchDevice ? 22 : 3 });
@@ -247,10 +255,9 @@
         };
 
         let loadedCount = 0;
-        const totalFiles = topper.length;
+        let totalFiles = 0;
         const bounds = L.latLngBounds();
         const lagredeSpor = [];
-        document.getElementById('total').textContent = totalFiles;
 
         function zoomTilAktiveSpor() {
             const aktiveBounds = L.latLngBounds();
@@ -269,29 +276,74 @@
             }
         }
 
-        topper.forEach(topp => {
-            const track = new L.GPX('./gpx/' + topp.fil, gpxOptions);
+        // Henter listen over filer dynamisk fra GitHub API
+        async function skannGitHubMappe() {
+            const apiURL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/gpx`;
+            
+            try {
+                const response = await fetch(apiURL);
+                if (!response.ok) throw new Error("Klarte ikke å hente fillisten fra GitHub Pages API");
+                const filer = await response.json();
+                
+                // Filtrer ut bare .gpx-filer
+                const gpxFiler = filer.filter(f => f.name.toLowerCase().endsWith('.gpx'));
+                totalFiles = gpxFiler.length;
+                document.getElementById('total').textContent = totalFiles;
+                document.getElementById('loading-status').innerHTML = `Laster GPX-spor... <span id="progress">0</span>/<span id="total">${totalFiles}</span>`;
+
+                if (totalFiles === 0) {
+                    document.getElementById('loading-status').textContent = "Ingen GPX-filer funnet i mappen.";
+                    return;
+                }
+
+                gpxFiler.forEach(file => {
+                    lastInnGPX(file.name);
+                });
+
+            } catch (feil) {
+                console.error("Feil ved skanning av GitHub-mappe:", feil);
+                document.getElementById('loading-status').textContent = "Kunne ikke hente filer automatisk. Sjekk brukernavn og repo-navn i koden.";
+            }
+        }
+
+        function lastInnGPX(filnavn) {
+            const filsti = './gpx/' + filnavn;
+            
+            // Sjekk om filen er registrert i databasen vår, hvis ikke lager vi et generisk objekt
+            const info = turDatabase[filnavn] || { 
+                navn: filnavn.replace('.gpx', '').replace(/_/g, ' '), // Gjør "2026_03_27" til "2026 03 27"
+                type: 'vinter' // Standard fall-back-type
+            };
+
+            const track = new L.GPX(filsti, gpxOptions);
+            
             track.on('loaded', function(e) {
                 const layer = e.target;
-                lagredeSpor.push({ layer: layer, type: topp.type });
+                lagredeSpor.push({ layer: layer, type: info.type });
                 if (layer.getBounds().isValid()) bounds.extend(layer.getBounds());
 
                 if (!isTouchDevice) {
-                    layer.bindTooltip(`${topp.navn}`, { sticky: true });
+                    layer.bindTooltip(`${info.navn}`, { sticky: true });
                     layer.on('mouseover', function() { layer.setStyle({ color: '#fc4c02', weight: 4.0, opacity: 1.0 }); layer.bringToFront(); });
                     layer.on('mouseout', function() { layer.setStyle({ color: '#ffffff', weight: 1.4, opacity: 0.4 }); });
-                    layer.on('click', () => åpneTurSide(topp));
+                    layer.on('click', () => åpneTurSide(info));
                 } else {
-                    const url = `${topp.type === "sommer" ? "sommer.html" : "vinter.html"}?fjell=${encodeURIComponent(topp.navn.replace(" (Sommer)", ""))}`;
-                    layer.bindPopup(`<b style="font-size:14px; color:#fff;">${topp.navn}</b><br><a href="${url}" class="popup-link-btn">Se detaljer ➔</a>`, { closeButton: false });
+                    const url = `${info.type === "sommer" ? "sommer.html" : "vinter.html"}?fjell=${encodeURIComponent(info.navn.replace(" (Sommer)", ""))}`;
+                    layer.bindPopup(`<b style="font-size:14px; color:#fff;">${info.navn}</b><br><a href="${url}" class="popup-link-btn">Se detaljer ➔</a>`, { closeButton: false });
                 }
                 sjekkFremdrift();
             });
-            track.addTo(map);
-        });
 
-        function åpneTurSide(topp) {
-            window.location.href = `${topp.type === "sommer" ? "sommer.html" : "vinter.html"}?fjell=${encodeURIComponent(topp.navn.replace(" (Sommer)", ""))}`;
+            track.on('error', function() {
+                console.warn(`Feil under parsing av: ${filnavn}`);
+                sjekkFremdrift();
+            });
+
+            track.addTo(map);
+        }
+
+        function åpneTurSide(info) {
+            window.location.href = `${info.type === "sommer" ? "sommer.html" : "vinter.html"}?fjell=${encodeURIComponent(info.navn.replace(" (Sommer)", ""))}`;
         }
 
         document.getElementById('btn-vinter').addEventListener('click', () => filtrerTurer('vinter'));
@@ -305,6 +357,9 @@
             lagredeSpor.forEach(item => { item.type === type ? map.addLayer(item.layer) : map.removeLayer(item.layer); });
             zoomTilAktiveSpor();
         }
+
+        // Start skanningen av GitHub-mappen automatisk når siden åpnes
+        skannGitHubMappe();
     </script>
 </body>
 </html>
