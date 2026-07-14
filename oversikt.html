@@ -78,8 +78,8 @@
             color: #ccc;
         }
 
-        .btn-winter.active { background: var(--winter-blue); border-color: #fff; font-weight: 700; }
-        .btn-summer.active { background: var(--summer-green); border-color: #fff; font-weight: 700; }
+        .btn-winter.active { background: var(--winter-blue) !important; border-color: #fff; font-weight: 700; }
+        .btn-summer.active { background: var(--summer-green) !important; border-color: #fff; font-weight: 700; }
 
         #map-container {
             flex: 1;
@@ -180,62 +180,19 @@
 
     <div id="map-container">
         <div id="map"></div>
-        <div id="loading-status">Skanner GitHub for GPX-filer... <span id="progress">0</span>/<span id="total">0</span></div>
+        <div id="loading-status">Henter sesongdatabaser...</div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        // =========================================================
-        //  OPPDATERT MED DINE GITHUB-DETALJER:
-        // =========================================================
         const GITHUB_USER = "larsgimse"; 
         const GITHUB_REPO = "topptur"; 
 
-        // Database for å koble filnavnene til fine navn og sesongtyper.
-        // Hvis du legger til en helt ny fil her, vil den fortsatt vises,
-        // men bruke filnavnet som navn og "vinter" som standard.
-        const turDatabase = {
-            "2026_03_27.gpx": { navn: "884", type: "vinter" },
-            "2026_04_03.gpx": { navn: "Bentsjordtinden", type: "vinter" },
-            "2026_01_10.gpx": { navn: "Buren", type: "vinter" },
-            "2026_03_26.gpx": { navn: "Burshammeren", type: "vinter" },
-            "2025_04_22.gpx": { navn: "Fagerfjellet", type: "vinter" },
-            "2025_05_25.gpx": { navn: "Gabrielfjellet", type: "vinter" },
-            "2025_12_06.gpx": { navn: "Gorzelvtinden", type: "vinter" },
-            "2026_04_06.gpx": { navn: "Gråtinden", type: "vinter" },
-            "2024_04_28.gpx": { navn: "Klemmartindan", type: "vinter" },
-            "2026_04_08.gpx": { navn: "Langfjellaksla", type: "vinter" },
-            "2024_04_21.gpx": { navn: "Middagstinden", type: "vinter" },
-            "2026_03_28.gpx": { navn: "Rema 1000", type: "vinter" },
-            "2026_03_15.gpx": { navn: "Skittentinden", type: "vinter" },
-            "2026_03_16.gpx": { navn: "Sollidalsaksla", type: "vinter" },
-            "2026_03_08.gpx": { navn: "Steinskartinden", type: "vinter" },
-            "2024_04_06.gpx": { navn: "Stormheimfjellet", type: "vinter" },
-            "2025_05_08.gpx": { navn: "Storstolpan", type: "vinter" },
-            "2024_03_26.gpx": { navn: "Stortinden", type: "vinter" },
-            "2025_05_24.gpx": { navn: "Straumsaksla", type: "vinter" },
-            "2026_04_05.gpx": { navn: "Svartnestinden", type: "vinter" },
-            "2026_05_14.gpx": { navn: "Tromsdalstinden", type: "vinter" },
-            "2023_12_29.gpx": { navn: "Tverrfjellet", type: "vinter" },
-            "2025_10_06.gpx": { navn: "Buren (Sommer)", type: "sommer" },
-            "2024_08_03.gpx": { navn: "Djeveltanna", type: "sommer" },
-            "2025_08_03.gpx": { navn: "Djupdalgruver", type: "sommer" },
-            "2025_07_14.gpx": { navn: "Hamperokken", type: "sommer" },
-            "2023_05_17.gpx": { navn: "Hillesøy", type: "sommer" },
-            "2025_02_28.gpx": { navn: "Kløftbakken", type: "sommer" },
-            "2020_07_24.gpx": { navn: "Mjeldskartinden", type: "sommer" },
-            "2025_09_25.gpx": { navn: "Orvasstinden", type: "sommer" },
-            "2025_08_11.gpx": { navn: "Rødtinden", type: "sommer" },
-            "2020_08_21.gpx": { navn: "Skamtinden", type: "sommer" },
-            "2025_07_31.gpx": { navn: "Soria Moria traversen", type: "sommer" },
-            "2023_09_24.gpx": { navn: "Steinskartinden (Sommer)", type: "sommer" },
-            "2024_10_19.gpx": { navn: "Stor Blåmann", type: "sommer" },
-            "2021_10_03.gpx": { navn: "Store Hollendaren", type: "sommer" },
-            "2022_10_01.gpx": { navn: "Tromsdalstinden (Sommer)", type: "sommer" },
-            "2021_09_19.gpx": { navn: "Vengsøytraversen", type: "sommer" }
-        };
+        // Listene vi fyller automatisk ved å skrape nettsidene dine
+        const vinterTopper = new Set();
+        const sommerTopper = new Set();
 
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         const minRenderer = L.canvas({ tolerance: isTouchDevice ? 22 : 3 });
@@ -257,13 +214,25 @@
 
         let loadedCount = 0;
         let totalFiles = 0;
-        const bounds = L.latLngBounds();
         const lagredeSpor = [];
 
         function zoomTilAktiveSpor() {
             const aktiveBounds = L.latLngBounds();
-            lagredeSpor.forEach(item => { if (map.hasLayer(item.layer)) aktiveBounds.extend(item.layer.getBounds()); });
-            if (aktiveBounds.isValid()) map.fitBounds(aktiveBounds, { padding: isTouchDevice ? [40, 100] : [40, 40] });
+            let harAktive = false;
+
+            lagredeSpor.forEach(item => {
+                if (map.hasLayer(item.layer)) {
+                    const layerBounds = item.layer.getBounds();
+                    if (layerBounds.isValid()) {
+                        aktiveBounds.extend(layerBounds);
+                        harAktive = true;
+                    }
+                }
+            });
+
+            if (harAktive && aktiveBounds.isValid()) {
+                map.fitBounds(aktiveBounds, { padding: isTouchDevice ? [40, 100] : [40, 40] });
+            }
         }
 
         function sjekkFremdrift() {
@@ -277,6 +246,52 @@
             }
         }
 
+        // Hjelpefunksjon for å vaske filnavnet (fjerner "2026_03_27" og ".gpx", sitter igjen med "Bentsjordtinden")
+        function rensFjellnavn(filnavn) {
+            let navn = filnavn.replace(/\.gpx$/i, '');
+            // Fjerner datoer som "2026_03_27_" eller "2026-03-27-" i starten av filen
+            navn = navn.replace(/^\d{4}[_\-]\d{2}[_\-]\d{2}[_\-]?/, '');
+            navn = navn.replace(/_/g, ' ').trim();
+            return navn;
+        }
+
+        // Skraper vinter.html og sommer.html for å finne ut hvilke fjell som hører til hvor
+        async function hentSesongTabeller() {
+            try {
+                // Hent og skann vintertopper
+                const resVinter = await fetch('https://larsgimse.github.io/topptur/vinter.html');
+                if (resVinter.ok) {
+                    const htmlText = await resVinter.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlText, 'text/html');
+                    // Antar toppene ligger i <h2>, <h3> eller i elementer med klassen .fjellnavn
+                    const headings = doc.querySelectorAll('h2, h3, .topp-tittel');
+                    headings.forEach(h => {
+                        const tittel = h.textContent.trim().toLowerCase();
+                        if (tittel) vinterTopper.add(tittel);
+                    });
+                }
+
+                // Hent og skann sommertopper
+                const resSommer = await fetch('https://larsgimse.github.io/topptur/sommer.html');
+                if (resSommer.ok) {
+                    const htmlText = await resSommer.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlText, 'text/html');
+                    const headings = doc.querySelectorAll('h2, h3, .topp-tittel');
+                    headings.forEach(h => {
+                        const tittel = h.textContent.trim().toLowerCase();
+                        if (tittel) sommerTopper.add(tittel);
+                    });
+                }
+            } catch (feil) {
+                console.warn("Kunne ikke hente sesongsider for automatisk kategorisering, bruker fallback:", feil);
+            }
+
+            // Start innlasting av kartspor etter at databasene er sjekket
+            skannGitHubMappe();
+        }
+
         // Henter listen over filer dynamisk fra GitHub API
         async function skannGitHubMappe() {
             const apiURL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/gpx`;
@@ -286,14 +301,14 @@
                 if (!response.ok) throw new Error("Klarte ikke å skanne GPX-mappen på GitHub.");
                 const filer = await response.json();
                 
-                // Henter kun ut filer som ender på .gpx
                 const gpxFiler = filer.filter(f => f.name.toLowerCase().endsWith('.gpx'));
                 totalFiles = gpxFiler.length;
-                document.getElementById('total').textContent = totalFiles;
-                document.getElementById('loading-status').innerHTML = `Laster GPX-spor... <span id="progress">0</span>/<span id="total">${totalFiles}</span>`;
+                
+                const statusEl = document.getElementById('loading-status');
+                statusEl.innerHTML = `Laster GPX-spor... <span id="progress">0</span>/<span id="total">${totalFiles}</span>`;
 
                 if (totalFiles === 0) {
-                    document.getElementById('loading-status').textContent = "Fant ingen GPX-filer i /gpx-mappen.";
+                    statusEl.textContent = "Fant ingen GPX-filer i /gpx-mappen.";
                     return;
                 }
 
@@ -303,25 +318,34 @@
 
             } catch (feil) {
                 console.error("Feil ved skanning av mappe:", feil);
-                document.getElementById('loading-status').textContent = "Kunne ikke skanne mappen automatisk. Sjekk at banen /gpx stemmer på GitHub.";
+                document.getElementById('loading-status').textContent = "Kunne ikke skanne mappen automatisk.";
             }
         }
 
         function lastInnGPX(filnavn) {
             const filsti = './gpx/' + filnavn;
-            
-            // Hvis filen ikke ligger i turDatabase, gjør vi "2026_03_27.gpx" om til "2026 03 27" som tittel på kartet
-            const info = turDatabase[filnavn] || { 
-                navn: filnavn.replace('.gpx', '').replace(/_/g, ' '), 
-                type: 'vinter' // Standardtype for nye/uregistrerte spor
+            const rentNavn = rensFjellnavn(filnavn);
+            const søkeNavn = rentNavn.toLowerCase();
+
+            // Automatisk kategorisering basert på de skrapte nettsidene dine
+            let type = 'vinter'; // default fallback
+            if (sommerTopper.has(søkeNavn) || søkeNavn.includes('sommer')) {
+                type = 'sommer';
+            } else if (vinterTopper.has(søkeNavn)) {
+                type = 'vinter';
+            }
+
+            const info = {
+                navn: rentNavn,
+                type: type
             };
 
             const track = new L.GPX(filsti, gpxOptions);
             
             track.on('loaded', function(e) {
                 const layer = e.target;
+                
                 lagredeSpor.push({ layer: layer, type: info.type });
-                if (layer.getBounds().isValid()) bounds.extend(layer.getBounds());
 
                 if (!isTouchDevice) {
                     layer.bindTooltip(`${info.navn}`, { sticky: true });
@@ -329,7 +353,7 @@
                     layer.on('mouseout', function() { layer.setStyle({ color: '#ffffff', weight: 1.4, opacity: 0.4 }); });
                     layer.on('click', () => åpneTurSide(info));
                 } else {
-                    const url = `${info.type === "sommer" ? "sommer.html" : "vinter.html"}?fjell=${encodeURIComponent(info.navn.replace(" (Sommer)", ""))}`;
+                    const url = `${info.type}.html?fjell=${encodeURIComponent(info.navn)}`;
                     layer.bindPopup(`<b style="font-size:14px; color:#fff;">${info.navn}</b><br><a href="${url}" class="popup-link-btn">Se detaljer ➔</a>`, { closeButton: false });
                 }
                 sjekkFremdrift();
@@ -344,23 +368,58 @@
         }
 
         function åpneTurSide(info) {
-            window.location.href = `${info.type === "sommer" ? "sommer.html" : "vinter.html"}?fjell=${encodeURIComponent(info.navn.replace(" (Sommer)", ""))}`;
+            window.location.href = `${info.type}.html?fjell=${encodeURIComponent(info.navn)}`;
         }
 
-        document.getElementById('btn-vinter').addEventListener('click', () => filtrerTurer('vinter'));
-        document.getElementById('btn-sommer').addEventListener('click', () => filtrerTurer('sommer'));
-        document.getElementById('btn-reset').addEventListener('click', function() {
-            lagredeSpor.forEach(item => { if (!map.hasLayer(item.layer)) map.addLayer(item.layer); });
+        // --- FILTRERING LOGIKK ---
+        const btnVinter = document.getElementById('btn-vinter');
+        const btnSommer = document.getElementById('btn-sommer');
+        const btnReset = document.getElementById('btn-reset');
+
+        function nullstillKnapper() {
+            btnVinter.classList.remove('active');
+            btnSommer.classList.remove('active');
+        }
+
+        btnVinter.addEventListener('click', () => {
+            nullstillKnapper();
+            btnVinter.classList.add('active');
+            filtrerTurer('vinter');
+        });
+
+        btnSommer.addEventListener('click', () => {
+            nullstillKnapper();
+            btnSommer.classList.add('active');
+            filtrerTurer('sommer');
+        });
+
+        btnReset.addEventListener('click', function() {
+            nullstillKnapper();
+            lagredeSpor.forEach(item => {
+                if (!map.hasLayer(item.layer)) {
+                    map.addLayer(item.layer);
+                }
+            });
             zoomTilAktiveSpor();
         });
 
         function filtrerTurer(type) {
-            lagredeSpor.forEach(item => { item.type === type ? map.addLayer(item.layer) : map.removeLayer(item.layer); });
+            lagredeSpor.forEach(item => {
+                if (item.type === type) {
+                    if (!map.hasLayer(item.layer)) {
+                        map.addLayer(item.layer);
+                    }
+                } else {
+                    if (map.hasLayer(item.layer)) {
+                        map.removeLayer(item.layer);
+                    }
+                }
+            });
             zoomTilAktiveSpor();
         }
 
-        // Fyrer i gang automatisk skanning med en gang siden åpnes
-        skannGitHubMappe();
+        // Start hele prosessen ved å først sjekke nettsidene, så skanne GPX-mappen
+        hentSesongTabeller();
     </script>
 </body>
 </html>
