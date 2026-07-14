@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Toppturer - Oversiktskart</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --bg-color: #111111;
+            --panel-bg: rgba(26, 26, 26, 0.9);
+            --text-color: #eeeeee;
+            --highlight-orange: #fc4c02;
+            --winter-blue: #0ea5e9;
+            --summer-green: #34a853;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            /* LØSNING FOR SAFARI: Bruker dvh (dynamic viewport height) */
+            height: 100vh;
+            height: 100dvh; 
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* En mer kompakt header som flyter øverst på kartet */
+        header {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: var(--panel-bg);
+            padding: 10px 14px;
+            display: flex;
+            justify-content: flex-end; /* Skyver knappene helt til høyre */
+            align-items: center;
+            border: 1px solid #222;
+            border-radius: 8px;
+            z-index: 1000;
+            backdrop-filter: blur(8px); /* Gjør bakgrunnen litt glassaktig */
+            -webkit-backdrop-filter: blur(8px);
+            min-height: 52px; /* Sikrer stabil høyde når h1 er absolutt posisjonert */
+        }
+
+        /* Sentrerer overskriften perfekt i headeren uavhengig av knappene */
+        h1 { 
+            font-size: 1.1rem; 
+            font-weight: 700; 
+            letter-spacing: -0.5px; 
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none; /* Gjør at man kan klikke "igjennom" teksten om nødvendig */
+        }
+        
+        .nav-buttons { display: flex; gap: 6px; align-items: center; }
+        
+        .btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #333;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        
+        .btn-reset {
+            background: #222;
+            border-color: #444;
+            color: #ccc;
+        }
+
+        .btn-winter.active { background: var(--winter-blue); border-color: #fff; font-weight: 700; }
+        .btn-summer.active { background: var(--summer-green); border-color: #fff; font-weight: 700; }
+
+        #map-container {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color);
+        }
+
+        #loading-status {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%); /* Sentrert på bunnen av mobil */
+            background: rgba(26, 26, 26, 0.95);
+            padding: 8px 14px;
+            border-radius: 20px;
+            border: 1px solid #333;
+            font-size: 0.8rem;
+            z-index: 1000;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            white-space: nowrap;
+        }
+
+        /* Stilren mørk popup for mobil */
+        .leaflet-popup-content-wrapper {
+            background: #1a1a1a !important;
+            color: #fff !important;
+            border: 1px solid var(--highlight-orange);
+            border-radius: 6px;
+        }
+        .leaflet-popup-tip {
+            background: #1a1a1a !important;
+        }
+        .popup-link-btn {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 6px 12px;
+            background: var(--highlight-orange);
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        /* Skreddersydd for iPhone og trange mobilskjermer */
+        @media (max-width: 600px) {
+            header {
+                top: auto;
+                bottom: 20px; /* Flytter hele menyen til bunnen, trygt over adressefeltet */
+                flex-direction: column;
+                gap: 8px;
+                align-items: center;
+                background: rgba(20, 20, 20, 0.95);
+                box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+                min-height: auto;
+            }
+            /* Nullstiller den absolutte posisjoneringen på mobil så overskriften stables pent over knappene */
+            h1 { 
+                position: static; 
+                transform: none; 
+                font-size: 0.9rem; 
+                text-align: center;
+            }
+            .nav-buttons {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .btn {
+                flex: 1;
+                text-align: center;
+                padding: 10px 5px; /* Deilig og store touchflater for tommelen */
+                font-size: 0.8rem;
+            }
+            #loading-status {
+                bottom: auto;
+                top: 20px; /* Flytter laste-status til toppen når menyen er nede */
+            }
+            /* Flytter de originale Leaflet-zoomknappene opp så de ikke kræsjer med menyen */
+            .leaflet-bottom { bottom: 110px !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Toppturer</h1>
+        <div class="nav-buttons">
+            <button id="btn-reset" class="btn btn-reset">🔄 Nullstill</button>
+            <button id="btn-vinter" class="btn btn-winter">❄️ Vinter</button>
+            <button id="btn-sommer" class="btn btn-summer">☀️ Sommer</button>
+        </div>
+    </header>
+
+    <div id="map-container">
+        <div id="map"></div>
+        <div id="loading-status">Laster GPX-spor... <span id="progress">0</span>/<span id="total">0</span></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
+
+    <script>
+        const topper = [
+            // VINTERTURER
+            { navn: "884", fil: "2026_03_27.gpx", type: "vinter" },
+            { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", type: "vinter" },
+            { navn: "Buren", fil: "2026_01_10.gpx", type: "vinter" },
+            { navn: "Burshammeren", fil: "2026_03_26.gpx", type: "vinter" },
+            { navn: "Fagerfjellet", fil: "2025_04_22.gpx", type: "vinter" },
+            { navn: "Gabrielfjellet", fil: "2025_05_25.gpx", type: "vinter" },
+            { navn: "Gorzelvtinden", fil: "2025_12_06.gpx", type: "vinter" },
+            { navn: "Gråtinden", fil: "2026_04_06.gpx", type: "vinter" },
+            { navn: "Klemmartindan", fil: "2024_04_28.gpx", type: "vinter" },
+            { navn: "Langfjellaksla", fil: "2026_04_08.gpx", type: "vinter" },
+            { navn: "Middagstinden", fil: "2024_04_21.gpx", type: "vinter" },
+            { navn: "Rema 1000", fil: "2026_03_28.gpx", type: "vinter" },
+            { navn: "Skittentinden", fil: "2026_03_15.gpx", type: "vinter" },
+            { navn: "Sollidalsaksla", fil: "2026_03_16.gpx", type: "vinter" },
+            { navn: "Steinskartinden", fil: "2026_03_08.gpx", type: "vinter" },
+            { navn: "Stormheimfjellet", fil: "2024_04_06.gpx", type: "vinter" },
+            { navn: "Storstolpan", fil: "2025_05_08.gpx", type: "vinter" },
+            { navn: "Stortinden", fil: "2024_03_26.gpx", type: "vinter" },
+            { navn: "Straumsaksla", fil: "2025_05_24.gpx", type: "vinter" },
+            { navn: "Svartnestinden", fil: "2026_04_05.gpx", type: "vinter" },
+            { navn: "Tromsdalstinden", fil: "2026_05_14.gpx", type: "vinter" },
+            { navn: "Tverrfjellet", fil: "2023_12_29.gpx", type: "vinter" },
+
+            // SOMMERTURER
+            { navn: "Buren (Sommer)", fil: "2025_10_06.gpx", type: "sommer" },
+            { navn: "Djeveltanna", fil: "2024_08_03.gpx", type: "sommer" },
+            { navn: "Djupdalgruver", fil: "2025_08_03.gpx", type: "sommer" },
+            { navn: "Hamperokken", fil: "2025_07_14.gpx", type: "sommer" },
+            { navn: "Hillesøy", fil: "2023_05_17.gpx", type: "sommer" },
+            { navn: "Kløftbakken", fil: "2025_02_28.gpx", type: "sommer" },
+            { navn: "Mjeldskartinden", fil: "2020_07_24.gpx", type: "sommer" },
+            { navn: "Orvasstinden", fil: "2025_09_25.gpx", type: "sommer" },
+            { navn: "Rødtinden", fil: "2025_08_11.gpx", type: "sommer" },
+            { navn: "Skamtinden", fil: "2020_08_21.gpx", type: "sommer" },
+            { navn: "Soria Moria traversen", fil: "2025_07_31.gpx", type: "sommer" },
+            { navn: "Steinskartinden (Sommer)", fil: "2023_09_24.gpx", type: "sommer" },
+            { navn: "Stor Blåmann", fil: "2024_10_19.gpx", type: "sommer" },
+            { navn: "Store Hollendaren", fil: "2021_10_03.gpx", type: "sommer" },
+            { navn: "Tromsdalstinden (Sommer)", fil: "2022_10_01.gpx", type: "sommer" },
+            { navn: "Vengsøytraversen", fil: "2021_09_19.gpx", type: "sommer" }
+        ];
+
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+        // Toleranse for klikk (usynlig tykkelse)
+        const minRenderer = L.canvas({ tolerance: isTouchDevice ? 22 : 3 });
+
+        const map = L.map('map', {
+            zoomControl: true,
+            maxZoom: 18,
+            renderer: minRenderer
+        }).setView([69.65, 18.95], 9);
+
+        // Flytt de innebygde zoom-knappene til øverst til venstre på mobil så de ikke krasjer med menyen
+        if (isTouchDevice) {
+            map.zoomControl.setPosition('topleft');
+        }
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        // De vakre tynne linjene dine beholdes uendret
+        const gpxOptions = {
+            async: true,
+            polyline_options: {
+                color: '#ffffff',
+                opacity: 0.4,
+                weight: 1.4,
+                lineCap: 'round'
+            },
+            marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
+        };
+
+        let loadedCount = 0;
+        const totalFiles = topper.length;
+        const bounds = L.latLngBounds();
+        const lagredeSpor = [];
+
+        document.getElementById('total').textContent = totalFiles;
+
+        function zoomTilAktiveSpor() {
+            const aktiveBounds = L.latLngBounds();
+            lagredeSpor.forEach(item => {
+                if (map.hasLayer(item.layer)) {
+                    aktiveBounds.extend(item.layer.getBounds());
+                }
+            });
+            if (aktiveBounds.isValid()) {
+                // Ekstra god margin på mobil siden vi har knapper i bunnen
+                map.fitBounds(aktiveBounds, { padding: isTouchDevice ? [40, 100] : [40, 40] });
+            }
+        }
+
+        function sjekkFremdrift() {
+            loadedCount++;
+            document.getElementById('progress').textContent = loadedCount;
+
+            if (loadedCount === totalFiles) {
+                zoomTilAktiveSpor();
+                const statusEl = document.getElementById('loading-status');
+                statusEl.style.opacity = '0';
+                setTimeout(() => statusEl.remove(), 500);
+            }
+        }
+
+        topper.forEach(topp => {
+            const track = new L.GPX(topp.fil, gpxOptions);
+            
+            track.on('loaded', function(e) {
+                const layer = e.target;
+                lagredeSpor.push({ layer: layer, type: topp.type });
+
+                const gpxBounds = layer.getBounds();
+                if (gpxBounds.isValid()) {
+                    bounds.extend(gpxBounds);
+                }
+
+                if (!isTouchDevice) {
+                    layer.bindTooltip(`${topp.navn} <span style="font-size:10px; font-weight:normal; color:#aaa;"><br>Klikk for å åpne</span>`, {
+                        sticky: true,
+                        className: 'track-tooltip',
+                        direction: 'top',
+                        offset: [0, -10]
+                    });
+
+                    layer.on('mouseover', function() {
+                        layer.setStyle({ color: 'var(--highlight-orange)', weight: 4.0, opacity: 1.0 });
+                        layer.bringToFront();
+                    });
+
+                    layer.on('mouseout', function() {
+                        layer.setStyle({ color: '#ffffff', weight: 1.4, opacity: 0.4 });
+                        layer.closeTooltip();
+                    });
+
+                    layer.on('click', function() {
+                        åpneTurSide(topp);
+                    });
+                } else {
+                    const rentNavn = topp.navn.replace(" (Sommer)", "");
+                    const målside = topp.type === "sommer" ? "sommer.html" : "vinter.html";
+                    const url = `${målside}?fjell=${encodeURIComponent(rentNavn)}`;
+
+                    layer.bindPopup(`
+                        <b style="font-size:14px; color:#fff;">${topp.navn}</b><br>
+                        <a href="${url}" class="popup-link-btn">Se detaljer ➔</a>
+                    `, { closeButton: false, offset: [0, -5] });
+
+                    layer.on('popupopen', function() {
+                        layer.setStyle({ color: 'var(--highlight-orange)', opacity: 1.0, weight: 3.0 });
+                    });
+                    layer.on('popupclose', function() {
+                        layer.setStyle({ color: '#ffffff', opacity: 0.4, weight: 1.4 });
+                    });
+                }
+                
+                sjekkFremdrift();
+            });
+
+            track.addTo(map);
+        });
+
+        function åpneTurSide(topp) {
+            const målside = topp.type === "sommer" ? "sommer.html" : "vinter.html";
+            const rentNavn = topp.navn.replace(" (Sommer)", "");
+            window.location.href = `${målside}?fjell=${encodeURIComponent(rentNavn)}`;
+        }
+
+        // FILTRERING
+        const btnVinter = document.getElementById('btn-vinter');
+        const btnSommer = document.getElementById('btn-sommer');
+
+        function filtrerTurer(valgtType) {
+            btnVinter.classList.remove('active');
+            btnSommer.classList.remove('active');
+
+            if (valgtType === 'vinter') btnVinter.classList.add('active');
+            if (valgtType === 'sommer') btnSommer.classList.add('active');
+
+            lagredeSpor.forEach(item => {
+                if (item.type === valgtType) {
+                    if (!map.hasLayer(item.layer)) map.addLayer(item.layer);
+                } else {
+                    if (map.hasLayer(item.layer)) map.removeLayer(item.layer);
+                }
+            });
+            zoomTilAktiveSpor();
+        }
+
+        btnVinter.addEventListener('click', () => filtrerTurer('vinter'));
+        btnSommer.addEventListener('click', () => filtrerTurer('sommer'));
+
+        document.getElementById('btn-reset').addEventListener('click', function() {
+            btnVinter.classList.remove('active');
+            btnSommer.classList.remove('active');
+
+            lagredeSpor.forEach(item => {
+                if (!map.hasLayer(item.layer)) map.addLayer(item.layer);
+                item.layer.setStyle({ color: '#ffffff', weight: 1.4, opacity: 0.4 });
+            });
+
+            if (bounds.isValid()) {
+                map.fitBounds(bounds, { padding: isTouchDevice ? [40, 100] : [40, 40] });
+            }
+        });
+    </script>
+</body>
+</html>
