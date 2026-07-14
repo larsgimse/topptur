@@ -21,7 +21,6 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background: var(--bg-color);
             color: var(--text-color);
-            /* LØSNING FOR SAFARI: Bruker dvh (dynamic viewport height) */
             height: 100vh;
             height: 100dvh; 
             display: flex;
@@ -29,7 +28,6 @@
             overflow: hidden;
         }
 
-        /* En mer kompakt header som flyter øverst på kartet */
         header {
             position: absolute;
             top: 10px;
@@ -38,17 +36,16 @@
             background: var(--panel-bg);
             padding: 10px 14px;
             display: flex;
-            justify-content: flex-end; /* Skyver knappene helt til høyre */
+            justify-content: flex-end;
             align-items: center;
             border: 1px solid #222;
             border-radius: 8px;
             z-index: 1000;
-            backdrop-filter: blur(8px); /* Gjør bakgrunnen litt glassaktig */
+            backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            min-height: 52px; /* Sikrer stabil høyde når h1 er absolutt posisjonert */
+            min-height: 52px;
         }
 
-        /* Sentrerer overskriften perfekt i headeren uavhengig av knappene */
         h1 { 
             font-size: 1.1rem; 
             font-weight: 700; 
@@ -56,7 +53,7 @@
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
-            pointer-events: none; /* Gjør at man kan klikke "igjennom" teksten om nødvendig */
+            pointer-events: none;
         }
         
         .nav-buttons { display: flex; gap: 6px; align-items: center; }
@@ -101,7 +98,7 @@
             position: absolute;
             bottom: 30px;
             left: 50%;
-            transform: translateX(-50%); /* Sentrert på bunnen av mobil */
+            transform: translateX(-50%);
             background: rgba(26, 26, 26, 0.95);
             padding: 8px 14px;
             border-radius: 20px;
@@ -113,7 +110,6 @@
             white-space: nowrap;
         }
 
-        /* Stilren mørk popup for mobil */
         .leaflet-popup-content-wrapper {
             background: #1a1a1a !important;
             color: #fff !important;
@@ -136,11 +132,10 @@
             text-align: center;
         }
 
-        /* Skreddersydd for iPhone og trange mobilskjermer */
         @media (max-width: 600px) {
             header {
                 top: auto;
-                bottom: 20px; /* Flytter hele menyen til bunnen, trygt over adressefeltet */
+                bottom: 20px;
                 flex-direction: column;
                 gap: 8px;
                 align-items: center;
@@ -148,7 +143,6 @@
                 box-shadow: 0 4px 20px rgba(0,0,0,0.6);
                 min-height: auto;
             }
-            /* Nullstiller den absolutte posisjoneringen på mobil så overskriften stables pent over knappene */
             h1 { 
                 position: static; 
                 transform: none; 
@@ -162,14 +156,13 @@
             .btn {
                 flex: 1;
                 text-align: center;
-                padding: 10px 5px; /* Deilig og store touchflater for tommelen */
+                padding: 10px 5px;
                 font-size: 0.8rem;
             }
             #loading-status {
                 bottom: auto;
-                top: 20px; /* Flytter laste-status til toppen når menyen er nede */
+                top: 20px;
             }
-            /* Flytter de originale Leaflet-zoomknappene opp så de ikke kræsjer med menyen */
             .leaflet-bottom { bottom: 110px !important; }
         }
     </style>
@@ -195,7 +188,6 @@
 
     <script>
         const topper = [
-            // VINTERTURER
             { navn: "884", fil: "2026_03_27.gpx", type: "vinter" },
             { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", type: "vinter" },
             { navn: "Buren", fil: "2026_01_10.gpx", type: "vinter" },
@@ -218,8 +210,6 @@
             { navn: "Svartnestinden", fil: "2026_04_05.gpx", type: "vinter" },
             { navn: "Tromsdalstinden", fil: "2026_05_14.gpx", type: "vinter" },
             { navn: "Tverrfjellet", fil: "2023_12_29.gpx", type: "vinter" },
-
-            // SOMMERTURER
             { navn: "Buren (Sommer)", fil: "2025_10_06.gpx", type: "sommer" },
             { navn: "Djeveltanna", fil: "2024_08_03.gpx", type: "sommer" },
             { navn: "Djupdalgruver", fil: "2025_08_03.gpx", type: "sommer" },
@@ -239,36 +229,20 @@
         ];
 
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-
-        // Toleranse for klikk (usynlig tykkelse)
         const minRenderer = L.canvas({ tolerance: isTouchDevice ? 22 : 3 });
+        const map = L.map('map', { zoomControl: true, maxZoom: 18, renderer: minRenderer }).setView([69.65, 18.95], 9);
 
-        const map = L.map('map', {
-            zoomControl: true,
-            maxZoom: 18,
-            renderer: minRenderer
-        }).setView([69.65, 18.95], 9);
-
-        // Flytt de innebygde zoom-knappene til øverst til venstre på mobil så de ikke krasjer med menyen
-        if (isTouchDevice) {
-            map.zoomControl.setPosition('topleft');
-        }
+        if (isTouchDevice) map.zoomControl.setPosition('topleft');
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             subdomains: 'abcd',
             maxZoom: 20
         }).addTo(map);
 
-        // De vakre tynne linjene dine beholdes uendret
         const gpxOptions = {
             async: true,
-            polyline_options: {
-                color: '#ffffff',
-                opacity: 0.4,
-                weight: 1.4,
-                lineCap: 'round'
-            },
+            polyline_options: { color: '#ffffff', opacity: 0.4, weight: 1.4, lineCap: 'round' },
             marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
         };
 
@@ -276,26 +250,17 @@
         const totalFiles = topper.length;
         const bounds = L.latLngBounds();
         const lagredeSpor = [];
-
         document.getElementById('total').textContent = totalFiles;
 
         function zoomTilAktiveSpor() {
             const aktiveBounds = L.latLngBounds();
-            lagredeSpor.forEach(item => {
-                if (map.hasLayer(item.layer)) {
-                    aktiveBounds.extend(item.layer.getBounds());
-                }
-            });
-            if (aktiveBounds.isValid()) {
-                // Ekstra god margin på mobil siden vi har knapper i bunnen
-                map.fitBounds(aktiveBounds, { padding: isTouchDevice ? [40, 100] : [40, 40] });
-            }
+            lagredeSpor.forEach(item => { if (map.hasLayer(item.layer)) aktiveBounds.extend(item.layer.getBounds()); });
+            if (aktiveBounds.isValid()) map.fitBounds(aktiveBounds, { padding: isTouchDevice ? [40, 100] : [40, 40] });
         }
 
         function sjekkFremdrift() {
             loadedCount++;
             document.getElementById('progress').textContent = loadedCount;
-
             if (loadedCount === totalFiles) {
                 zoomTilAktiveSpor();
                 const statusEl = document.getElementById('loading-status');
@@ -305,105 +270,41 @@
         }
 
         topper.forEach(topp => {
-            const track = new L.GPX(topp.fil, gpxOptions);
-            
+            const track = new L.GPX('./gpx/' + topp.fil, gpxOptions);
             track.on('loaded', function(e) {
                 const layer = e.target;
                 lagredeSpor.push({ layer: layer, type: topp.type });
-
-                const gpxBounds = layer.getBounds();
-                if (gpxBounds.isValid()) {
-                    bounds.extend(gpxBounds);
-                }
+                if (layer.getBounds().isValid()) bounds.extend(layer.getBounds());
 
                 if (!isTouchDevice) {
-                    layer.bindTooltip(`${topp.navn} <span style="font-size:10px; font-weight:normal; color:#aaa;"><br>Klikk for å åpne</span>`, {
-                        sticky: true,
-                        className: 'track-tooltip',
-                        direction: 'top',
-                        offset: [0, -10]
-                    });
-
-                    layer.on('mouseover', function() {
-                        layer.setStyle({ color: 'var(--highlight-orange)', weight: 4.0, opacity: 1.0 });
-                        layer.bringToFront();
-                    });
-
-                    layer.on('mouseout', function() {
-                        layer.setStyle({ color: '#ffffff', weight: 1.4, opacity: 0.4 });
-                        layer.closeTooltip();
-                    });
-
-                    layer.on('click', function() {
-                        åpneTurSide(topp);
-                    });
+                    layer.bindTooltip(`${topp.navn}`, { sticky: true });
+                    layer.on('mouseover', function() { layer.setStyle({ color: '#fc4c02', weight: 4.0, opacity: 1.0 }); layer.bringToFront(); });
+                    layer.on('mouseout', function() { layer.setStyle({ color: '#ffffff', weight: 1.4, opacity: 0.4 }); });
+                    layer.on('click', () => åpneTurSide(topp));
                 } else {
-                    const rentNavn = topp.navn.replace(" (Sommer)", "");
-                    const målside = topp.type === "sommer" ? "sommer.html" : "vinter.html";
-                    const url = `${målside}?fjell=${encodeURIComponent(rentNavn)}`;
-
-                    layer.bindPopup(`
-                        <b style="font-size:14px; color:#fff;">${topp.navn}</b><br>
-                        <a href="${url}" class="popup-link-btn">Se detaljer ➔</a>
-                    `, { closeButton: false, offset: [0, -5] });
-
-                    layer.on('popupopen', function() {
-                        layer.setStyle({ color: 'var(--highlight-orange)', opacity: 1.0, weight: 3.0 });
-                    });
-                    layer.on('popupclose', function() {
-                        layer.setStyle({ color: '#ffffff', opacity: 0.4, weight: 1.4 });
-                    });
+                    const url = `${topp.type === "sommer" ? "sommer.html" : "vinter.html"}?fjell=${encodeURIComponent(topp.navn.replace(" (Sommer)", ""))}`;
+                    layer.bindPopup(`<b style="font-size:14px; color:#fff;">${topp.navn}</b><br><a href="${url}" class="popup-link-btn">Se detaljer ➔</a>`, { closeButton: false });
                 }
-                
                 sjekkFremdrift();
             });
-
             track.addTo(map);
         });
 
         function åpneTurSide(topp) {
-            const målside = topp.type === "sommer" ? "sommer.html" : "vinter.html";
-            const rentNavn = topp.navn.replace(" (Sommer)", "");
-            window.location.href = `${målside}?fjell=${encodeURIComponent(rentNavn)}`;
+            window.location.href = `${topp.type === "sommer" ? "sommer.html" : "vinter.html"}?fjell=${encodeURIComponent(topp.navn.replace(" (Sommer)", ""))}`;
         }
 
-        // FILTRERING
-        const btnVinter = document.getElementById('btn-vinter');
-        const btnSommer = document.getElementById('btn-sommer');
+        document.getElementById('btn-vinter').addEventListener('click', () => filtrerTurer('vinter'));
+        document.getElementById('btn-sommer').addEventListener('click', () => filtrerTurer('sommer'));
+        document.getElementById('btn-reset').addEventListener('click', function() {
+            lagredeSpor.forEach(item => { if (!map.hasLayer(item.layer)) map.addLayer(item.layer); });
+            zoomTilAktiveSpor();
+        });
 
-        function filtrerTurer(valgtType) {
-            btnVinter.classList.remove('active');
-            btnSommer.classList.remove('active');
-
-            if (valgtType === 'vinter') btnVinter.classList.add('active');
-            if (valgtType === 'sommer') btnSommer.classList.add('active');
-
-            lagredeSpor.forEach(item => {
-                if (item.type === valgtType) {
-                    if (!map.hasLayer(item.layer)) map.addLayer(item.layer);
-                } else {
-                    if (map.hasLayer(item.layer)) map.removeLayer(item.layer);
-                }
-            });
+        function filtrerTurer(type) {
+            lagredeSpor.forEach(item => { item.type === type ? map.addLayer(item.layer) : map.removeLayer(item.layer); });
             zoomTilAktiveSpor();
         }
-
-        btnVinter.addEventListener('click', () => filtrerTurer('vinter'));
-        btnSommer.addEventListener('click', () => filtrerTurer('sommer'));
-
-        document.getElementById('btn-reset').addEventListener('click', function() {
-            btnVinter.classList.remove('active');
-            btnSommer.classList.remove('active');
-
-            lagredeSpor.forEach(item => {
-                if (!map.hasLayer(item.layer)) map.addLayer(item.layer);
-                item.layer.setStyle({ color: '#ffffff', weight: 1.4, opacity: 0.4 });
-            });
-
-            if (bounds.isValid()) {
-                map.fitBounds(bounds, { padding: isTouchDevice ? [40, 100] : [40, 40] });
-            }
-        });
     </script>
 </body>
 </html>
