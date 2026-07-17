@@ -224,7 +224,6 @@
             { navn: "Bønntuva", fil: "2026_07_12.gpx", overrideAar: "2026", video: [{ url: "https://www.instagram.com/p/DatayEJCIvE/", tittel: "Se bilder", type: "photo" }], strava: "https://www.strava.com/activities/19286411884" },
             { navn: "Djeveltanna", fil: "2024_08_03.gpx", video: [{ url: "https://www.instagram.com/p/C-dPqdWM4Ku/", tittel: "Se video" }] },
             { navn: "Djupdalgruver", fil: "2025_08_03.gpx", video: [{ url: "https://www.instagram.com/p/DNBr-heMfba/", tittel: "Se video" }] },
-            { navn: "Durmålstinden", fil: "2026_07_16.gpx", video: [{ url: "https://www.instagram.com/p/Da4xYwQISgu/", tittel: "Se video" }], strava: "https://www.strava.com/activities/19341569723" },
             { navn: "Fløya - Sherpatrappa", fil: "floya.gpx", overrideAar: "2022", video: [{ url: "https://www.instagram.com/p/CfZtWgOslWb", tittel: "Se bilder", type: "photo" }] },
             { navn: "Hamperokken", fil: "2025_07_14.gpx", video: [{ url: "https://www.instagram.com/p/DMcEC9dIb6M/", tittel: "Se video" }] },
             { navn: "Hillesøy", fil: "2023_05_17.gpx", video: [{ url: "https://www.instagram.com/p/CsWlAnBMV5f", tittel: "Se bilder", type: "photo" }] },
@@ -434,8 +433,7 @@
                         videoContainer.appendChild(veiBtn);
                     }
 
-                    const søkeord = topp.navn === "Durmålstinden" ? "Durmålstinden, Kvaløya" : (topp.navn + ' fjelltur tromsø');
-                    const sok = document.createElement('a'); sok.href = `https://www.google.no/search?q=${encodeURIComponent(søkeord)}`; sok.target = "_blank"; sok.className = 'search-link-btn'; sok.innerHTML = `<span>🔍</span> Turbeskrivelse`;
+                    const sok = document.createElement('a'); sok.href = `https://www.google.no/search?q=${encodeURIComponent(topp.navn + ' fjelltur tromsø')}`; sok.target = "_blank"; sok.className = 'search-link-btn'; sok.innerHTML = `<span>🔍</span> Turbeskrivelse`;
                     videoContainer.appendChild(sok);
 
                     const da = document.createElement('div'); da.className = 'download-area'; da.innerHTML = `<div class="download-header"><span>💾</span> Last ned:</div>`;
@@ -509,6 +507,6 @@
         const lukkPopup = () => infoPopup.classList.remove('open');
         closeInfoBtn.onclick = lukkPopup;
         infoPopup.onclick = (e) => { if (e.target === infoPopup) lukkPopup(); };
-   </script>
+    </script>
 </body>
 </html>
