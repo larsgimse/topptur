@@ -1,5 +1,15 @@
 <h1>Info om denne siden</h1>
 <p>
-<h2>Her kommer det mer info...</h2>
-<pr>
-<h3>Enda mer info...</h3>
+<h2>Denne siden viser turer rundt Tromsø både om vinteren og sommeren.<br>
+Alle turene er turer jeg, Lars Gimse har vært på.<br></h2>
+<br>
+<h3>Siden inneholder GPS spor, video og bilder fra de ulike turene<br>
+Dette får du tilgang til ved på klikke på de enkelte turene<br>
+<br>
+Side det finnes mange gode turbeskrivelser allerede på nett,<br>
+er Turbeskrivelse på denne siden et søk på Google og de enkelte turene.<br>
+<br>
+Hele siden er satt opp med KI og ny funksjonalitet kommer når jeg får nye ideer.<br>
+<br>
+</h3>
+<a href="https://m.me/larsgimse" target="_blank">Idé, eller lurer på noe? Send meg en melding på Messenger</a>
