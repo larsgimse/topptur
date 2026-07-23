@@ -97,10 +97,7 @@
         @media (max-width: 768px) {
             #buttons { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding: 10px 15px; scrollbar-width: none; }
             #buttons::-webkit-scrollbar { display: none; }
-            #video-buttons-container { 
-                width: calc(100% - 20px); 
-                max-width: 240px;
-            }
+            #video-buttons-container { width: 220px; }
             #map { height: 70vh; min-height: unset; width: 100%; }
         }
 
@@ -198,12 +195,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
-        // Sjekk om det er en mobilskjerm for å tilpasse trefflate og linjebredde
         const isMobile = window.innerWidth <= 768;
+
+        // Opprett en egen Canvas-renderer for mobil som gir en usynlig, bred treffsone rundt sporet
+        const customRenderer = isMobile ? L.canvas({ tolerance: 15 }) : L.svg();
 
         const map = L.map('map', { 
             zoomSnap: 0.5,
-            clickTolerance: isMobile ? 18 : 3 // Gi betydelig større klikk/touch-radius på mobil
+            renderer: customRenderer
         }).setView([69.65, 18.95], 10);
 
         const allTracksGroup = L.featureGroup().addTo(map);
@@ -213,7 +212,7 @@
         let isReseting = false;
 
         let loadedTracksCount = 0;
-        const totalTracksCount = 21; // Totalt antall topper
+        const totalTracksCount = 21;
 
         const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { attribution: '© Kartverket' }).addTo(map);
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
@@ -386,19 +385,20 @@
             }
         }
 
+        // Definer tydeligere linjebredde for mobil vs PC
+        const normalWeight = isMobile ? 4.5 : 1.5;
+        const activeWeight = isMobile ? 6 : 2.5;
+
         topper.sort((a,b) => a.navn.localeCompare(b.navn)).forEach(topp => {
             const btn = document.createElement('button');
             btn.className = 'top-btn'; btn.innerText = topp.navn;
             btn.appendChild(lagBadge(topp.fil));
             document.getElementById('buttons').appendChild(btn);
 
-            // Gjør linjene litt tykkere på mobil slik at de er lettere å trykke på
-            const unselectedWeight = isMobile ? 3 : 1.5;
-            const selectedWeight = isMobile ? 5 : 2.5;
-
             const track = new L.GPX('gpx/' + topp.fil, {
-                async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
-                polyline_options: { color: 'var(--strava-orange)', weight: unselectedWeight, opacity: 0.6 }
+                async: true, 
+                marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
+                polyline_options: { color: 'var(--strava-orange)', weight: normalWeight, opacity: 0.75 }
             }).on('loaded', (e) => {
                 const l = e.target;
                 allTracksGroup.addLayer(l);
@@ -418,8 +418,8 @@
                     btn.classList.add('active');
                     aktiveEkstraSporLayers.forEach(layer => map.removeLayer(layer));
                     aktiveEkstraSporLayers = [];
-                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.1, weight: unselectedWeight, color: 'var(--strava-orange)'}));
-                    l.setStyle({opacity: 1, weight: selectedWeight, color: 'var(--strava-orange)'}).bringToFront(); 
+                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.1, weight: normalWeight, color: 'var(--strava-orange)'}));
+                    l.setStyle({opacity: 1, weight: activeWeight, color: 'var(--strava-orange)'}).bringToFront(); 
 
                     videoContainer.innerHTML = '';
                     videoContainer.classList.remove('ui-hidden');
@@ -466,7 +466,7 @@
                         videoContainer.appendChild(skapKontrollRad(es.tittel, es.fil, false,
                             (on) => {
                                 if (on) {
-                                    esL = new L.GPX('gpx/' + es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null}, polyline_options: {color: es.farge, weight: unselectedWeight, dashArray:'4,6'}}).addTo(map);
+                                    esL = new L.GPX('gpx/' + es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null}, polyline_options: {color: es.farge, weight: normalWeight, dashArray:'4,6'}}).addTo(map);
                                     aktiveEkstraSporLayers.push(esL);
                                 } else if (esL) { map.removeLayer(esL); aktiveEkstraSporLayers = aktiveEkstraSporLayers.filter(x => x !== esL); }
                             },
@@ -529,8 +529,8 @@
                     map.flyToBounds(l.getBounds(), {padding: [50, 50]});
                 };
 
-                btn.onmouseenter = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--strava-blue)', weight: selectedWeight, opacity: 1}).bringToFront(); };
-                btn.onmouseleave = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--strava-orange)', weight: unselectedWeight, opacity: 0.6}); };
+                btn.onmouseenter = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--strava-blue)', weight: activeWeight, opacity: 1}).bringToFront(); };
+                btn.onmouseleave = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--strava-orange)', weight: normalWeight, opacity: 0.75}); };
                 
                 btn.onclick = aktiver;
                 l.on('click', (ev) => { L.DomEvent.stopPropagation(ev); aktiver(); });
@@ -546,8 +546,7 @@
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
             map.closePopup();
             aktiveEkstraSporLayers.forEach(l => map.removeLayer(l));
-            const resetWeight = isMobile ? 3 : 1.5;
-            allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.6, weight: resetWeight, color: 'var(--strava-orange)'}); });
+            allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.75, weight: normalWeight, color: 'var(--strava-orange)'}); });
             map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]});
             setTimeout(() => isReseting = false, 300);
         };
