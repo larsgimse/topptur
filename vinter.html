@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kartvisning</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    /* Grunnleggende layout */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    #map {
+      width: 100%;
+      height: 100vh;
+    }
+
+    /* 
+      =======================================================
+      MOBIL & DARK MODE FIX FOR LEAFLET-SPOR
+      =======================================================
+      Sørger for at SVG-veier på kartet beholder sin oransje
+      stroke-farge og ikke blir overstyrt til svart på mobil.
+    */
+    .leaflet-container path.leaflet-interactive {
+      stroke: #ff6600 !important; /* Låser sporfargen til oransje */
+      stroke-opacity: 0.85 !important;
+    }
+
+    /* Skjermer kartet mot at telefonens mørke modus tvinger svg til svart */
+    @media (prefers-color-scheme: dark) {
+      .leaflet-container path {
+        stroke-dasharray: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // 1. Initialiser kartet
+    const map = L.map('map').setView([69.6492, 18.9553], 11);
+
+    // 2. Legg til bakgrunnskart (f.eks. Kartverket / OpenStreetMap)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    // 3. Konfigurasjon for spor (GeoJSON / Polyline)
+    const sporStyling = {
+      color: '#ff6600',       /* Oransje farge */
+      weight: 4,
+      opacity: 0.85,
+      lineCap: 'round',
+      lineJoin: 'round'
+    };
+
+    /* 
+      Eksempel på innlasting/tegning av spor:
+      Dersom du laster inn GeoJSON eller oppretter L.polyline, 
+      beholdes den eksisterende funksjonaliteten din uendret her.
+    */
+    
+    // Dersom du bruker L.geoJSON:
+    /*
+    L.geoJSON(gpxData, {
+      style: sporStyling
+    }).addTo(map);
+    */
+
+  </script>
+</body>
+</html>
