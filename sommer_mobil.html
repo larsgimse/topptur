@@ -70,8 +70,16 @@
         @media (max-width: 768px) {
             #buttons { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding: 10px 15px; scroll-behavior: smooth; }
             #buttons::-webkit-scrollbar { display: none; }
-            #video-buttons-container { width: 220px; }
-            #map { height: 100vw; min-height: unset; width: 100%; }
+            
+            /* Tilpasninger for mobil for å gi bedre plass til kartet */
+            #video-buttons-container { 
+                width: 180px; 
+                max-height: 60vh; 
+                overflow-y: auto; 
+                top: 5px; 
+                right: 5px; 
+            }
+            #map { height: 75vh; min-height: unset; width: 100%; }
             
             /* Dynamisk sveipe-skygge på mobil */
             .buttons-wrapper::after {
@@ -199,6 +207,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
+        // Sjekk om enheten har touch-skjerm / er mobil
+        const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        const defaultWeight = isTouch ? 10 : 1.5;
+        const activeWeight = isTouch ? 12 : 3;
+        const hoverWeight = isTouch ? 12 : 4;
+
         // Fjern skygge hvis man har scrollet helt til høyre i topp-knappene
         const buttonsContainer = document.getElementById('buttons');
         const buttonsWrapper = document.getElementById('buttonsWrapper');
@@ -381,15 +395,15 @@
 
             const track = new L.GPX('gpx/' + topp.fil, {
                 async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
-                polyline_options: { color: 'var(--summer-green)', weight: 1.5, opacity: 0.6 }
+                polyline_options: { color: 'var(--summer-green)', weight: defaultWeight, opacity: 0.6 }
             }).on('loaded', (e) => {
                 const l = e.target; allTracksGroup.addLayer(l);
                 
-                btn.onmouseenter = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--hover-blue)', weight: 4, opacity: 1}).bringToFront(); };
-                btn.onmouseleave = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--summer-green)', weight: 1.5, opacity: 0.6}); };
+                btn.onmouseenter = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--hover-blue)', weight: hoverWeight, opacity: 1}).bringToFront(); };
+                btn.onmouseleave = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--summer-green)', weight: defaultWeight, opacity: 0.6}); };
 
-                l.on('mouseover', () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--hover-blue)', weight: 4, opacity: 1}).bringToFront(); });
-                l.on('mouseout', () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--summer-green)', weight: 1.5, opacity: 0.6}); });
+                l.on('mouseover', () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--hover-blue)', weight: hoverWeight, opacity: 1}).bringToFront(); });
+                l.on('mouseout', () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--summer-green)', weight: defaultWeight, opacity: 0.6}); });
 
                 const aktiver = () => {
                     isReseting = false; aktivToppNavn = topp.navn;
@@ -402,8 +416,8 @@
                     btn.classList.add('active');
                     get_aktiveEkstraSporLayers = () => aktiveEkstraSporLayers;
                     aktiveEkstraSporLayers.forEach(layer => map.removeLayer(layer)); aktiveEkstraSporLayers = [];
-                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.1, weight: 1, color: 'var(--summer-green)'}));
-                    l.setStyle({opacity: 1, weight: 3, color: 'var(--strava-orange)'}).bringToFront(); 
+                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.1, weight: defaultWeight, color: 'var(--summer-green)'}));
+                    l.setStyle({opacity: 1, weight: activeWeight, color: 'var(--strava-orange)'}).bringToFront(); 
 
                     videoContainer.innerHTML = ''; videoContainer.classList.remove('ui-hidden');
 
@@ -457,7 +471,7 @@
                     topp.ekstraSpor?.forEach(es => {
                         let esL = null;
                         videoContainer.appendChild(skapKontrollRad(es.tittel, es.fil, false, (on) => {
-                            if (on) { esL = new L.GPX('gpx/' + es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null}, polyline_options: {color: es.farge, weight:1.5, dashArray:'4,6'}}).addTo(map); aktiveEkstraSporLayers.push(esL); }
+                            if (on) { esL = new L.GPX('gpx/' + es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null}, polyline_options: {color: es.farge, weight: defaultWeight, dashArray:'4,6'}}).addTo(map); aktiveEkstraSporLayers.push(esL); }
                             else if (esL) { map.removeLayer(esL); aktiveEkstraSporLayers = aktiveEkstraSporLayers.filter(x => x !== esL); }
                         }, (on) => { if (on && esL) visProfil(esL, es.tittel, es.fil); else map.closePopup(); }));
                     });
@@ -506,7 +520,7 @@
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
             map.closePopup(); aktiveEkstraSporLayers.forEach(l => map.removeLayer(l));
             
-            allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.6, weight:1.5, color: 'var(--summer-green)'}); });
+            allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.6, weight: defaultWeight, color: 'var(--summer-green)'}); });
             map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]});
             setTimeout(() => isReseting = false, 300);
         };
@@ -514,46 +528,6 @@
         setTimeout(() => {
             if (!aktivToppNavn) map.fitBounds(allTracksGroup.getBounds(), {padding:[20,20]});
         }, 1000);
-
-        // Info Pop-up logikk (Henter info.txt og parser enkle h1, h2, h3 tagger samt avsnitt)
-        const infoBtn = document.getElementById('infoBtn');
-        const infoPopup = document.getElementById('infoPopup');
-        const closeInfoBtn = document.getElementById('closeInfoBtn');
-        const infoPopupText = document.getElementById('infoPopupText');
-
-        infoBtn.onclick = () => {
-            infoPopup.classList.add('open');
-            fetch('info.txt')
-                .then(response => {
-                    if (!response.ok) throw new Error('Kunne ikke laste info.txt');
-                    return response.text();
-                })
-                .then(text => {
-                    // Enkel parser for overskrifter og avsnitt
-                    const lines = text.split('\n');
-                    let htmlContent = '';
-                    lines.forEach(line => {
-                        line = line.trim();
-                        if (line.startsWith('###')) {
-                            htmlContent += `<h3>${line.replace('###', '').trim()}</h3>`;
-                        } else if (line.startsWith('##')) {
-                            htmlContent += `<h2>${line.replace('##', '').trim()}</h2>`;
-                        } else if (line.startsWith('#')) {
-                            htmlContent += `<h1>${line.replace('#', '').trim()}</h1>`;
-                        } else if (line.length > 0) {
-                            htmlContent += `<p>${line}</p>`;
-                        }
-                    });
-                    infoPopupText.innerHTML = htmlContent || '<p>Ingen informasjon tilgjengelig.</p>';
-                })
-                .catch(err => {
-                    infoPopupText.innerHTML = `<p style="color:red;">Klarte ikke å hente info.txt. Sjekk at filen ligger lagret på riktig sted på GitHub.</p>`;
-                });
-        };
-
-        const lukkPopup = () => infoPopup.classList.remove('open');
-        closeInfoBtn.onclick = lukkPopup;
-        infoPopup.onclick = (e) => { if (e.target === infoPopup) lukkPopup(); };
-   </script>
+    </script>
 </body>
 </html>
