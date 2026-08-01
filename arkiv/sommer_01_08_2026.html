@@ -247,14 +247,6 @@
             { navn: "Kløftbakken", fil: "2025_02_28.gpx", video: [{ url: "https://www.instagram.com/p/DGoaEMTsPop/", tittel: "Se video" }] },
             { navn: "Middagstinden", fil: "2026_07_13.gpx", overrideAar: "2026", video: [{ url: "https://www.instagram.com/p/Dav_9_9IyDN/", tittel: "Se video" }], strava: "https://www.strava.com/activities/19296465484" },
             { navn: "Mjeldskartinden", fil: "2020_07_24.gpx", video: [{ url: "https://www.instagram.com/p/CDEWTcXFfNq", tittel: "Se bilder", type: "photo" }] },
-            { 
-                navn: "Nattmålsfjellet - Buren", 
-                fil: "2026_07_31.gpx", 
-                overrideAar: "2026", 
-                video: [{ url: "https://www.instagram.com/p/DbeS4N_Iq9F/", tittel: "Se video" }], 
-                strava: "https://www.strava.com/activities/19544004313",
-                ekstraSpor: [{ tittel: "Spor kun til Nattmålsfjellet", fil: "2026_07_31a.gpx", farge: "#4f46e5" }]
-            },
             { navn: "Orvasstinden", fil: "2025_09_25.gpx", video: [{ url: "https://www.instagram.com/p/DPKU6TiCH9y/", tittel: "Se video" }] },
             { navn: "Rødtinden", fil: "2025_08_11.gpx", video: [{ url: "https://www.instagram.com/p/DNQt9aPsjSt/", tittel: "Se video" }] },
             { 
@@ -537,32 +529,30 @@
                     const startLatLng = l.getLayers()[0].getLatLngs()[0];
                     if (startLatLng) {
                         const veiBtn = document.createElement('a');
-                        veiBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${startLatLng.lat},${startLatLng.lng}`;
-                        veiBtn.target = "_blank"; veiBtn.className = 'video-link-btn search-link-btn';
-                        veiBtn.innerHTML = `<span>🗺️</span> Veibeskrivelse`;
+                        veiBtn.href = `https://www.google.com/maps/search/?api=1&query=${startLatLng.lat},${startLatLng.lng}`;
+                        veiBtn.target = "_blank";
+                        veiBtn.className = 'search-link-btn';
+                        veiBtn.style.borderColor = 'var(--download-blue)';
+                        veiBtn.style.color = 'var(--download-blue)';
+                        veiBtn.innerHTML = `<span>🚗</span> Veibeskrivelse`;
                         videoContainer.appendChild(veiBtn);
                     }
 
-                    const dlContainer = document.createElement('div');
-                    dlContainer.className = 'download-area';
-                    dlContainer.innerHTML = `<div class="download-header"><span>📥</span> Last ned GPX</div>`;
-                    const linksWrap = document.createElement('div');
-                    linksWrap.className = 'download-links-container';
-
-                    const mainDl = document.createElement('span');
-                    mainDl.className = 'dl-link'; mainDl.innerText = 'Hovedspor';
-                    mainDl.onclick = () => lastNedGPX('gpx/' + topp.fil, topp.fil);
-                    linksWrap.appendChild(mainDl);
-
-                    topp.ekstraSpor?.forEach(es => {
-                        const esDl = document.createElement('span');
-                        esDl.className = 'dl-link'; esDl.innerText = es.tittel;
-                        esDl.onclick = () => lastNedGPX('gpx/' + es.fil, es.fil);
-                        linksWrap.appendChild(esDl);
-                    });
-
-                    dlContainer.appendChild(linksWrap);
-                    videoContainer.appendChild(dlContainer);
+                    // Last ned GPXknapper
+                    const dlArea = document.createElement('div');
+                    dlArea.className = 'download-area';
+                    
+                    let dlHTML = `<div class="download-header"><span>💾</span> Last ned GPX</div><div class="download-links-container">`;
+                    dlHTML += `<span class="dl-link" onclick="lastNedGPX('gpx/${topp.fil}', '${topp.navn}')">Hovedspor</span>`;
+                    
+                    if (topp.ekstraSpor) {
+                        topp.ekstraSpor.forEach(es => {
+                            dlHTML += `<span class="dl-link" onclick="lastNedGPX('gpx/${es.fil}', '${topp.navn} - ${es.tittel}')">${es.tittel}</span>`;
+                        });
+                    }
+                    dlHTML += `</div>`;
+                    dlArea.innerHTML = dlHTML;
+                    videoContainer.appendChild(dlArea);
 
                     map.flyToBounds(l.getBounds(), { padding: [60, 60], duration: 0.8 });
                 };
@@ -580,34 +570,47 @@
         document.getElementById('resetBtn').onclick = () => {
             isReseting = true; aktivToppNavn = null;
             
-            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-            window.history.pushState({path: newUrl}, '', newUrl);
+            // Fjern fjell fra URL
+            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.pushState({path: cleanUrl}, '', cleanUrl);
 
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
-            videoContainer.innerHTML = ''; videoContainer.classList.add('ui-hidden');
             aktiveEkstraSporLayers.forEach(layer => map.removeLayer(layer)); aktiveEkstraSporLayers = [];
+            videoContainer.innerHTML = ''; videoContainer.classList.add('ui-hidden');
             allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.6, weight: defaultWeight, color: 'var(--summer-green)'}));
             map.flyTo(defaultCenter, defaultZoom, { duration: 0.8 });
             map.closePopup();
+            setTimeout(() => { isReseting = false; }, 800);
         };
 
-        const infoPopup = document.getElementById('infoPopup');
+        // Info Pop-up logikk
         const infoBtn = document.getElementById('infoBtn');
+        const infoPopup = document.getElementById('infoPopup');
         const closeInfoBtn = document.getElementById('closeInfoBtn');
         const infoPopupText = document.getElementById('infoPopupText');
 
         infoBtn.onclick = () => {
-            infoPopup.classList.add('open');
-            if (infoPopupText.innerHTML === "Laster informasjon...") {
-                fetch('info.txt')
-                    .then(r => r.text())
-                    .then(t => infoPopupText.innerHTML = t.replace(/\n/g, '<br>'))
-                    .catch(() => infoPopupText.innerText = "Kunne ikke laste info.txt");
-            }
+            fetch('info.txt')
+                .then(response => response.text())
+                .then(text => {
+                    infoPopupText.innerHTML = text.replace(/\n/g, '<br>');
+                    infoPopup.classList.add('open');
+                })
+                .catch(err => {
+                    infoPopupText.innerHTML = "Kunne ikke laste info.txt. Sjekk at filen ligger i samme mappe.";
+                    infoPopup.classList.add('open');
+                });
         };
 
-        closeInfoBtn.onclick = () => infoPopup.classList.remove('open');
-        infoPopup.onclick = (e) => { if (e.target === infoPopup) infoPopup.classList.remove('open'); };
+        closeInfoBtn.onclick = () => {
+            infoPopup.classList.remove('open');
+        };
+
+        infoPopup.onclick = (e) => {
+            if (e.target === infoPopup) {
+                infoPopup.classList.remove('open');
+            }
+        };
     </script>
 </body>
 </html>
