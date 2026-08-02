@@ -258,10 +258,9 @@
             { 
                 navn: "Nordfjellet - Tromsø geografiske midtpunkt", 
                 fil: "2026_08_01.gpx", 
-                overrideAar: "2026", 
                 video: [{ url: "https://www.instagram.com/p/Dbh4xYDoydg/", tittel: "Se video" }], 
                 strava: "https://www.strava.com/activities/19557674622",
-                ekstraSpor: [{ tittel: "Alternativ rute, eksponert", fil: "2026_08_01_alt.gpx", farge: "#ef4444" }]
+                ekstraSpor: [{ tittel: "Alternativ rute, som ikke er eksponert", fil: "2026_08_01_alt.gpx", farge: "var(--strava-green)", defaultActive: true }]
             },
             { navn: "Orvasstinden", fil: "2025_09_25.gpx", video: [{ url: "https://www.instagram.com/p/DPKU6TiCH9y/", tittel: "Se video" }] },
             { navn: "Rødtinden", fil: "2025_08_11.gpx", video: [{ url: "https://www.instagram.com/p/DNQt9aPsjSt/", tittel: "Se video" }] },
@@ -539,10 +538,29 @@
                     
                     topp.ekstraSpor?.forEach(es => {
                         let esL = null;
-                        videoContainer.appendChild(skapKontrollRad(es.tittel, es.fil, false, (on) => {
-                            if (on) {
-                                esL = new L.GPX('gpx/' + es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null}, polyline_options: {color: es.farge, weight: isTouchDevice ? 3 : 1.5, opacity: 0.9} }).addTo(map);
+                        const startAktiv = !!es.defaultActive;
+
+                        const leggTilSpor = () => {
+                            if (!esL) {
+                                esL = new L.GPX('gpx/' + es.fil, { 
+                                    async: true, 
+                                    marker_options: {startIconUrl:null, endIconUrl:null}, 
+                                    polyline_options: {color: es.farge, weight: isTouchDevice ? 4 : 3, opacity: 0.9} 
+                                }).addTo(map);
                                 aktiveEkstraSporLayers.push(esL);
+                            } else {
+                                map.addLayer(esL);
+                                if (!aktiveEkstraSporLayers.includes(esL)) aktiveEkstraSporLayers.push(esL);
+                            }
+                        };
+
+                        if (startAktiv) {
+                            leggTilSpor();
+                        }
+
+                        videoContainer.appendChild(skapKontrollRad(es.tittel, null, startAktiv, (on) => {
+                            if (on) {
+                                leggTilSpor();
                             } else if (esL) {
                                 map.removeLayer(esL);
                                 aktiveEkstraSporLayers = aktiveEkstraSporLayers.filter(item => item !== esL);
