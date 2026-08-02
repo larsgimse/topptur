@@ -270,7 +270,8 @@
                     fil: "2026_08_01_alt.gpx", 
                     farge: "var(--strava-green)", 
                     defaultActive: true,
-                    popupTekst: "Hovedspor er delvis eksponert til hit, velg alternativ rute opp"
+                    popupTekst: "Hovedspor er delvis eksponert til hit, velg alternativ rute opp",
+                    markerPos: [69.6967, 18.8475]
                 }]
             },
             { id: "orvasstinden", navn: "Orvasstinden", fil: "2025_09_25.gpx", video: [{ url: "https://www.instagram.com/p/DPKU6TiCH9y/", tittel: "Se video" }] },
@@ -537,9 +538,9 @@
                     menuTopRow.appendChild(shareBtn);
                     videoContainer.appendChild(menuTopRow);
 
-                    // 1. Kontroll-rad for Hovedsporet (Plasseres ØVERST)
+                    // 1. Hovedspor - Heter navnet på toppen
                     const mainControlRow = skapKontrollRad(
-                        "Hovedspor",
+                        topp.navn,
                         topp.fil,
                         true,
                         (aktiv) => {
@@ -559,7 +560,7 @@
                     );
                     videoContainer.appendChild(mainControlRow);
 
-                    // 2. Kontroll-rader for eventuelle Ekstra spor
+                    // 2. Ekstraspor / Tur 2 (Legges rett under hovedsporet)
                     if (topp.ekstraSpor && topp.ekstraSpor.length > 0) {
                         topp.ekstraSpor.forEach(ekstra => {
                             const eTrack = new L.GPX('gpx/' + ekstra.fil, {
@@ -571,6 +572,18 @@
                                 if (ekstra.defaultActive) {
                                     eLayer.addTo(map);
                                     aktiveEkstraSporLayers.push(eLayer);
+                                }
+
+                                // Legg til pin/markør dersom definert på ekstraSpor (f.eks Nordfjellet)
+                                if (ekstra.popupTekst) {
+                                    let pinPos = ekstra.markerPos;
+                                    if (!pinPos) {
+                                        const bounds = eLayer.getBounds();
+                                        pinPos = bounds.getCenter();
+                                    }
+                                    const marker = L.marker(pinPos).addTo(map);
+                                    marker.bindPopup(`<b>${ekstra.tittel}</b><br>${ekstra.popupTekst}`);
+                                    aktiveMarkører.push(marker);
                                 }
 
                                 const row = skapKontrollRad(
