@@ -327,6 +327,7 @@
         totalTracksCount = topper.length;
 
         function lagBadge(fil, override) {
+            if (!fil && !override) return null;
             const s = document.createElement('span');
             s.className = 'badge-label';
             let aar = override || (fil ? fil.split('_')[0] : "2020");
@@ -398,7 +399,10 @@
             const container = document.createElement('div');
             container.className = 'control-row-container';
             const lb = document.createElement('div'); lb.className = 'control-label'; lb.innerText = label;
-            if (badgeFil) lb.appendChild(lagBadge(badgeFil));
+            if (badgeFil) {
+                const badge = lagBadge(badgeFil);
+                if (badge) lb.appendChild(badge);
+            }
             container.appendChild(lb);
 
             const sporGroup = document.createElement('div');
@@ -418,15 +422,14 @@
 
         function sjekkURLParameter() {
             const urlParams = new URLSearchParams(window.location.search);
-            const idFraURL = urlParams.get('id');
             const fjellFraURL = urlParams.get('fjell');
 
-            if (idFraURL || fjellFraURL) {
-                const søkVal = (idFraURL || fjellFraURL).toLowerCase().trim();
+            if (fjellFraURL) {
+                const søkVal = decodeURIComponent(fjellFraURL).toLowerCase().trim();
                 const topperKnapper = document.querySelectorAll('.top-btn');
                 
                 topper.forEach((topp, idx) => {
-                    if (topp.id === søkVal || decodeURIComponent(søkVal) === topp.navn.toLowerCase()) {
+                    if (topp.navn.toLowerCase() === søkVal || topp.id === søkVal) {
                         if (topperKnapper[idx]) topperKnapper[idx].click();
                     }
                 });
@@ -435,7 +438,7 @@
 
         const defaultWeight = isTouchDevice ? 3 : 1.5;
 
-        // Egendefinert litt mindre marker-ikon for pins
+        // Egendefinert lite marker-ikon for pin
         const smallIcon = L.icon({
             iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
             iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -449,7 +452,8 @@
         topper.sort((a,b) => a.navn.localeCompare(b.navn)).forEach(topp => {
             const btn = document.createElement('button');
             btn.className = 'top-btn'; btn.innerText = topp.navn;
-            btn.appendChild(lagBadge(topp.fil, topp.overrideAar));
+            const badge = lagBadge(topp.fil, topp.overrideAar);
+            if (badge) btn.appendChild(badge);
             document.getElementById('buttons').appendChild(btn);
 
             const mainTrackColor = topp.navn === "Nordfjellet - Tromsø geografiske midtpunkt" ? 'var(--strava-green)' : 'var(--summer-green)';
@@ -525,8 +529,7 @@
                     shareBtn.title = 'Del topp';
                     shareBtn.innerHTML = '🔗';
                     shareBtn.onclick = () => {
-                        // Genererer den korte adressen basert på toppens unike ID
-                        const shareUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?id=' + topp.id;
+                        const shareUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?fjell=' + encodeURIComponent(topp.navn);
                         if (navigator.clipboard) {
                             navigator.clipboard.writeText(shareUrl).then(() => {
                                 shareBtn.innerHTML = '✓ Kopiert!';
@@ -544,7 +547,8 @@
                     topp.video?.forEach(v => {
                         const a = document.createElement('a'); a.href = v.url; a.target = "_blank"; a.className = 'video-link-btn';
                         a.innerHTML = `<span>${v.type === "photo" ? "📷" : "🎬"}</span> ${v.tittel}`;
-                        a.appendChild(lagBadge(v.dato || topp.fil, v.dato ? null : topp.overrideAar));
+                        const vBadge = lagBadge(v.dato || topp.fil, v.dato ? null : topp.overrideAar);
+                        if (vBadge) a.appendChild(vBadge);
                         videoContainer.appendChild(a);
                     });
 
@@ -562,6 +566,7 @@
                         (aktiv) => { if (aktiv) visProfil(l, hovedsporLabel, topp.fil); else map.closePopup(); }
                     ));
 
+                    // Ekstra spor legges direkte under hovedspor
                     if (topp.ekstraSpor) {
                         topp.ekstraSpor.forEach(ekstra => {
                             const isDefaultActive = !!ekstra.defaultActive;
@@ -576,9 +581,12 @@
                                 }
                                 aktiveEkstraSporLayers.push(eLayer);
 
-                                const startPos = eLayer.getLayers()[0]?.getLatLngs()[0];
-                                if (startPos) {
-                                    const m = L.marker(startPos, { icon: smallIcon });
+                                // Finn det siste koordinatet (slutten av sporet)
+                                const points = eLayer.getLayers()[0]?.getLatLngs();
+                                const lastPos = points ? points[points.length - 1] : null;
+
+                                if (lastPos) {
+                                    const m = L.marker(lastPos, { icon: smallIcon });
                                     if (isDefaultActive) m.addTo(map);
                                     aktiveMarkører.push(m);
                                     
@@ -588,15 +596,17 @@
                                         m.openPopup(null, { autoPan: false });
                                     }
                                 }
-
-                                videoContainer.appendChild(skapKontrollRad(ekstra.tittel, ekstra.fil, isDefaultActive,
-                                    (aktiv) => {
-                                        if (aktiv) { map.addLayer(eLayer); aktiveMarkører.forEach(m => map.addLayer(m)); }
-                                        else { map.removeLayer(eLayer); aktiveMarkører.forEach(m => map.removeLayer(m)); }
-                                    },
-                                    (aktiv) => { if (aktiv) visProfil(eLayer, ekstra.tittel, ekstra.fil); else map.closePopup(); }
-                                ));
                             });
+
+                            // Generer kontrollknappen uten årstall-badge og plasser den under hovedspor
+                            const eRad = skapKontrollRad(ekstra.tittel, null, isDefaultActive,
+                                (aktiv) => {
+                                    if (aktiv) { map.addLayer(ekstraTrack); aktiveMarkører.forEach(m => map.addLayer(m)); }
+                                    else { map.removeLayer(ekstraTrack); aktiveMarkører.forEach(m => map.removeLayer(m)); }
+                                },
+                                (aktiv) => { if (aktiv) visProfil(ekstraTrack, ekstra.tittel, ekstra.fil); else map.closePopup(); }
+                            );
+                            videoContainer.appendChild(eRad);
                         });
                     }
 
