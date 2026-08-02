@@ -255,14 +255,6 @@
                 strava: "https://www.strava.com/activities/19544004313",
                 ekstraSpor: [{ tittel: "Spor kun til Nattmålsfjellet", fil: "2026_07_31a.gpx", farge: "#4f46e5" }]
             },
-            { 
-                navn: "Nordfjellet - Tromsø geografiske midtpunkt", 
-                fil: "2026_08_01.gpx", 
-                overrideAar: "2026", 
-                video: [{ url: "https://www.instagram.com/p/Dbh4xYDoydg/", tittel: "Se video" }], 
-                strava: "https://www.strava.com/activities/19557674622",
-                ekstraSpor: [{ tittel: "Alternativ rute, eksponert", fil: "2026_08_01_alt.gpx", farge: "#ef4444" }]
-            },
             { navn: "Orvasstinden", fil: "2025_09_25.gpx", video: [{ url: "https://www.instagram.com/p/DPKU6TiCH9y/", tittel: "Se video" }] },
             { navn: "Rødtinden", fil: "2025_08_11.gpx", video: [{ url: "https://www.instagram.com/p/DNQt9aPsjSt/", tittel: "Se video" }] },
             { 
@@ -430,19 +422,13 @@
             btn.appendChild(lagBadge(topp.fil, topp.overrideAar));
             document.getElementById('buttons').appendChild(btn);
 
-            const mainTrackColor = topp.navn === "Nordfjellet - Tromsø geografiske midtpunkt" ? 'var(--strava-green)' : 'var(--summer-green)';
-
             const track = new L.GPX('gpx/' + topp.fil, {
                 async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
-                polyline_options: { color: mainTrackColor, weight: defaultWeight, opacity: 0.6 }
+                polyline_options: { color: 'var(--summer-green)', weight: defaultWeight, opacity: 0.6 }
             }).on('loaded', (e) => {
                 const l = e.target; allTracksGroup.addLayer(l);
                 
-                loadedTracksCount++;
-                if (loadedTracksCount === totalTracksCount) {
-                    sjekkURLParameter();
-                }
-
+                // Gjør sporene enklere å treffe med fingeren på mobil via et usynlig ekstra sporsikt (click tolerance)
                 if (isTouchDevice) {
                     l.eachLayer(layer => {
                         if (layer.setStyle) {
@@ -451,6 +437,7 @@
                     });
                 }
 
+                // Hover-funksjonalitet (zooming + fremheving kun på PC / ikke-touch)
                 if (!isTouchDevice) {
                     btn.onmouseenter = () => { 
                         if (!aktivToppNavn && !isReseting) {
@@ -460,7 +447,7 @@
                     };
                     btn.onmouseleave = () => { 
                         if (!aktivToppNavn && !isReseting) {
-                            l.setStyle({color: mainTrackColor, weight: defaultWeight, opacity: 0.6}); 
+                            l.setStyle({color: 'var(--summer-green)', weight: defaultWeight, opacity: 0.6}); 
                             map.flyTo(defaultCenter, defaultZoom, { duration: 0.4 });
                         }
                     };
@@ -473,13 +460,14 @@
                 });
                 l.on('mouseout', () => { 
                     if (!aktivToppNavn && !isReseting && !isTouchDevice) {
-                        l.setStyle({color: mainTrackColor, weight: defaultWeight, opacity: 0.6});
+                        l.setStyle({color: 'var(--summer-green)', weight: defaultWeight, opacity: 0.6});
                     }
                 });
 
                 const aktiver = () => {
                     isReseting = false; aktivToppNavn = topp.navn;
                     
+                    // Oppdater URL uten å laste siden på nytt
                     const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?fjell=' + encodeURIComponent(topp.navn);
                     window.history.pushState({path: newUrl}, '', newUrl);
 
@@ -491,6 +479,7 @@
 
                     videoContainer.innerHTML = ''; videoContainer.classList.remove('ui-hidden');
 
+                    // Topprad med "Skjul meny" og "Del topp" knapper
                     const menuTopRow = document.createElement('div');
                     menuTopRow.className = 'menu-top-row';
 
@@ -540,77 +529,81 @@
                     topp.ekstraSpor?.forEach(es => {
                         let esL = null;
                         videoContainer.appendChild(skapKontrollRad(es.tittel, es.fil, false, (on) => {
-                            if (on) {
-                                esL = new L.GPX('gpx/' + es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null}, polyline_options: {color: es.farge, weight: isTouchDevice ? 3 : 1.5, opacity: 0.9} }).addTo(map);
-                                aktiveEkstraSporLayers.push(esL);
-                            } else if (esL) {
-                                map.removeLayer(esL);
-                                aktiveEkstraSporLayers = aktiveEkstraSporLayers.filter(item => item !== esL);
-                            }
-                        }, (on) => {
-                            if (on && esL) visProfil(esL, es.tittel, es.fil);
-                            else map.closePopup();
-                        }));
+                            if (on) { esL = new L.GPX('gpx/' + es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null}, polyline_options: {color: es.farge, weight: isTouchDevice ? 3 : 1.5, dashArray:'4,6'}}).addTo(map); aktiveEkstraSporLayers.push(esL); }
+                            else if (esL) { map.removeLayer(esL); aktiveEkstraSporLayers = aktiveEkstraSporLayers.filter(x => x !== esL); }
+                        }, (on) => { if (on && esL) visProfil(esL, es.tittel, es.fil); else map.closePopup(); }));
                     });
+
+                    const startLatLng = l.getLayers()[0].getLatLngs()[0];
+                    if (startLatLng) {
+                        const veiBtn = document.createElement('a');
+                        veiBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${startLatLng.lat},${startLatLng.lng}`;
+                        veiBtn.target = "_blank"; veiBtn.className = 'video-link-btn search-link-btn';
+                        veiBtn.innerHTML = `<span>🗺️</span> Veibeskrivelse`;
+                        videoContainer.appendChild(veiBtn);
+                    }
 
                     const dlContainer = document.createElement('div');
                     dlContainer.className = 'download-area';
-                    dlContainer.innerHTML = `<div class="download-header"><span>💾</span> Last ned GPX</div>`;
-                    const dlLinks = document.createElement('div');
-                    dlLinks.className = 'download-links-container';
+                    dlContainer.innerHTML = `<div class="download-header"><span>📥</span> Last ned GPX</div>`;
+                    const linksWrap = document.createElement('div');
+                    linksWrap.className = 'download-links-container';
 
                     const mainDl = document.createElement('span');
-                    mainDl.className = 'dl-link';
-                    mainDl.innerText = 'Hovedspor';
+                    mainDl.className = 'dl-link'; mainDl.innerText = 'Hovedspor';
                     mainDl.onclick = () => lastNedGPX('gpx/' + topp.fil, topp.fil);
-                    dlLinks.appendChild(mainDl);
+                    linksWrap.appendChild(mainDl);
 
                     topp.ekstraSpor?.forEach(es => {
                         const esDl = document.createElement('span');
-                        esDl.className = 'dl-link';
-                        esDl.innerText = es.tittel;
+                        esDl.className = 'dl-link'; esDl.innerText = es.tittel;
                         esDl.onclick = () => lastNedGPX('gpx/' + es.fil, es.fil);
-                        dlLinks.appendChild(esDl);
+                        linksWrap.appendChild(esDl);
                     });
 
-                    dlContainer.appendChild(dlLinks);
+                    dlContainer.appendChild(linksWrap);
                     videoContainer.appendChild(dlContainer);
 
-                    map.flyToBounds(l.getBounds(), { padding: [60, 60], duration: 0.5 });
+                    map.flyToBounds(l.getBounds(), { padding: [60, 60], duration: 0.8 });
                 };
 
                 btn.onclick = aktiver;
                 l.on('click', aktiver);
+
+                loadedTracksCount++;
+                if (loadedTracksCount === totalTracksCount) {
+                    sjekkURLParameter();
+                }
             });
         });
 
         document.getElementById('resetBtn').onclick = () => {
             isReseting = true; aktivToppNavn = null;
+            
+            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.pushState({path: newUrl}, '', newUrl);
+
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
-            aktiveEkstraSporLayers.forEach(layer => map.removeLayer(layer)); aktiveEkstraSporLayers = [];
             videoContainer.innerHTML = ''; videoContainer.classList.add('ui-hidden');
-            allTracksGroup.eachLayer(layer => layer.setStyle({color: 'var(--summer-green)', weight: defaultWeight, opacity: 0.6}));
-            map.flyTo(defaultCenter, defaultZoom, { duration: 0.5 });
-            window.history.pushState({}, '', window.location.pathname);
-            setTimeout(() => isReseting = false, 600);
+            aktiveEkstraSporLayers.forEach(layer => map.removeLayer(layer)); aktiveEkstraSporLayers = [];
+            allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.6, weight: defaultWeight, color: 'var(--summer-green)'}));
+            map.flyTo(defaultCenter, defaultZoom, { duration: 0.8 });
+            map.closePopup();
         };
 
-        // Info Pop-up Logikk
-        const infoBtn = document.getElementById('infoBtn');
         const infoPopup = document.getElementById('infoPopup');
+        const infoBtn = document.getElementById('infoBtn');
         const closeInfoBtn = document.getElementById('closeInfoBtn');
         const infoPopupText = document.getElementById('infoPopupText');
 
         infoBtn.onclick = () => {
             infoPopup.classList.add('open');
-            fetch('INFO.md')
-                .then(res => res.text())
-                .then(text => {
-                    infoPopupText.innerText = text;
-                })
-                .catch(() => {
-                    infoPopupText.innerText = "Kunne ikke laste INFO.md.";
-                });
+            if (infoPopupText.innerHTML === "Laster informasjon...") {
+                fetch('info.txt')
+                    .then(r => r.text())
+                    .then(t => infoPopupText.innerHTML = t.replace(/\n/g, '<br>'))
+                    .catch(() => infoPopupText.innerText = "Kunne ikke laste info.txt");
+            }
         };
 
         closeInfoBtn.onclick = () => infoPopup.classList.remove('open');
