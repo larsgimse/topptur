@@ -444,17 +444,6 @@
 
         const defaultWeight = isTouchDevice ? 3 : 1.5;
 
-        // Egendefinert lite marker-ikon for pin
-        const smallIcon = L.icon({
-            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-            iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-            iconSize: [18, 30],
-            iconAnchor: [9, 30],
-            popupAnchor: [1, -24],
-            shadowSize: [30, 30]
-        });
-
         topper.sort((a,b) => a.navn.localeCompare(b.navn)).forEach(topp => {
             const btn = document.createElement('button');
             btn.className = 'top-btn'; btn.innerText = topp.navn;
@@ -548,36 +537,29 @@
                     menuTopRow.appendChild(shareBtn);
                     videoContainer.appendChild(menuTopRow);
 
-                    if (topp.video && topp.video.length > 0) {
-                        topp.video.forEach(v => {
-                            const vBtn = document.createElement('a');
-                            vBtn.className = 'video-link-btn';
-                            vBtn.href = v.url;
-                            vBtn.target = '_blank';
-                            const ikon = v.type === 'photo' ? '📷' : '🎬';
-                            vBtn.innerHTML = `<span>${ikon}</span> ${v.tittel}${v.dato ? ` (${v.dato})` : ''}`;
-                            videoContainer.appendChild(vBtn);
-                        });
-                    }
+                    // 1. Kontroll-rad for Hovedsporet (Plasseres ØVERST)
+                    const mainControlRow = skapKontrollRad(
+                        "Hovedspor",
+                        topp.fil,
+                        true,
+                        (aktiv) => {
+                            if (aktiv) {
+                                l.setStyle({ opacity: 1, weight: isTouchDevice ? 4 : 3, color: 'var(--strava-orange)' }).bringToFront();
+                            } else {
+                                l.setStyle({ opacity: 0 });
+                            }
+                        },
+                        (aktiv) => {
+                            if (aktiv) {
+                                visProfil(l, topp.navn, topp.fil);
+                            } else {
+                                l.closePopup();
+                            }
+                        }
+                    );
+                    videoContainer.appendChild(mainControlRow);
 
-                    if (topp.strava) {
-                        const sBtn = document.createElement('a');
-                        sBtn.className = 'video-link-btn strava-link-btn';
-                        sBtn.href = topp.strava;
-                        sBtn.target = '_blank';
-                        sBtn.innerHTML = `<span>🏃</span> Strava`;
-                        videoContainer.appendChild(sBtn);
-                    }
-
-                    if (topp.suunto) {
-                        const suuntoBtn = document.createElement('a');
-                        suuntoBtn.className = 'video-link-btn suunto-link-btn';
-                        suuntoBtn.href = topp.suunto;
-                        suuntoBtn.target = '_blank';
-                        suuntoBtn.innerHTML = `<span style="color:var(--suunto-red);">🔺</span> 3D visualisering - Suunto`;
-                        videoContainer.appendChild(suuntoBtn);
-                    }
-
+                    // 2. Kontroll-rader for eventuelle Ekstra spor
                     if (topp.ekstraSpor && topp.ekstraSpor.length > 0) {
                         topp.ekstraSpor.forEach(ekstra => {
                             const eTrack = new L.GPX('gpx/' + ekstra.fil, {
@@ -618,7 +600,40 @@
                         });
                     }
 
-                    // Last ned GPX område
+                    // 3. Videolenker
+                    if (topp.video && topp.video.length > 0) {
+                        topp.video.forEach(v => {
+                            const vBtn = document.createElement('a');
+                            vBtn.className = 'video-link-btn';
+                            vBtn.href = v.url;
+                            vBtn.target = '_blank';
+                            const ikon = v.type === 'photo' ? '📷' : '🎬';
+                            vBtn.innerHTML = `<span>${ikon}</span> ${v.tittel}${v.dato ? ` (${v.dato})` : ''}`;
+                            videoContainer.appendChild(vBtn);
+                        });
+                    }
+
+                    // 4. Strava
+                    if (topp.strava) {
+                        const sBtn = document.createElement('a');
+                        sBtn.className = 'video-link-btn strava-link-btn';
+                        sBtn.href = topp.strava;
+                        sBtn.target = '_blank';
+                        sBtn.innerHTML = `<span>🏃</span> Strava`;
+                        videoContainer.appendChild(sBtn);
+                    }
+
+                    // 5. Suunto
+                    if (topp.suunto) {
+                        const suuntoBtn = document.createElement('a');
+                        suuntoBtn.className = 'video-link-btn suunto-link-btn';
+                        suuntoBtn.href = topp.suunto;
+                        suuntoBtn.target = '_blank';
+                        suuntoBtn.innerHTML = `<span style="color:var(--suunto-red);">🔺</span> 3D visualisering - Suunto`;
+                        videoContainer.appendChild(suuntoBtn);
+                    }
+
+                    // 6. Last ned GPX
                     const dlArea = document.createElement('div');
                     dlArea.className = 'download-area';
                     dlArea.innerHTML = `<div class="download-header"><span>📥</span> Last ned GPX</div>`;
