@@ -200,7 +200,7 @@
         <div id="map"></div>
         <div id="loading-status">
             <span class="spinner"></span>
-            <span id="loading-text">Analyserer tursider...</span>
+            <span id="loading-text">Analyserer topptursider...</span>
         </div>
     </div>
 
@@ -243,6 +243,7 @@
         const bounds = L.latLngBounds();
         const lagredeSpor = [];
 
+        // Henter kildekoden til siden og analyserer alle fjellobjekter
         async function hentTurerFraSide(url, type) {
             try {
                 const response = await fetch(url);
@@ -253,13 +254,12 @@
 
                 const leggTilTopp = (navn, fil) => {
                     if (!fil) return;
+                    // Hent ren GPX-filnavn
                     const filnavn = fil.split('/').pop().trim();
                     if (filnavn && filnavn.endsWith('.gpx') && !funneTopper.some(t => t.fil === filnavn)) {
                         
-                        // Rensk opp navnet hvis det er hentet fra filnavn eller tittel
                         let rensetNavn = (navn && navn.trim()) ? navn.trim() : filnavn.replace('.gpx', '');
-                        
-                        // Fjern parenteser som (Sommer) eller (Vinter) hvis de eksisterer
+                        // Fjern parenteser dersom de har fulgt med fra tittelen
                         rensetNavn = rensetNavn.replace(/\s*\(Sommer\)/i, "").replace(/\s*\(Vinter\)/i, "").trim();
 
                         funneTopper.push({ 
@@ -270,11 +270,22 @@
                     }
                 };
 
-                // 1. Prioriter ekte lenker i HTML dersom de peker på ?fjell=
+                // 1. Ekstraher objekter definert i JS-arrays (f.eks: { navn: "Bønntuva", fil: "bonntuva.gpx" })
+                // Dekker både "navn" / "tittel" / "title" / "name" og "fil" / "gpx" / "path"
+                const regexNavnFil = /(?:navn|tittel|title|name)\s*:\s*["']([^"']+)["'][\s\S]*?(?:fil|gpx|path)\s*:\s*["']([^"']+\.gpx)["']/gi;
+                const regexFilNavn = /(?:fil|gpx|path)\s*:\s*["']([^"']+\.gpx)["'][\s\S]*?(?:navn|tittel|title|name)\s*:\s*["']([^"']+)["']/gi;
+
+                let match;
+                while ((match = regexNavnFil.exec(htmlText)) !== null) {
+                    leggTilTopp(match[1], match[2]);
+                }
+                while ((match = regexFilNavn.exec(htmlText)) !== null) {
+                    leggTilTopp(match[2], match[1]);
+                }
+
+                // 2. Sjekk om toppen er lenket opp via HTML <a>-tagger
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(htmlText, 'text/html');
-                
-                // Søk etter lenker med fjell-parameter direkte
                 doc.querySelectorAll('a[href*="fjell="]').forEach(a => {
                     const href = a.getAttribute('href');
                     const matchFjell = href.match(/fjell=([^&]+)/);
@@ -287,19 +298,7 @@
                     }
                 });
 
-                // 2. Direkte treff på JS-strukturer (navn og fil)
-                const regexNavnFil = /(?:navn|tittel|title|name)\s*:\s*["']([^"']+)["'][\s\S]*?(?:fil|gpx|path)\s*:\s*["']([^"']+\.gpx)["']/gi;
-                const regexFilNavn = /(?:fil|gpx|path)\s*:\s*["']([^"']+\.gpx)["'][\s\S]*?(?:navn|tittel|title|name)\s*:\s*["']([^"']+)["']/gi;
-
-                let m;
-                while ((m = regexNavnFil.exec(htmlText)) !== null) {
-                    leggTilTopp(m[1], m[2]);
-                }
-                while ((m = regexFilNavn.exec(htmlText)) !== null) {
-                    leggTilTopp(m[2], m[1]);
-                }
-
-                // 3. Fallback for gpx-filer som mangler tittel i JS
+                // 3. Fallback: Hent eventuelle GPX-referanser som ikke ble plukket opp av strukturerte felt
                 const alleGpx = htmlText.match(/["']([^"']+\.gpx)["']/gi) || [];
                 alleGpx.forEach(gpxStr => {
                     const renFil = gpxStr.replace(/["']/g, '');
@@ -344,9 +343,10 @@
         }
 
         async function initialiserKart() {
+            // Henter turlisten dynamisk direkte fra vinter.html og sommer.html
             const [vinterTopper, sommerTopper] = await Promise.all([
-                hentTurerFraSide('vinter.html', 'vinter'),
-                hentTurerFraSide('sommer.html', 'sommer')
+                hentTurerFraSide('https://larsgimse.github.io/topptur/vinter.html', 'vinter'),
+                hentTurerFraSide('https://larsgimse.github.io/topptur/sommer.html', 'sommer')
             ]);
 
             const alleTopper = [...vinterTopper, ...sommerTopper];
@@ -376,10 +376,11 @@
                     const ikon = topp.type === "vinter" ? "❄️" : "☀️";
                     const målside = topp.type === "sommer" ? "sommer.html" : "vinter.html";
 
-                    // Bygg eksakt URL som matcher sommer.html?fjell=Bønntuva
+                    // Genererer eksakt URL-struktur som matcher nettsiden (f.eks. sommer.html?fjell=B%C3%B8nntuva)
                     const url = `${målside}?fjell=${encodeURIComponent(topp.navn)}`;
 
                     if (!isTouchDevice) {
+                        // Desktop mouseover / hover-effekt
                         layer.bindTooltip(`
                             <b>${topp.navn}</b><br>
                             <span style="font-size:11px; color:#aaa; font-weight:normal;">${ikon} ${typeTekst}</span>
@@ -400,10 +401,12 @@
                             layer.closeTooltip();
                         });
 
+                        // Klikk åpner toppen direkte på riktig side
                         layer.on('click', function() {
                             window.location.href = url;
                         });
                     } else {
+                        // Mobil popup
                         layer.bindPopup(`
                             <b style="font-size:14px; color:#fff;">${topp.navn}</b><br>
                             <span style="font-size:11px; color:#aaa;">${ikon} ${typeTekst}</span><br>
