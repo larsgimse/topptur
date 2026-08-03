@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DIT Navntrekker</title>
+  <!-- Laster inn p5.js fra CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #191e28;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+    }
+    #canvas-container {
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="canvas-container"></div>
+
+  <script>
+    let nameSelection = ['Massimo','Marie','Tore','Øystein','Rune','Bjørn Håkon','May-Hege','Rolf-Erik','Ragnhild','Monica','Lars G','Julie','Lars N','Magnus','Sturla'];
+
+    let names = []; 
+    let availableNames = [];
+    let drawnBalls = [];
+    let history = [];
+
+    let cx, cy;
+    let drumRadius = 150;
+    let drumAngle = 0;
+    let currentSpinSpeed = 0.04;
+
+    let phase = 'welcome'; // welcome | idle | animating | done
+    let activeBall = null; 
+
+    let jackpotNames = []; 
+    let fireworks = [];    
+
+    let colors = [
+      [230, 50, 50],  [50, 180, 80],  [40, 120, 230], 
+      [240, 180, 30], [160, 60, 200], [230, 110, 30], 
+      [30, 200, 200], [230, 80, 150]
+    ];
+
+    let nextBtn = {x:0, y:0, w:160, h:44};
+    let backBtn = {x:0, y:0, w:44, h:44};
+
+    // Størrelse og posisjon på setup-modalen
+    let modalW = 580, modalH = 480;
+
+    // HTML-elementer for navneinput i velkomstvinduet
+    let nameInput, addBtn, clearBtn, startBtn;
+    let nameListContainer;
+
+    function setup() {
+      let canvas = createCanvas(1050, 580);
+      canvas.parent('canvas-container');
+      textAlign(CENTER, CENTER);
+
+      cx = width / 2 - 40;
+      cy = height / 2 - 30;
+
+      nameSelection.sort((a, b) => a.localeCompare(b, 'no'));
+
+      let btnY = height - 55;
+      nextBtn.x = cx - nextBtn.w / 2 + 25;
+      nextBtn.y = btnY;
+      backBtn.x = nextBtn.x - backBtn.w - 12;
+      backBtn.y = btnY;
+
+      setupDOMOverlay();
+    }
+
+    // Bygger input-felt og knapper med HTML for enkel skriving og sletting
+    function setupDOMOverlay() {
+      let mX = width / 2 - modalW / 2;
+      let mY = height / 2 - modalH / 2;
+
+      // Tekstfelt
+      nameInput = createInput('');
+      nameInput.attribute('placeholder', 'Skriv inn et navn...');
+      nameInput.style('width', '240px');
+      nameInput.style('padding', '8px 12px');
+      nameInput.style('border-radius', '6px');
+      nameInput.style('border', '1px solid #46556e');
+      nameInput.style('background', '#19202d');
+      nameInput.style('color', '#fff');
+      nameInput.style('font-size', '14px');
+      nameInput.style('outline', 'none');
+
+      // Legg til-knapp
+      addBtn = createButton('Legg til');
+      styleButton(addBtn, '#28a745', '#fff');
+      addBtn.mousePressed(addNameFromInput);
+      
+      // Enter-tast i tekstfeltet
+      nameInput.elt.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          addNameFromInput();
+        }
+      });
+
+      // Tøm liste-knapp
+      clearBtn = createButton('Tøm liste');
+      styleButton(clearBtn, '#dc3545', '#fff');
+      clearBtn.mousePressed(() => {
+        nameSelection = [];
+        renderNameList();
+      });
+
+      // Start-knapp
+      startBtn = createButton('Start trekning 🎰');
+      styleButton(startBtn, '#ffc107', '#000', true);
+      startBtn.mousePressed(() => {
+        if (nameSelection.length > 0) {
+          hideDOMOverlay();
+          initLottery();
+        }
+      });
+
+      // Beholder for navnelisten (scrollbar)
+      nameListContainer = createDiv('');
+      nameListContainer.style('width', `${modalW - 70}px`);
+      nameListContainer.style('height', '230px');
+      nameListContainer.style('overflow-y', 'auto');
+      nameListContainer.style('display', 'flex');
+      nameListContainer.style('flex-wrap', 'wrap');
+      nameListContainer.style('gap', '8px');
+      nameListContainer.style('align-content', 'flex-start');
+      nameListContainer.style('padding', '10px');
+      nameListContainer.style('background', '#1a2332');
+      nameListContainer.style('border-radius', '8px');
+      nameListContainer.style('border', '1px solid #323d52');
+
+      positionDOMOverlay();
+      renderNameList();
+    }
+
+    function styleButton(btn, bgColor, textColor, isBig = false) {
+      btn.style('background-color', bgColor);
+      btn.style('color', textColor);
+      btn.style('border', 'none');
+      btn.style('padding', isBig ? '10px 24px' : '8px 14px');
+      btn.style('border-radius', '6px');
+      btn.style('font-weight', 'bold');
+      btn.style('cursor', 'pointer');
+      btn.style('font-size', isBig ? '16px' : '13px');
+      btn.style('transition', '0.2s');
+    }
+
+    function positionDOMOverlay() {
+      let container = select('#canvas-container').elt;
+      let rect = container.getBoundingClientRect();
+
+      let mX = rect.left + width / 2 - modalW / 2;
+      let mY = rect.top + height / 2 - modalH / 2;
+
+      nameInput.position(mX + 35, mY + 90);
+      addBtn.position(mX + 285, mY + 90);
+      clearBtn.position(mX + 365, mY + 90);
+      nameListContainer.position(mX + 35, mY + 140);
+      startBtn.position(mX + modalW / 2 - 80, mY + modalH - 60);
+    }
+
+    function renderNameList() {
+      nameListContainer.html('');
+      nameSelection.sort((a, b) => a.localeCompare(b, 'no'));
+
+      nameSelection.forEach((name, index) => {
+        let tag = createDiv('');
+        tag.style('background', '#283447');
+        tag.style('color', '#e0e6ed');
+        tag.style('padding', '5px 10px');
+        tag.style('border-radius', '15px');
+        tag.style('font-size', '13px');
+        tag.style('display', 'flex');
+        tag.style('align-items', 'center');
+        tag.style('gap', '8px');
+        tag.style('border', '1px solid #3b4c66');
+
+        let nameSpan = createSpan(name);
+        
+        let removeBtn = createSpan('×');
+        removeBtn.style('color', '#ff6b6b');
+        removeBtn.style('font-weight', 'bold');
+        removeBtn.style('cursor', 'pointer');
+        removeBtn.style('font-size', '16px');
+        removeBtn.mousePressed(() => {
+          nameSelection.splice(index, 1);
+          renderNameList();
+        });
+
+        tag.child(nameSpan);
+        tag.child(removeBtn);
+        nameListContainer.child(tag);
+      });
+
+      if (nameSelection.length === 0) {
+        startBtn.style('opacity', '0.5');
+        startBtn.style('cursor', 'not-allowed');
+      } else {
+        startBtn.style('opacity', '1');
+        startBtn.style('cursor', 'pointer');
+      }
+    }
+
+    function addNameFromInput() {
+      let val = nameInput.value().trim();
+      if (val !== '' && !nameSelection.includes(val)) {
+        nameSelection.push(val);
+        nameInput.value('');
+        renderNameList();
+      }
+    }
+
+    function hideDOMOverlay() {
+      nameInput.hide();
+      addBtn.hide();
+      clearBtn.hide();
+      startBtn.hide();
+      nameListContainer.hide();
+    }
+
+    function windowResized() {
+      if (phase === 'welcome') {
+        positionDOMOverlay();
+      }
+    }
+
+    function initLottery() {
+      names = [...nameSelection];
+
+      if (names.length === 0) return; 
+
+      availableNames = [];
+      drawnBalls = [];
+      history = [];
+
+      let shuffled = shuffle([...names]);
+      let jackpotCount = min(3, names.length); 
+      jackpotNames = shuffled.slice(0, jackpotCount);
+
+      for (let i = 0; i < names.length; i++) {
+        availableNames.push(createBallObject(names[i], i));
+      }
+
+      phase = 'idle';
+    }
+
+    function createBallObject(name, index) {
+      let col = colors[index % colors.length];
+      let maxDistance = drumRadius - 28;
+      let r = sqrt(random(1)) * maxDistance; 
+      let a = random(TWO_PI);
+      
+      return {
+        name: name,
+        color: col,
+        x: cos(a) * r,
+        y: sin(a) * r,
+        vx: random(-1, 1),
+        vy: random(-1, 1),
+        size: 46,
+        isJackpot: jackpotNames.includes(name)
+      };
+    }
+
+    function startDraw() {
+      if (availableNames.length === 0) {
+        phase = 'done';
+        return;
+      }
+
+      phase = 'animating';
+
+      let idx = floor(random(availableNames.length));
+      let picked = availableNames.splice(idx, 1)[0];
+
+      let targetX = width - 135;
+      let targetY = 130 + drawnBalls.length * 28;
+
+      activeBall = {
+        name: picked.name,
+        color: picked.color,
+        progress: 0,
+        targetX: targetX,
+        targetY: targetY,
+        isJackpot: picked.isJackpot
+      };
+
+      history.push({
+        ball: picked,
+        availableSnapshot: [...availableNames],
+        drawnSnapshot: [...drawnBalls]
+      });
+    }
+
+    function goBack() {
+      if (history.length === 0 || phase === 'animating') return;
+      
+      let lastState = history.pop();
+      availableNames = lastState.availableSnapshot;
+      drawnBalls = lastState.drawnSnapshot;
+      
+      phase = 'idle';
+      activeBall = null;
+    }
+
+    function triggerFireworks() {
+      for (let i = 0; i < 5; i++) {
+        let fx = random(width * 0.2, width * 0.8);
+        let fy = random(height * 0.2, height * 0.5);
+        let count = 50;
+        for (let j = 0; j < count; j++) {
+          let angle = random(TWO_PI);
+          let speed = random(1.5, 5);
+          fireworks.push({
+            x: fx,
+            y: fy,
+            vx: cos(angle) * speed,
+            vy: sin(angle) * speed,
+            alpha: 255,
+            color: [random(200, 255), random(100, 255), random(50, 255)],
+            size: random(4, 7)
+          });
+        }
+      }
+    }
+
+    function updateAndDrawFireworks() {
+      for (let i = fireworks.length - 1; i >= 0; i--) {
+        let p = fireworks[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        
+        p.vy += 0.07; 
+        p.alpha -= 2.5;
+
+        fill(p.color[0], p.color[1], p.color[2], p.alpha);
+        noStroke();
+        ellipse(p.x, p.y, p.size);
+
+        if (p.alpha <= 0) {
+          fireworks.splice(i, 1);
+        }
+      }
+    }
+
+    function draw() {
+      background(25, 30, 40);
+      drawBackgroundPattern();
+
+      drawLeftPoster();
+      drawRightPoster();
+
+      drawDrumAndBalls();
+      drawTransparentTube();
+
+      if (phase === 'animating' && activeBall) {
+        updateAndDrawActiveBall();
+      }
+
+      drawUI();
+      updateAndDrawFireworks();
+
+      if (phase === 'welcome') {
+        drawWelcomeModal();
+      }
+    }
+
+    function drawBackgroundPattern() {
+      stroke(35, 42, 55);
+      strokeWeight(2);
+      for (let x = 0; x < width; x += 40) {
+        line(x, 0, x, height);
+      }
+    }
+
+    function drawLeftPoster() {
+      push();
+      let px = 25;
+      let py = 80;
+      let pw = 210;
+      let ph = 380;
+
+      fill(32, 40, 54);
+      stroke(255, 215, 0, 180);
+      strokeWeight(2);
+      rect(px, py, pw, ph, 12);
+
+      noFill();
+      stroke(255, 215, 0, 80);
+      strokeWeight(1);
+      rect(px + 6, py + 6, pw - 12, ph - 12, 8);
+
+      fill(255, 215, 0);
+      noStroke();
+      textSize(18); textStyle(BOLD);
+      text("🎰 JACKPOT!", px + pw/2, py + 35);
+
+      stroke(255, 215, 0, 100);
+      strokeWeight(1);
+      line(px + 20, py + 55, px + pw - 20, py + 55);
+
+      noStroke();
+      fill(220, 230, 245);
+      textSize(13); textStyle(NORMAL);
+      textAlign(CENTER, TOP);
+      let msg = "Gjør deg klar!\n\nI løpet av trekningen skjuler det seg\n 3 tilfeldige\nJACKPOTTER!\n\nDa blir det ekte fyrverkeri og ekstra stas! 🎉";
+      text(msg, px + 15, py + 75, pw - 30);
+
+      let revealedJackpots = drawnBalls.filter(b => b.isJackpot).length;
+      fill(20, 26, 36);
+      stroke(255, 215, 0, 120);
+      strokeWeight(1);
+      rect(px + 20, py + ph - 75, pw - 40, 50, 8);
+
+      noStroke();
+      fill(255, 215, 0);
+      textSize(12); textStyle(BOLD);
+      text("AVSLØRT HITTIL", px + pw/2, py + ph - 68);
+      textSize(16);
+      text("💥 " + revealedJackpots + " / " + jackpotNames.length + " 💥", px + pw/2, py + ph - 45);
+
+      pop();
+    }
+
+    function drawRightPoster() {
+      push();
+      let px = width - 235;
+      let py = 80;
+      let pw = 210;
+      let ph = 450;
+
+      fill(32, 40, 54);
+      stroke(70, 85, 110);
+      strokeWeight(2);
+      rect(px, py, pw, ph, 12);
+
+      fill(255);
+      noStroke();
+      textSize(18); textStyle(BOLD);
+      text("Trukket (" + drawnBalls.length + "/" + names.length + ")", px + pw/2, py + 25);
+
+      stroke(70, 85, 110);
+      strokeWeight(1);
+      line(px + 15, py + 42, px + pw - 15, py + 42);
+
+      textAlign(LEFT, CENTER);
+      textSize(13);
+      
+      for (let i = 0; i < drawnBalls.length; i++) {
+        let b = drawnBalls[i];
+        let entryY = py + 60 + i * 25;
+
+        fill(b.color[0], b.color[1], b.color[2]);
+        noStroke();
+        ellipse(px + 22, entryY, 14);
+
+        if (b.isJackpot) {
+          fill(255, 215, 0);
+          textStyle(BOLD);
+          text((i + 1) + ". " + b.name + " 🎉", px + 36, entryY);
+        } else {
+          fill(210, 220, 235);
+          textStyle(NORMAL);
+          text((i + 1) + ". " + b.name, px + 36, entryY);
+        }
+      }
+
+      pop();
+    }
+
+    function drawDrumAndBalls() {
+      push();
+      translate(cx, cy);
+
+      let targetSpeed = map(sin(frameCount * 0.02), -1, 1, 0.02, 0.06);
+      
+      if (phase === 'animating') {
+        targetSpeed += 0.025;
+      }
+      
+      currentSpinSpeed = lerp(currentSpinSpeed, targetSpeed, 0.05);
+      drumAngle += currentSpinSpeed;
+
+      // Stativ
+      stroke(60, 70, 85);
+      strokeWeight(8);
+      line(0, 0, -80, drumRadius + 40);
+      line(0, 0, 80, drumRadius + 40);
+
+      // Roterende eiker
+      push();
+      rotate(drumAngle);
+      stroke(255, 255, 255, 30);
+      strokeWeight(3);
+      for (let i = 0; i < 4; i++) {
+        rotate(HALF_PI);
+        line(0, 0, drumRadius - 10, 0);
+      }
+      pop();
+
+      // Krafter på ballene
+      for (let b of availableNames) {
+        let d = dist(0, 0, b.x, b.y);
+        let angle = atan2(b.y, b.x);
+
+        b.vy += 0.38;
+
+        let maxR = drumRadius - b.size / 2 - 2;
+        let isClimbingSide = (b.x > -20 && b.y < 40);
+
+        if (d >= maxR - 25) {
+          let tangentX = -sin(angle);
+          let tangentY = cos(angle);
+          let wallDrive = currentSpinSpeed * 30;
+          
+          b.vx += tangentX * wallDrive;
+          b.vy += tangentY * wallDrive;
+
+          if (isClimbingSide && currentSpinSpeed < 0.048) {
+            let dropFactor = map(currentSpinSpeed, 0.02, 0.048, 1.0, 0.0);
+            b.vx *= (1 - dropFactor * 0.5);
+            b.vy *= (1 - dropFactor * 0.5);
+            b.vx -= dropFactor * 1.5; 
+            b.vy += dropFactor * 0.8;
+          }
+        }
+
+        b.vx += random(-0.2, 0.2);
+        b.vy += random(-0.2, 0.2);
+
+        b.x += b.vx;
+        b.y += b.vy;
+
+        b.vx *= 0.92;
+        b.vy *= 0.92;
+      }
+
+      // Kollisjoner
+      for (let i = 0; i < availableNames.length; i++) {
+        for (let j = i + 1; j < availableNames.length; j++) {
+          let b1 = availableNames[i];
+          let b2 = availableNames[j];
+
+          let dx = b2.x - b1.x;
+          let dy = b2.y - b1.y;
+          let distance = sqrt(dx * dx + dy * dy);
+          let minDist = (b1.size + b2.size) / 2;
+
+          if (distance < minDist && distance > 0) {
+            let nx = dx / distance;
+            let ny = dy / distance;
+
+            let overlap = 0.5 * (minDist - distance);
+            b1.x -= nx * overlap;
+            b1.y -= ny * overlap;
+            b2.x += nx * overlap;
+            b2.y += ny * overlap;
+
+            let kx = b1.vx - b2.vx;
+            let ky = b1.vy - b2.vy;
+            let p = 2 * (nx * kx + ny * ky) / 2;
+
+            b1.vx -= p * nx * 0.8;
+            b1.vy -= p * ny * 0.8;
+            b2.vx += p * nx * 0.8;
+            b2.vy += p * ny * 0.8;
+          }
+        }
+      }
+
+      // Veggkollisjon
+      for (let b of availableNames) {
+        let d = dist(0, 0, b.x, b.y);
+        let maxR = drumRadius - b.size / 2 - 2;
+
+        if (d > maxR) {
+          let angle = atan2(b.y, b.x);
+          b.x = cos(angle) * maxR;
+          b.y = sin(angle) * maxR;
+
+          let nx = cos(angle);
+          let ny = sin(angle);
+
+          let dotProduct = b.vx * nx + b.vy * ny;
+          b.vx = (b.vx - 1.6 * dotProduct * nx) * 0.6;
+          b.vy = (b.vy - 1.6 * dotProduct * ny) * 0.6;
+        }
+
+        drawSingleBall(b.x, b.y, b.size, b.color, b.name);
+      }
+
+      // Trommelglass
+      noFill();
+      stroke(255, 255, 255, 60);
+      strokeWeight(12);
+      ellipse(0, 0, drumRadius * 2 + 10);
+
+      stroke(255, 255, 255, 140);
+      strokeWeight(4);
+      ellipse(0, 0, drumRadius * 2);
+
+      // Lysrefleksjon
+      stroke(255, 255, 255, 80);
+      strokeWeight(6);
+      arc(0, 0, drumRadius * 1.8, drumRadius * 1.8, -PI * 0.75, -PI * 0.25);
+
+      // Nav
+      fill(80, 90, 105);
+      stroke(30);
+      strokeWeight(2);
+      ellipse(0, 0, 30);
+
+      pop();
+    }
+
+    function drawTransparentTube() {
+      push();
+      noFill();
+      
+      let startX = cx;
+      let startY = cy + drumRadius;
+      let midX = cx + 180;
+      let midY = cy + drumRadius + 50;
+      let endX = width - 240;
+      let endY = height - 100;
+
+      stroke(255, 255, 255, 70);
+      strokeWeight(50);
+      bezier(startX, startY, startX, startY + 60, midX, midY, endX, endY);
+
+      stroke(20, 25, 35);
+      strokeWeight(40);
+      bezier(startX, startY, startX, startY + 60, midX, midY, endX, endY);
+
+      stroke(255, 255, 255, 120);
+      strokeWeight(2);
+      bezier(startX - 16, startY, startX - 16, startY + 50, midX - 10, midY - 10, endX, endY - 16);
+
+      pop();
+    }
+
+    function updateAndDrawActiveBall() {
+      activeBall.progress += 0.02;
+
+      let startX = cx;
+      let startY = cy + drumRadius;
+      let midX = cx + 180;
+      let midY = cy + drumRadius + 50;
+      let endX = width - 240;
+      let endY = height - 100;
+
+      let currentX, currentY;
+
+      if (activeBall.progress < 0.7) {
+        let t = map(activeBall.progress, 0, 0.7, 0, 1);
+        currentX = bezierPoint(startX, startX, midX, endX, t);
+        currentY = bezierPoint(startY, startY + 60, midY, endY, t);
+      } else {
+        let t = map(activeBall.progress, 0.7, 1.0, 0, 1);
+        currentX = lerp(endX, activeBall.targetX, t);
+        currentY = lerp(endY, activeBall.targetY, t);
+      }
+
+      drawSingleBall(currentX, currentY, 46, activeBall.color, activeBall.name);
+
+      if (activeBall.progress >= 1.0) {
+        drawnBalls.push({
+          name: activeBall.name,
+          color: activeBall.color,
+          x: activeBall.targetX,
+          y: activeBall.targetY,
+          isJackpot: activeBall.isJackpot
+        });
+
+        if (activeBall.isJackpot) {
+          triggerFireworks();
+        }
+
+        activeBall = null;
+        phase = (availableNames.length === 0) ? 'done' : 'idle';
+      }
+    }
+
+    function drawSingleBall(x, y, size, col, nameText) {
+      push();
+      translate(x, y);
+
+      noStroke();
+      fill(0, 0, 0, 60);
+      ellipse(4, 5, size);
+
+      fill(col[0], col[1], col[2]);
+      stroke(255, 255, 255, 180);
+      strokeWeight(2);
+      ellipse(0, 0, size);
+
+      let innerDiameter = size * 0.72;
+      fill(255);
+      noStroke();
+      ellipse(0, 0, innerDiameter);
+
+      fill(20);
+      textStyle(BOLD);
+
+      let maxAllowedWidth = innerDiameter - 4;
+      let currentFontSize = 12;
+      textSize(currentFontSize);
+      
+      while (textWidth(nameText) > maxAllowedWidth && currentFontSize > 6) {
+        currentFontSize -= 0.5;
+        textSize(currentFontSize);
+      }
+      
+      text(nameText, 0, 1);
+
+      fill(255, 255, 255, 130);
+      ellipse(-size * 0.22, -size * 0.22, size * 0.25);
+
+      pop();
+    }
+
+    function drawUI() {
+      fill(15, 20, 28, 200);
+      noStroke();
+      rect(cx - 240, 15, 480, 52, 10);
+
+      if (phase === 'done') {
+        fill(255, 215, 0);
+        textSize(20); textStyle(BOLD);
+        text("Alle navn er trukket! 🎉", cx, 41);
+      } else if (drawnBalls.length > 0) {
+        let last = drawnBalls[drawnBalls.length - 1];
+        
+        if (last.isJackpot) {
+          fill(255, 215, 0);
+          textSize(22); textStyle(BOLD);
+          text("💥 JACKPOT! " + last.name + " 💥", cx, 41);
+        } else {
+          fill(255, 215, 0);
+          textSize(24); textStyle(BOLD);
+          text(last.name, cx, 41);
+        }
+      } else {
+        fill(180, 190, 205);
+        textSize(16); textStyle(NORMAL);
+        text("Trykk på knappen for å trekke første ball!", cx, 41);
+      }
+
+      drawButtons();
+    }
+
+    function drawButtons() {
+      let isLocked = phase === 'animating' || phase === 'welcome';
+      let canBack = history.length > 0 && !isLocked;
+
+      let hoverBack = mouseX > backBtn.x && mouseX < backBtn.x + backBtn.w
+                   && mouseY > backBtn.y && mouseY < backBtn.y + backBtn.h;
+
+      fill(canBack ? (hoverBack ? color(200, 70, 60) : color(150, 50, 40)) : color(60, 65, 75));
+      stroke(canBack ? color(255, 150, 140) : color(90));
+      strokeWeight(2);
+      rect(backBtn.x, backBtn.y, backBtn.w, backBtn.h, 8);
+      
+      noStroke();
+      fill(canBack ? 255 : 120);
+      textSize(18); textStyle(BOLD);
+      text("←", backBtn.x + backBtn.w / 2, backBtn.y + backBtn.h / 2);
+
+      let hoverNext = mouseX > nextBtn.x && mouseX < nextBtn.x + nextBtn.w
+                   && mouseY > nextBtn.y && mouseY < nextBtn.y + nextBtn.h;
+
+      let isDone = (phase === 'done');
+
+      fill(!isLocked && !isDone ? (hoverNext ? color(40, 200, 100) : color(30, 160, 80)) : color(60, 70, 80));
+      stroke(!isLocked && !isDone ? color(150, 255, 180) : color(90));
+      strokeWeight(2);
+      rect(nextBtn.x, nextBtn.y, nextBtn.w, nextBtn.h, 10);
+
+      noStroke();
+      fill(!isLocked && !isDone ? 255 : 140);
+      textSize(15); textStyle(BOLD);
+      
+      let btnLabel = "Trekk ball 🎰";
+      if (phase === 'animating') btnLabel = "Trekker...";
+      if (isDone) btnLabel = "Ferdig! ✨";
+
+      text(btnLabel, nextBtn.x + nextBtn.w / 2, nextBtn.y + nextBtn.h / 2);
+      textStyle(NORMAL);
+    }
+
+    function drawWelcomeModal() {
+      push();
+      fill(0, 0, 0, 190);
+      rect(0, 0, width, height);
+
+      let mX = width / 2 - modalW / 2;
+      let mY = height / 2 - modalH / 2;
+
+      // Bakgrunnsboks
+      fill(25, 32, 45);
+      stroke(255, 215, 0);
+      strokeWeight(2);
+      rect(mX, mY, modalW, modalH, 15);
+
+      // Overskrift og undertekst
+      noStroke();
+      fill(255, 215, 0);
+      textSize(22); textStyle(BOLD);
+      textAlign(CENTER, TOP);
+      text("Legg til deltakere 🎰", width / 2, mY + 20);
+
+      fill(200, 210, 225);
+      textSize(13); textStyle(NORMAL);
+      text("Legg til eller fjern navn som skal være med i trekningen:", width / 2, mY + 50);
+
+      pop();
+    }
+
+    function mousePressed() {
+      if (phase === 'welcome') return;
+
+      let overNext = mouseX > nextBtn.x && mouseX < nextBtn.x + nextBtn.w
+                   && mouseY > nextBtn.y && mouseY < nextBtn.y + nextBtn.h;
+      let overBack = mouseX > backBtn.x && mouseX < backBtn.x + backBtn.w
+                   && mouseY > backBtn.y && mouseY < backBtn.y + backBtn.h;
+
+      if (overBack && history.length > 0 && phase !== 'animating') {
+        goBack();
+        return;
+      }
+
+      if (overNext && phase !== 'animating' && phase !== 'done') {
+        startDraw();
+      }
+    }
+
+    function keyPressed() {
+      if (phase !== 'welcome' && (key === ' ' || keyCode === ENTER)) {
+        if (phase !== 'animating' && phase !== 'done') {
+          startDraw();
+        }
+      }
+    }
+  </script>
+</body>
+</html>
