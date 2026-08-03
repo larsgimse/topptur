@@ -200,7 +200,7 @@
         <div id="map"></div>
         <div id="loading-status">
             <span class="spinner"></span>
-            <span id="loading-text">Leser inn const topper...</span>
+            <span id="loading-text">Leser inn hovedspor fra const topper...</span>
         </div>
     </div>
 
@@ -251,44 +251,36 @@
                 
                 const funneTopper = [];
 
-                // 1. Søk etter `const topper = [...]` eller `var topper = [...]` eller `const sommerTurer = [...]` etc.
+                // 1. Identifiser hele const topper = [...] matrisen
                 const topperBlockMatch = htmlText.match(/(?:const|let|var)\s+\w*topper\w*\s*=\s*(\[[\s\S]*?\]);/i) || 
                                          htmlText.match(/(?:const|let|var)\s+\w*turer\w*\s*=\s*(\[[\s\S]*?\]);/i);
 
                 if (topperBlockMatch && topperBlockMatch[1]) {
                     const blockText = topperBlockMatch[1];
-                    // Ekstraher hvert enkelt objekt i arrayen
+                    // Del opp matrisen per topp-objekt {}
                     const objectRegex = /\{[\s\S]*?\}/g;
                     let objMatch;
                     
                     while ((objMatch = objectRegex.exec(blockText)) !== null) {
                         const objStr = objMatch[0];
                         
-                        // Hent navn/tittel
+                        // Hent navn
                         const navnMatch = objStr.match(/(?:navn|tittel|title|name)\s*:\s*["']([^"']+)["']/i);
-                        // Hent GPX-fil
-                        const gpxMatch = objStr.match(/(?:gpx|fil|path)\s*:\s*["']([^"']+\.gpx)["']/i) || 
+                        
+                        // Hent BARE den FØRSTE gpx-filen som defineres i objektet (hovedsporet)
+                        const gpxMatch = objStr.match(/(?:gpx|fil|path)\s*:\s*(?:\[\s*["']([^"']+\.gpx)["']|["']([^"']+\.gpx)["'])/i) ||
                                          objStr.match(/["']([^"']+\.gpx)["']/i);
 
                         if (gpxMatch) {
-                            const filnavn = gpxMatch[1].split('/').pop().trim();
+                            // Håndter enten første match fra matrise [ ... ] eller fra en enkel streng
+                            const funnetFil = gpxMatch[1] || gpxMatch[2] || gpxMatch[0].replace(/["']/g, '');
+                            const filnavn = funnetFil.split('/').pop().trim();
                             const fjellNavn = navnMatch ? navnMatch[1].trim() : filnavn.replace('.gpx', '');
                             
-                            if (!funneTopper.some(t => t.fil === filnavn)) {
+                            // Sørg for at hver topp kun legges til én gang per side
+                            if (!funneTopper.some(t => t.navn === fjellNavn)) {
                                 funneTopper.push({ navn: fjellNavn, fil: filnavn, type });
                             }
-                        }
-                    }
-                }
-
-                // 2. Fallback hvis arrayen brukte annen navngivning eller format:
-                if (funneTopper.length === 0) {
-                    const regexGenerisk = /\{\s*(?:[^{}]*?)(?:navn|tittel)\s*:\s*["']([^"']+)["'][\s\S]*?(?:fil|gpx)\s*:\s*["']([^"']+\.gpx)["']/gi;
-                    let m;
-                    while ((m = regexGenerisk.exec(htmlText)) !== null) {
-                        const filnavn = m[2].split('/').pop().trim();
-                        if (!funneTopper.some(t => t.fil === filnavn)) {
-                            funneTopper.push({ navn: m[1].trim(), fil: filnavn, type });
                         }
                     }
                 }
@@ -317,7 +309,7 @@
             loadedCount++;
             const statusText = document.getElementById('loading-text');
             if (statusText) {
-                statusText.textContent = `Laster inn spor... ${loadedCount}/${totalFiles}`;
+                statusText.textContent = `Laster inn hovedspor... ${loadedCount}/${totalFiles}`;
             }
 
             if (loadedCount >= totalFiles) {
@@ -345,7 +337,7 @@
                 return;
             }
 
-            document.getElementById('loading-text').textContent = `Laster inn spor... 0/${totalFiles}`;
+            document.getElementById('loading-text').textContent = `Laster inn hovedspor... 0/${totalFiles}`;
 
             alleTopper.forEach(topp => {
                 const track = new L.GPX('gpx/' + topp.fil, gpxOptions);
@@ -363,7 +355,6 @@
                     const ikon = topp.type === "vinter" ? "❄️" : "☀️";
                     const målside = topp.type === "sommer" ? "sommer.html" : "vinter.html";
 
-                    // Bygg eksakt URL med navnet slikt det er i const topper
                     const url = `${målside}?fjell=${encodeURIComponent(topp.navn)}`;
 
                     if (!isTouchDevice) {
