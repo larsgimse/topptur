@@ -228,54 +228,49 @@
                 if (!response.ok) throw new Error(`Kunne ikke hente ${url}`);
                 const htmlText = await response.text();
                 
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(htmlText, 'text/html');
                 const funneTopper = [];
 
                 const leggTilTopp = (navn, fil) => {
                     if (!fil) return;
                     const filnavn = fil.split('/').pop().trim();
-                    if (filnavn && !funneTopper.some(t => t.fil === filnavn)) {
+                    if (filnavn && filnavn.endsWith('.gpx') && !funneTopper.some(t => t.fil === filnavn)) {
                         funneTopper.push({ 
-                            navn: navn ? navn.trim() : filnavn.replace('.gpx', ''), 
+                            navn: (navn && navn.trim()) ? navn.trim() : filnavn.replace('.gpx', ''), 
                             fil: filnavn, 
                             type 
                         });
                     }
                 };
 
-                // Sjekk 1: Alle vanlige HTML-lenker som peker til .gpx
-                const lenker = doc.querySelectorAll('a[href*=".gpx"]');
-                lenker.forEach(a => {
+                // 1. Sjekk vanlige HTML-lenker
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+                doc.querySelectorAll('a[href*=".gpx"]').forEach(a => {
                     leggTilTopp(a.textContent, a.getAttribute('href'));
                 });
 
-                // Sjekk 2: Universell parsing av JavaScript-objekter i kildekoden
-                const scripts = doc.querySelectorAll('script');
-                scripts.forEach(script => {
-                    const innhold = script.textContent;
+                // 2. Direkte treff på fil/navn i Javascript
+                const regexFilNavn = /(?:fil|gpx|path)\s*:\s*["']([^"']+\.gpx)["'][\s\S]*?(?:navn|tittel|title|name)\s*:\s*["']([^"']+)["']/gi;
+                const regexNavnFil = /(?:navn|tittel|title|name)\s*:\s*["']([^"']+)["'][\s\S]*?(?:fil|gpx|path)\s*:\s*["']([^"']+\.gpx)["']/gi;
 
-                    // Fanger opp alle JS-objekter { ... }
-                    const objectRegex = /\{[^{}]*?\}/g;
-                    let match;
+                let m;
+                while ((m = regexFilNavn.exec(htmlText)) !== null) {
+                    leggTilTopp(m[2], m[1]);
+                }
+                while ((m = regexNavnFil.exec(htmlText)) !== null) {
+                    leggTilTopp(m[1], m[2]);
+                }
 
-                    while ((match = objectRegex.exec(innhold)) !== null) {
-                        const objStr = match[0];
-                        
-                        // Sjekker om objektet inneholder en referanse til en GPX-fil
-                        const gpxMatch = objStr.match(/(?:fil|gpx|path)\s*:\s*["']([^"']+\.gpx)["']/i);
-                        if (gpxMatch) {
-                            const fil = gpxMatch[1];
-                            // Søker etter navnet i samme objekt
-                            const navnMatch = objStr.match(/(?:navn|tittel|title|name)\s*:\s*["']([^"']+)["']/i);
-                            const navn = navnMatch ? navnMatch[1] : fil.split('/').pop().replace('.gpx', '');
-                            
-                            leggTilTopp(navn, fil);
-                        }
-                    }
+                // 3. Fallback: Hent absolutt alle .gpx-referanser i kildekoden
+                const alleGpx = htmlText.match(/["']([^"']+\.gpx)["']/gi) || [];
+                alleGpx.forEach(gpxStr => {
+                    const renFil = gpxStr.replace(/["']/g, '');
+                    leggTilTopp(null, renFil);
                 });
 
+                console.log(`Hentet ${funneTopper.length} ${type}-topper fra ${url}`);
                 return funneTopper;
+
             } catch (error) {
                 console.error("Feil ved henting av " + type + "-siden:", error);
                 return [];
