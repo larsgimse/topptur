@@ -94,39 +94,20 @@
             background: var(--bg-color);
         }
 
-        /* OPPDATERT LASTEINDIKATOR */
         #loading-status {
             position: absolute;
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(26, 26, 26, 0.95);
-            padding: 10px 18px;
-            border-radius: 24px;
+            padding: 8px 14px;
+            border-radius: 20px;
             border: 1px solid #333;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             z-index: 1000;
             pointer-events: none;
             transition: opacity 0.5s ease;
             white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-
-        .spinner {
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(255,255,255,0.2);
-            border-top-color: var(--highlight-orange);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            display: inline-block;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
         }
 
         .leaflet-popup-content-wrapper {
@@ -199,10 +180,7 @@
 
     <div id="map-container">
         <div id="map"></div>
-        <div id="loading-status">
-            <span class="spinner"></span>
-            <span id="loading-text">Analyserer tursider...</span>
-        </div>
+        <div id="loading-status">Henter turer... <span id="progress">0</span>/<span id="total">0</span></div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -250,48 +228,49 @@
                 if (!response.ok) throw new Error(`Kunne ikke hente ${url}`);
                 const htmlText = await response.text();
                 
-                const funneTopper = [];
-
-                const leggTilTopp = (navn, fil) => {
-                    if (!fil) return;
-                    const filnavn = fil.split('/').pop().trim();
-                    if (filnavn && filnavn.endsWith('.gpx') && !funneTopper.some(t => t.fil === filnavn)) {
-                        funneTopper.push({ 
-                            navn: (navn && navn.trim()) ? navn.trim() : filnavn.replace('.gpx', ''), 
-                            fil: filnavn, 
-                            type 
-                        });
-                    }
-                };
-
-                // 1. Sjekk vanlige HTML-lenker
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(htmlText, 'text/html');
-                doc.querySelectorAll('a[href*=".gpx"]').forEach(a => {
-                    leggTilTopp(a.textContent, a.getAttribute('href'));
+                const funneTopper = [];
+
+                // Sjekk 1: Alle vanlige lenker som peker til GPX
+                const lenker = doc.querySelectorAll('a[href*=".gpx"]');
+                lenker.forEach(a => {
+                    const filbane = a.getAttribute('href');
+                    const filnavn = filbane.split('/').pop();
+                    const navn = a.textContent.trim() || filnavn.replace('.gpx', '');
+                    if (!funneTopper.some(t => t.fil === filnavn)) {
+                        funneTopper.push({ navn, fil: filnavn, type });
+                    }
                 });
 
-                // 2. Direkte treff på fil/navn i Javascript
-                const regexFilNavn = /(?:fil|gpx|path)\s*:\s*["']([^"']+\.gpx)["'][\s\S]*?(?:navn|tittel|title|name)\s*:\s*["']([^"']+)["']/gi;
-                const regexNavnFil = /(?:navn|tittel|title|name)\s*:\s*["']([^"']+)["'][\s\S]*?(?:fil|gpx|path)\s*:\s*["']([^"']+\.gpx)["']/gi;
-
-                let m;
-                while ((m = regexFilNavn.exec(htmlText)) !== null) {
-                    leggTilTopp(m[2], m[1]);
-                }
-                while ((m = regexNavnFil.exec(htmlText)) !== null) {
-                    leggTilTopp(m[1], m[2]);
-                }
-
-                // 3. Fallback: Hent absolutt alle .gpx-referanser i kildekoden
-                const alleGpx = htmlText.match(/["']([^"']+\.gpx)["']/gi) || [];
-                alleGpx.forEach(gpxStr => {
-                    const renFil = gpxStr.replace(/["']/g, '');
-                    leggTilTopp(null, renFil);
+                // Sjekk 2: Parser Javascript-arrays (f.eks. i kildekoden din) mer nøyaktig
+                const scripts = doc.querySelectorAll('script');
+                scripts.forEach(script => {
+                    const innhold = script.textContent;
+                    // Fanger opp { navn: "...", fil: "..." } uansett rekkefølge og linjeskift
+                    const regex = /\{\s*navn\s*:\s*["']([^"']+)["']\s*,\s*fil\s*:\s*["']([^"']+)["']/g;
+                    let match;
+                    while ((match = regex.exec(innhold)) !== null) {
+                        const navn = match[1];
+                        const fil = match[2].split('/').pop();
+                        if (!funneTopper.some(t => t.fil === fil)) {
+                            funneTopper.push({ navn, fil, type });
+                        }
+                    }
+                    
+                    // Sjekker også omvendingen { fil: "...", navn: "..." }
+                    const regexOmvendt = /\{\s*fil\s*:\s*["']([^"']+)["']\s*,\s*navn\s*:\s*["']([^"']+)["']/g;
+                    let matchOmvendt;
+                    while ((matchOmvendt = regexOmvendt.exec(innhold)) !== null) {
+                        const fil = matchOmvendt[1].split('/').pop();
+                        const navn = matchOmvendt[2];
+                        if (!funneTopper.some(t => t.fil === fil)) {
+                            funneTopper.push({ navn, fil, type });
+                        }
+                    }
                 });
 
                 return funneTopper;
-
             } catch (error) {
                 console.error("Feil ved henting av " + type + "-siden:", error);
                 return [];
@@ -312,18 +291,13 @@
 
         function sjekkFremdrift() {
             loadedCount++;
-            const statusText = document.getElementById('loading-text');
-            if (statusText) {
-                statusText.textContent = `Laster inn spor... ${loadedCount}/${totalFiles}`;
-            }
+            document.getElementById('progress').textContent = loadedCount;
 
             if (loadedCount >= totalFiles) {
                 zoomTilAktiveSpor();
                 const statusEl = document.getElementById('loading-status');
-                if (statusEl) {
-                    statusEl.style.opacity = '0';
-                    setTimeout(() => statusEl.remove(), 500);
-                }
+                statusEl.style.opacity = '0';
+                setTimeout(() => statusEl.remove(), 500);
             }
         }
 
@@ -335,15 +309,12 @@
 
             const alleTopper = [...vinterTopper, ...sommerTopper];
             totalFiles = alleTopper.length;
+            document.getElementById('total').textContent = totalFiles;
 
             if (totalFiles === 0) {
-                const statusEl = document.getElementById('loading-status');
-                if (statusEl) statusEl.innerHTML = "Ingen turer funnet på nettsidene.";
+                document.getElementById('loading-status').textContent = "Ingen turer funnet på nettsidene.";
                 return;
             }
-
-            // Oppdater teksten med én gang antallet er kjent
-            document.getElementById('loading-text').textContent = `Laster inn spor... 0/${totalFiles}`;
 
             alleTopper.forEach(topp => {
                 const track = new L.GPX('gpx/' + topp.fil, gpxOptions);
@@ -361,6 +332,7 @@
                     const ikon = topp.type === "vinter" ? "❄️" : "☀️";
                     const målside = topp.type === "sommer" ? "sommer.html" : "vinter.html";
                     
+                    // Renser navnet for parametere, slik at f.eks. "Buren (Sommer)" blir sendt som "Buren"
                     const rentNavn = topp.navn.replace(/\s*\(Sommer\)/i, "").replace(/\s*\(Vinter\)/i, "").trim();
                     const url = `${målside}?fjell=${encodeURIComponent(rentNavn)}`;
 
@@ -408,6 +380,7 @@
 
                 track.on('error', function() {
                     console.warn("Klarte ikke å laste GPX-fil:", topp.fil);
+                    // Sikrer at telleren øker selv om filen feiler, slik at kartet ikke henger!
                     sjekkFremdrift();
                 });
 
@@ -417,7 +390,7 @@
 
         initialiserKart();
 
-        // FILTRERING
+        // FILTRERING (Uendret funksjonalitet)
         const btnVinter = document.getElementById('btn-vinter');
         const btnSommer = document.getElementById('btn-sommer');
 

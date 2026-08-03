@@ -94,39 +94,20 @@
             background: var(--bg-color);
         }
 
-        /* OPPDATERT LASTEINDIKATOR */
         #loading-status {
             position: absolute;
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(26, 26, 26, 0.95);
-            padding: 10px 18px;
-            border-radius: 24px;
+            padding: 8px 14px;
+            border-radius: 20px;
             border: 1px solid #333;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             z-index: 1000;
             pointer-events: none;
             transition: opacity 0.5s ease;
             white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-
-        .spinner {
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(255,255,255,0.2);
-            border-top-color: var(--highlight-orange);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            display: inline-block;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
         }
 
         .leaflet-popup-content-wrapper {
@@ -199,10 +180,7 @@
 
     <div id="map-container">
         <div id="map"></div>
-        <div id="loading-status">
-            <span class="spinner"></span>
-            <span id="loading-text">Analyserer tursider...</span>
-        </div>
+        <div id="loading-status">Henter turer... <span id="progress">0</span>/<span id="total">0</span></div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -290,6 +268,7 @@
                     leggTilTopp(null, renFil);
                 });
 
+                console.log(`Hentet ${funneTopper.length} ${type}-topper fra ${url}`);
                 return funneTopper;
 
             } catch (error) {
@@ -312,10 +291,7 @@
 
         function sjekkFremdrift() {
             loadedCount++;
-            const statusText = document.getElementById('loading-text');
-            if (statusText) {
-                statusText.textContent = `Laster inn spor... ${loadedCount}/${totalFiles}`;
-            }
+            document.getElementById('progress').textContent = loadedCount;
 
             if (loadedCount >= totalFiles) {
                 zoomTilAktiveSpor();
@@ -335,15 +311,12 @@
 
             const alleTopper = [...vinterTopper, ...sommerTopper];
             totalFiles = alleTopper.length;
+            document.getElementById('total').textContent = totalFiles;
 
             if (totalFiles === 0) {
-                const statusEl = document.getElementById('loading-status');
-                if (statusEl) statusEl.innerHTML = "Ingen turer funnet på nettsidene.";
+                document.getElementById('loading-status').textContent = "Ingen turer funnet på nettsidene.";
                 return;
             }
-
-            // Oppdater teksten med én gang antallet er kjent
-            document.getElementById('loading-text').textContent = `Laster inn spor... 0/${totalFiles}`;
 
             alleTopper.forEach(topp => {
                 const track = new L.GPX('gpx/' + topp.fil, gpxOptions);
