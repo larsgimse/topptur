@@ -141,8 +141,9 @@
         }
         .search-link-btn { border-color: var(--strava-green); color: var(--strava-green); }
         .strava-link-btn { border-color: var(--strava-orange); color: var(--strava-orange); }
-        .suunto-link-btn { border-color: #000; color: #000; }
-        
+        .suunto-link-btn { border-color: var(--suunto-red); color: var(--suunto-red); }
+        .suunto-icon { color: var(--suunto-red); font-size: 10px; }
+
         .download-area {
             width: 100%; background: rgba(255, 255, 255, 0.95); border-radius: 8px; 
             border: 2px solid var(--download-blue); padding: 8px 10px; 
@@ -594,6 +595,44 @@
                     menuTopRow.appendChild(hb); menuTopRow.appendChild(shareBtn);
                     videoContainer.appendChild(menuTopRow);
 
+                    // 1. Legg til spor-brytere ØVERST (Hovedspor = toppens navn)
+                    videoContainer.appendChild(skapKontrollRad(topp.navn, topp.fil, true, 
+                        (vis) => vis ? map.addLayer(l) : map.removeLayer(l),
+                        (vis) => { if (vis) visProfil(l, topp.navn, topp.fil); else l.closePopup(); }
+                    ));
+
+                    // 2. Legg til eventuelle ekstra spor direkte under (rad 2)
+                    if (topp.ekstraSpor) {
+                        topp.ekstraSpor.forEach(es => {
+                            const eTrack = new L.GPX('gpx/' + es.fil, {
+                                async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
+                                polyline_options: { color: es.farge || '#4f46e5', weight: defaultWeight + 1, opacity: 0.9 }
+                            }).on('loaded', (evt) => {
+                                const eLayer = evt.target;
+                                if (es.defaultActive) {
+                                    aktiveEkstraSporLayers.push(eLayer);
+                                    eLayer.addTo(map);
+                                    if (es.popupTekst) {
+                                        const latlngs = eLayer.getLayers()[0].getLatLngs();
+                                        // Henter siste punkt på ekstra spor for Nordfjellet
+                                        const sistePunkt = latlngs[latlngs.length - 1];
+                                        const marker = L.marker(sistePunkt, { icon: smallIcon }).addTo(map);
+                                        marker.bindPopup(`<b>${es.tittel}</b><br>${es.popupTekst}`).openPopup();
+                                        aktiveMarkører.push(marker);
+                                    }
+                                }
+                                videoContainer.appendChild(skapKontrollRad(es.tittel, es.fil, es.defaultActive || false,
+                                    (vis) => {
+                                        if (vis) { map.addLayer(eLayer); aktiveEkstraSporLayers.push(eLayer); }
+                                        else { map.removeLayer(eLayer); }
+                                    },
+                                    (vis) => { if (vis) visProfil(eLayer, es.tittel, es.fil); else eLayer.closePopup(); }
+                                ));
+                            });
+                        });
+                    }
+
+                    // 3. Legg til media- og eksterne lenker UNDER bryterne
                     if (topp.video && topp.video.length > 0) {
                         topp.video.forEach(v => {
                             const vb = document.createElement('a');
@@ -608,17 +647,18 @@
                     if (topp.strava) {
                         const sb = document.createElement('a'); sb.className = 'video-link-btn strava-link-btn';
                         sb.href = topp.strava; sb.target = '_blank';
-                        sb.innerHTML = `🏃 <span>Se på Strava</span>`;
+                        sb.innerHTML = `🏃 <span>Se spor på Strava</span>`;
                         videoContainer.appendChild(sb);
                     }
 
                     if (topp.suunto) {
                         const sub = document.createElement('a'); sub.className = 'video-link-btn suunto-link-btn';
                         sub.href = topp.suunto; sub.target = '_blank';
-                        sub.innerHTML = `⌚ <span>Se på Suunto</span>`;
+                        sub.innerHTML = `<span class="suunto-icon">🔺</span> <span>3D visualisering</span>`;
                         videoContainer.appendChild(sub);
                     }
 
+                    // 4. GPX nedlasting nederst
                     const dlBox = document.createElement('div'); dlBox.className = 'download-area';
                     dlBox.innerHTML = `<div class="download-header">📥 Last ned GPX</div>`;
                     const dlLinksContainer = document.createElement('div'); dlLinksContainer.className = 'download-links-container';
@@ -636,40 +676,6 @@
                     }
                     dlBox.appendChild(dlLinksContainer);
                     videoContainer.appendChild(dlBox);
-
-                    videoContainer.appendChild(skapKontrollRad('Hovedspor', topp.fil, true, 
-                        (vis) => vis ? map.addLayer(l) : map.removeLayer(l),
-                        (vis) => { if (vis) visProfil(l, topp.navn, topp.fil); else l.closePopup(); }
-                    ));
-
-                    if (topp.ekstraSpor) {
-                        topp.ekstraSpor.forEach(es => {
-                            const eTrack = new L.GPX('gpx/' + es.fil, {
-                                async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
-                                polyline_options: { color: es.farge || '#4f46e5', weight: defaultWeight + 1, opacity: 0.9 }
-                            }).on('loaded', (evt) => {
-                                const eLayer = evt.target;
-                                if (es.defaultActive) {
-                                    aktiveEkstraSporLayers.push(eLayer);
-                                    eLayer.addTo(map);
-                                    if (es.popupTekst) {
-                                        const latlngs = eLayer.getLayers()[0].getLatLngs();
-                                        const midtPunkt = latlngs[Math.floor(latlngs.length / 2)];
-                                        const marker = L.marker(midtPunkt, { icon: smallIcon }).addTo(map);
-                                        marker.bindPopup(`<b>${es.tittel}</b><br>${es.popupTekst}`);
-                                        aktiveMarkører.push(marker);
-                                    }
-                                }
-                                videoContainer.appendChild(skapKontrollRad(es.tittel, es.fil, es.defaultActive || false,
-                                    (vis) => {
-                                        if (vis) { map.addLayer(eLayer); aktiveEkstraSporLayers.push(eLayer); }
-                                        else { map.removeLayer(eLayer); }
-                                    },
-                                    (vis) => { if (vis) visProfil(eLayer, es.tittel, es.fil); else eLayer.closePopup(); }
-                                ));
-                            });
-                        });
-                    }
 
                     map.flyToBounds(l.getBounds(), { padding: [60, 60], duration: 0.8 });
                 };
