@@ -90,7 +90,7 @@
             display: flex; align-items: center; justify-content: center; gap: 4px;
         }
 
-        .ui-hidden .video-link-btn, .ui-hidden .control-row-container, .ui-hidden .search-link-btn, .ui-hidden .download-area { display: none !important; }
+        .ui-hidden .video-link-btn, .ui-hidden .control-row-container, .ui-hidden .search-link-btn, .ui-hidden .download-area, .ui-hidden .desc-box { display: none !important; }
 
         /* Nederste rad med teller og gimse.info */
         .footer-row {
@@ -143,6 +143,14 @@
         .strava-link-btn { border-color: var(--strava-orange); color: var(--strava-orange); }
         .suunto-link-btn { border-color: var(--suunto-red); color: var(--suunto-red); }
         .suunto-icon { color: var(--suunto-red); font-size: 10px; }
+
+        /* Stil for turbeskrivelse og veibeskrivelse */
+        .desc-box {
+            background: rgba(255, 255, 255, 0.95); padding: 8px 10px; border-radius: 8px;
+            border: 1px solid #ccc; width: 100%; box-sizing: border-box; backdrop-filter: blur(4px);
+            text-align: left; font-size: 11px; color: var(--dark-grey); line-height: 1.4;
+        }
+        .desc-box-title { font-weight: 800; text-transform: uppercase; font-size: 10px; color: #64748b; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
 
         .download-area {
             width: 100%; background: rgba(255, 255, 255, 0.95); border-radius: 8px; 
@@ -279,9 +287,9 @@
         };
 
         const topper = [
-            { id: "buren", navn: "Buren", fil: "2025_10_06.gpx", overrideAar: "2020", video: [{ url: "https://youtu.be/-m3sEIIIUHg", tittel: "Se video", dato: "2020_08_23" }] },
-            { id: "bonntuva", navn: "Bønntuva", fil: "2026_07_12.gpx", overrideAar: "2026", video: [{ url: "https://www.instagram.com/p/DatayEJCIvE/", tittel: "Se bilder", type: "photo" }], strava: "https://www.strava.com/activities/19286411884" },
-            { id: "djeveltanna", navn: "Djeveltanna", fil: "2024_08_03.gpx", video: [{ url: "https://www.instagram.com/p/C-dPqdWM4Ku/", tittel: "Se video" }] },
+            { id: "buren", navn: "Buren", fil: "2025_10_06.gpx", overrideAar: "2020", video: [{ url: "https://youtu.be/-m3sEIIIUHg", tittel: "Se video", dato: "2020_08_23" }], beskrivelse: "Fin tur med god utsikt over Ersfjorden.", veiBeskrivelse: "Parkering ved Ersfjordbotn." },
+            { id: "bonntuva", navn: "Bønntuva", fil: "2026_07_12.gpx", overrideAar: "2026", video: [{ url: "https://www.instagram.com/p/DatayEJCIvE/", tittel: "Se bilder", type: "photo" }], strava: "https://www.strava.com/activities/19286411884", beskrivelse: "Flott tur opp fra Kroken.", veiBeskrivelse: "Parkering ved Movegen i Kroken." },
+            { id: "djeveltanna", navn: "Djeveltanna", fil: "2024_08_03.gpx", video: [{ url: "https://www.instagram.com/p/C-dPqdWM4Ku/", tittel: "Se video" }], beskrivelse: "Klassisk og luftig tur på Kvaløya.", veiBeskrivelse: "Parkering ved Kattfjordeidet." },
             { id: "djupdalgruver", navn: "Djupdalgruver", fil: "2025_08_03.gpx", video: [{ url: "https://www.instagram.com/p/DNBr-heMfba/", tittel: "Se video" }] },
             { id: "durmalstinden", navn: "Durmålstinden", fil: "2026_07_16.gpx", overrideAar: "2026", video: [{ url: "https://www.instagram.com/p/Da4xYwQISgu/", tittel: "Se video" }], strava: "https://www.strava.com/activities/19341569723", suunto: "https://maps.suunto.com/move/larsgimse/6a593ab2c1d9b72814c099f2" },
             { id: "floya", navn: "Fløya - Sherpatrappa", fil: "floya.gpx", overrideAar: "2022", video: [{ url: "https://www.instagram.com/p/CfZtWgOslWb", tittel: "Se bilder", type: "photo" }] },
@@ -617,7 +625,7 @@
 
                     videoContainer.appendChild(topRow);
 
-                    // Bruker toppen sit navn i menyen i stedet for "Hovedspor"
+                    // Bruker toppen sitt navn i menyen i stedet for "Hovedspor"
                     videoContainer.appendChild(skapKontrollRad(
                         topp.navn, 
                         topp.fil, true, 
@@ -669,6 +677,22 @@
                                 videoContainer.appendChild(eRad);
                             });
                         });
+                    }
+
+                    // Turbeskrivelse
+                    if (topp.beskrivelse) {
+                        const descBox = document.createElement('div');
+                        descBox.className = 'desc-box';
+                        descBox.innerHTML = `<div class="desc-box-title"><span>📝</span> Turbeskrivelse</div>${topp.beskrivelse}`;
+                        videoContainer.appendChild(descBox);
+                    }
+
+                    // Veibeskrivelse
+                    if (topp.veiBeskrivelse) {
+                        const veiBox = document.createElement('div');
+                        veiBox.className = 'desc-box';
+                        veiBox.innerHTML = `<div class="desc-box-title"><span>🚗</span> Veibeskrivelse</div>${topp.veiBeskrivelse}`;
+                        videoContainer.appendChild(veiBox);
                     }
 
                     if (topp.video && topp.video.length > 0) {
