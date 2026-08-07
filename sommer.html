@@ -122,7 +122,7 @@
             border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 600; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; transition: all 0.2s ease-in-out;
         }
-        .top-btn:hover { transform: scale(1.05); }
+        .top-btn:hover { transform: scale(1.05); background-color: var(--hover-blue); }
         .top-btn.active { background-color: var(--hover-blue); transform: scale(1.05); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
 
         .badge-label {
@@ -216,7 +216,6 @@
             <option value="osm">OpenStreetMap</option>
         </select>
         
-        <!-- Søkefelt ved siden av kartvelger -->
         <div class="search-input-wrapper">
             <span>🔍</span>
             <input type="text" id="topSearchInput" list="topperList" placeholder="Søk etter topp..." />
@@ -240,7 +239,6 @@
         <button onclick="window.location.href='http://gimse.info'" style="padding:8px 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer; font-size:13px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">➡️ gimse.info</button>
     </div>
 
-    <!-- Info Pop-up HTML Struktur -->
     <div class="info-popup-overlay" id="infoPopup">
         <div class="info-popup-content">
             <button class="info-popup-close" id="closeInfoBtn">&times;</button>
@@ -390,10 +388,30 @@
         ];
 
         totalTracksCount = topper.length;
-
-        // Fyller datalist for auto-fullfør i søkefeltet
         const topperList = document.getElementById('topperList');
         const knapperMap = {};
+
+        // Hjelpefunksjon for å hente ut det første gyldige startkoordinatet trygt
+        function getStartLatLng(gpxLayer) {
+            let res = null;
+            try {
+                gpxLayer.eachLayer(layer => {
+                    if (res) return;
+                    if (layer instanceof L.Polyline) {
+                        let pts = layer.getLatLngs();
+                        while (Array.isArray(pts) && pts.length > 0 && Array.isArray(pts[0])) {
+                            pts = pts[0];
+                        }
+                        if (pts && pts.length > 0 && pts[0].lat !== undefined) {
+                            res = pts[0];
+                        }
+                    }
+                });
+            } catch(e) {
+                console.error("Kunne ikke hente startpunkt:", e);
+            }
+            return res;
+        }
 
         function lagBadge(fil, override) {
             if (!fil && !override) return null;
@@ -437,12 +455,17 @@
             if (startTid && sluttTid) {
                 const diffMs = sluttTid - startTid;
                 tidTR = `${Math.floor(diffMs / 3600000)}t ${Math.floor((diffMs % 3600000) / 60000)}min`;
-                const punkter = gpxLayer.getLayers()[0].getLatLngs();
-                let toppTid = null;
-                for (let p of punkter) { if (p.meta && p.meta.ele >= h - 0.5) { toppTid = p.meta.time; break; } }
-                if (toppTid) {
-                    const dTopp = toppTid - startTid;
-                    tidTilTopp = `${Math.floor(dTopp / 3600000)}t ${Math.floor((dTopp % 3600000) / 60000)}min`;
+                let firstPolyline = null;
+                gpxLayer.eachLayer(l => { if (!firstPolyline && l instanceof L.Polyline) firstPolyline = l; });
+                if (firstPolyline) {
+                    let punkter = firstPolyline.getLatLngs();
+                    while (Array.isArray(punkter) && punkter.length > 0 && Array.isArray(punkter[0])) punkter = punkter[0];
+                    let toppTid = null;
+                    for (let p of punkter) { if (p.meta && p.meta.ele >= h - 0.5) { toppTid = p.meta.time; break; } }
+                    if (toppTid) {
+                        const dTopp = toppTid - startTid;
+                        tidTilTopp = `${Math.floor(dTopp / 3600000)}t ${Math.floor((dTopp % 3600000) / 60000)}min`;
+                    }
                 }
             }
 
@@ -507,7 +530,6 @@
 
         const defaultWeight = isTouchDevice ? 3 : 1.5;
 
-        // Egendefinert lite marker-ikon for pin
         const smallIcon = L.icon({
             iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
             iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -519,7 +541,6 @@
         });
 
         topper.sort((a,b) => a.navn.localeCompare(b.navn)).forEach(topp => {
-            // Legg til i datalist for søkevalg
             const opt = document.createElement('option');
             opt.value = topp.navn;
             topperList.appendChild(opt);
@@ -540,18 +561,18 @@
             }).on('loaded', e => {
                 const gpxL = e.target;
                 
-                // Fjern standard Leaflet GPX start/slutt-ikoner
                 gpxL.getLayers().forEach(layer => {
                     if (layer instanceof L.Marker) {
                         gpxL.removeLayer(layer);
                     }
                 });
 
-                // Legg til en liten pin ved toppunktet
-                const elevStats = gpxL.get_elevation_data();
-                if (elevStats && elevStats.length > 0) {
-                    const maxE = gpxL.get_elevation_max();
-                    const latlngs = gpxL.getLayers()[0].getLatLngs();
+                const maxE = gpxL.get_elevation_max();
+                let firstPolyline = null;
+                gpxL.eachLayer(lay => { if (!firstPolyline && lay instanceof L.Polyline) firstPolyline = lay; });
+                if (firstPolyline) {
+                    let latlngs = firstPolyline.getLatLngs();
+                    while (Array.isArray(latlngs) && latlngs.length > 0 && Array.isArray(latlngs[0])) latlngs = latlngs[0];
                     let toppLatLng = null;
                     for (let p of latlngs) {
                         if (p.meta && p.meta.ele >= maxE - 0.5) {
@@ -572,11 +593,23 @@
 
                 allTracksGroup.addLayer(gpxL);
 
-                // Lagre referanser på sporet
                 gpxL._toppNavn = topp.navn;
                 gpxL._mainTrackColor = mainTrackColor;
 
-                // Koble klikk på sporet til knappen
+                // Tooltip og hover for mus på kartsporet
+                gpxL.bindTooltip(topp.navn, { sticky: true, direction: 'auto' });
+                gpxL.on('mouseover', () => {
+                    if (aktivToppNavn !== topp.navn) {
+                        gpxL.setStyle({ color: 'var(--hover-blue)', weight: 4, opacity: 1 });
+                        gpxL.bringToFront();
+                    }
+                });
+                gpxL.on('mouseout', () => {
+                    if (aktivToppNavn !== topp.navn) {
+                        gpxL.setStyle({ color: mainTrackColor, weight: defaultWeight, opacity: 0.8 });
+                    }
+                });
+
                 gpxL.on('click', () => {
                     btn.click();
                 });
@@ -589,10 +622,22 @@
                 console.error("Kunne ikke laste GPX-fil:", 'gpx/' + topp.fil, e);
             });
 
+            // Hover-effekt på knappen for å utheve sporet i kartet
+            btn.onmouseenter = () => {
+                if (!btn.classList.contains('active')) {
+                    l.setStyle({ color: 'var(--hover-blue)', weight: 4, opacity: 1 });
+                    l.bringToFront();
+                }
+            };
+            btn.onmouseleave = () => {
+                if (!btn.classList.contains('active')) {
+                    l.setStyle({ color: mainTrackColor, weight: defaultWeight, opacity: 0.8 });
+                }
+            };
+
             btn.onclick = () => {
                 const varAktiv = btn.classList.contains('active');
 
-                // Nullstill tidligere aktiv topp
                 document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
                 aktiveEkstraSporLayers.forEach(layer => map.removeLayer(layer));
                 aktiveEkstraSporLayers = [];
@@ -601,7 +646,6 @@
                 videoContainer.innerHTML = '';
                 aktivToppNavn = null;
 
-                // Tilbakestill stiler på alle spor
                 allTracksGroup.eachLayer(layer => {
                     if (layer.setStyle) {
                         layer.setStyle({ color: layer._mainTrackColor || 'var(--summer-green)', weight: defaultWeight, opacity: 0.8 });
@@ -616,16 +660,13 @@
                 btn.classList.add('active');
                 aktivToppNavn = topp.navn;
 
-                // Fremhev valgt hovedspor
                 l.setStyle({ color: 'var(--strava-orange)', weight: 5, opacity: 1 });
                 l.bringToFront();
 
-                // Zoom til sporet
                 if (l.getBounds().isValid()) {
                     map.fitBounds(l.getBounds(), { padding: [50, 50] });
                 }
 
-                // Generer UI i høyre hjørne
                 const topMenuRow = document.createElement('div');
                 topMenuRow.className = 'menu-top-row';
 
@@ -652,7 +693,6 @@
 
                 videoContainer.appendChild(topMenuRow);
 
-                // Hovedspor kontroll
                 const hovedKontroll = skapKontrollRad(
                     topp.navn,
                     topp.fil,
@@ -668,7 +708,6 @@
                 );
                 videoContainer.appendChild(hovedKontroll);
 
-                // Ekstraspor
                 if (topp.ekstraSpor && topp.ekstraSpor.length > 0) {
                     topp.ekstraSpor.forEach(eSpor => {
                         const isAlt = eSpor.defaultActive;
@@ -686,11 +725,16 @@
                                 layer.addTo(map);
                                 layer.bringToFront();
                                 if (eSpor.popupTekst) {
-                                    const latlngs = layer.getLayers()[0].getLatLngs();
-                                    const midtPt = latlngs[Math.floor(latlngs.length / 2)];
-                                    if (midtPt) {
-                                        const m = L.marker(midtPt, { icon: smallIcon }).bindPopup(eSpor.popupTekst).addTo(map);
-                                        aktiveMarkører.push(m);
+                                    let exPoly = null;
+                                    layer.eachLayer(lSub => { if (!exPoly && lSub instanceof L.Polyline) exPoly = lSub; });
+                                    if (exPoly) {
+                                        let latlngs = exPoly.getLatLngs();
+                                        while (Array.isArray(latlngs) && latlngs.length > 0 && Array.isArray(latlngs[0])) latlngs = latlngs[0];
+                                        const midtPt = latlngs[Math.floor(latlngs.length / 2)];
+                                        if (midtPt) {
+                                            const m = L.marker(midtPt, { icon: smallIcon }).bindPopup(eSpor.popupTekst).addTo(map);
+                                            aktiveMarkører.push(m);
+                                        }
                                     }
                                 }
                             }
@@ -715,13 +759,12 @@
                     });
                 }
 
-                // Nedlastingsområde
                 const dlArea = document.createElement('div');
                 dlArea.className = 'download-area';
                 let dlHTML = `<div class="download-header"><span>📥</span> Last ned GPX</div><div class="download-links-container">`;
                 dlHTML += `<span class="dl-link" onclick="lastNedGPX('gpx/${topp.fil}', '${topp.fil}')">Hovedspor</span>`;
                 if (topp.ekstraSpor) {
-                    topp.ekstraSpor.forEach((es, i) => {
+                    topp.ekstraSpor.forEach((es) => {
                         dlHTML += `<span class="dl-link" onclick="lastNedGPX('gpx/${es.fil}', '${es.fil}')">${es.tittel}</span>`;
                     });
                 }
@@ -729,7 +772,6 @@
                 dlArea.innerHTML = dlHTML;
                 videoContainer.appendChild(dlArea);
 
-                // Video/Bilder lenker
                 if (topp.video && topp.video.length > 0) {
                     topp.video.forEach(v => {
                         const vBtn = document.createElement('a');
@@ -739,7 +781,6 @@
                     });
                 }
 
-                // Strava
                 if (topp.strava) {
                     const sBtn = document.createElement('a');
                     sBtn.href = topp.strava; sBtn.target = "_blank"; sBtn.className = 'video-link-btn strava-link-btn';
@@ -747,7 +788,6 @@
                     videoContainer.appendChild(sBtn);
                 }
 
-                // Suunto (3D visualisering)
                 if (topp.suunto) {
                     const suuntoBtn = document.createElement('a');
                     suuntoBtn.href = topp.suunto; suuntoBtn.target = "_blank"; suuntoBtn.className = 'video-link-btn suunto-link-btn';
@@ -755,22 +795,16 @@
                     videoContainer.appendChild(suuntoBtn);
                 }
 
-                // Turbeskrivelse
                 videoContainer.appendChild(Object.assign(document.createElement('a'), {
                     href: `https://www.google.no/search?q=${encodeURIComponent(topp.navn + ' topptursbeskrivelse')}`,
                     target: "_blank", className: 'search-link-btn', innerHTML: `<span>🔍</span> Turbeskrivelse`
                 }));
 
                 // Veibeskrivelse
-                const latlngs = l.getLayers()[0].getLatLngs();
-                const startPunkt = latlngs[0];
-
+                const startPunkt = getStartLatLng(l);
                 if (startPunkt) {
-                    const startLat = startPunkt.lat;
-                    const startLng = startPunkt.lng;
-
                     const mapsBtn = document.createElement('a');
-                    mapsBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${startLat},${startLng}`;
+                    mapsBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${startPunkt.lat},${startPunkt.lng}`;
                     mapsBtn.target = "_blank";
                     mapsBtn.className = 'search-link-btn';
                     mapsBtn.style.borderColor = 'var(--new-green)';
@@ -783,7 +817,6 @@
             };
         });
 
-        // Søkefelt-logikk
         const topSearchInput = document.getElementById('topSearchInput');
         topSearchInput.addEventListener('input', (e) => {
             const val = e.target.value.toLowerCase().trim();
@@ -793,7 +826,6 @@
             }
         });
 
-        // Reset-knapp
         document.getElementById('resetBtn').onclick = () => {
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
             aktiveEkstraSporLayers.forEach(layer => map.removeLayer(layer));
@@ -813,7 +845,6 @@
             map.setView(defaultCenter, defaultZoom);
         };
 
-        // Info Pop-up Logikk
         const infoBtn = document.getElementById('infoBtn');
         const infoPopup = document.getElementById('infoPopup');
         const closeInfoBtn = document.getElementById('closeInfoBtn');
