@@ -200,7 +200,7 @@
         <div id="map"></div>
         <div id="loading-status">
             <span class="spinner"></span>
-            <span id="loading-text">Leser inn hovedspor fra const topper...</span>
+            <span id="loading-text">Leser inn hovedspor...</span>
         </div>
     </div>
 
@@ -243,39 +243,41 @@
         const bounds = L.latLngBounds();
         const lagredeSpor = [];
 
-        async function hentTopperFraKonstant(url, type) {
+        async function hentTopper(url, type) {
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`Kunne ikke hente ${url}`);
+
+                // Direct JSON parsing if URL points to a JSON file (like sommer_topper.json)
+                if (url.endsWith('.json')) {
+                    const data = await response.json();
+                    return data.map(topp => ({
+                        navn: topp.navn,
+                        fil: topp.fil,
+                        type: type
+                    }));
+                }
+
+                // Regex parsing if URL points to an HTML file (like vinter.html)
                 const htmlText = await response.text();
-                
                 const funneTopper = [];
 
-                // 1. Identifiser hele matrisen (topper eller turer)
                 const topperBlockMatch = htmlText.match(/(?:const|let|var)\s+\w*(?:topper|turer)\w*\s*=\s*(\[[\s\S]*?\]);/i);
 
                 if (topperBlockMatch && topperBlockMatch[1]) {
                     const blockText = topperBlockMatch[1];
-                    
-                    // 2. Del opp matrisen per topp-objekt {}
                     const objectRegex = /\{[\s\S]*?\}/g;
                     let objMatch;
-                    
+
                     while ((objMatch = objectRegex.exec(blockText)) !== null) {
                         const objStr = objMatch[0];
-                        
-                        // Hent navn (støtter navn, tittel, title, name)
                         const navnMatch = objStr.match(/(?:navn|tittel|title|name)\s*:\s*["']([^"']+)["']/i);
-                        
-                        // Hent første .gpx-fil fra objektet uansett nøkkelnavn og struktur
                         const gpxMatch = objStr.match(/["']([^"']+\.gpx)["']/i);
 
                         if (gpxMatch && gpxMatch[1]) {
-                            const fullSti = gpxMatch[1];
-                            const filnavn = fullSti.split('/').pop().trim();
+                            const filnavn = gpxMatch[1].split('/').pop().trim();
                             const fjellNavn = navnMatch ? navnMatch[1].trim() : filnavn.replace('.gpx', '');
 
-                            // Unngå duplikater basert på filnavn per side
                             if (!funneTopper.some(t => t.fil === filnavn)) {
                                 funneTopper.push({ navn: fjellNavn, fil: filnavn, type });
                             }
@@ -286,7 +288,7 @@
                 return funneTopper;
 
             } catch (error) {
-                console.error("Feil ved parsing av " + type + "-siden:", error);
+                console.error("Feil ved henting av " + type + "-data:", error);
                 return [];
             }
         }
@@ -322,8 +324,8 @@
 
         async function initialiserKart() {
             const [vinterTopper, sommerTopper] = await Promise.all([
-                hentTopperFraKonstant('https://larsgimse.github.io/topptur/vinter.html', 'vinter'),
-                hentTopperFraKonstant('https://larsgimse.github.io/topptur/sommer.html', 'sommer')
+                hentTopper('vinter.html', 'vinter'),
+                hentTopper('sommer_topper.json', 'sommer')
             ]);
 
             const alleTopper = [...vinterTopper, ...sommerTopper];
@@ -331,7 +333,7 @@
 
             if (totalFiles === 0) {
                 const statusEl = document.getElementById('loading-status');
-                if (statusEl) statusEl.innerHTML = "Fant ingen topper i const topper.";
+                if (statusEl) statusEl.innerHTML = "Fant ingen topper.";
                 return;
             }
 
