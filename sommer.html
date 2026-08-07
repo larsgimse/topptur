@@ -274,7 +274,6 @@
         let aktiveEkstraSporLayers = [];
         let aktiveMarkører = [];
         let aktivToppNavn = null;
-        let isReseting = false;
 
         let totalTracksCount = 0;
         let loadedTracksCount = 0;
@@ -535,7 +534,7 @@
 
             const mainTrackColor = topp.navn === "Nordfjellet - Tromsø geografiske midtpunkt" ? 'var(--strava-green)' : 'var(--summer-green)';
 
-            const l = new L.GPX('sommer_gpx/' + topp.fil, {
+            const l = new L.GPX('gpx/' + topp.fil, {
                 async: true,
                 polyline_options: { color: mainTrackColor, weight: defaultWeight, opacity: 0.8 }
             }).on('loaded', e => {
@@ -586,6 +585,8 @@
                 if (loadedTracksCount === totalTracksCount) {
                     sjekkURLParameter();
                 }
+            }).on('error', e => {
+                console.error("Kunne ikke laste GPX-fil:", 'gpx/' + topp.fil, e);
             });
 
             btn.onclick = () => {
@@ -671,7 +672,7 @@
                 if (topp.ekstraSpor && topp.ekstraSpor.length > 0) {
                     topp.ekstraSpor.forEach(eSpor => {
                         const isAlt = eSpor.defaultActive;
-                        const exL = new L.GPX('sommer_gpx/' + eSpor.fil, {
+                        const exL = new L.GPX('gpx/' + eSpor.fil, {
                             async: true,
                             polyline_options: { color: isAlt ? 'var(--strava-orange)' : 'var(--dark-grey)', weight: isAlt ? 4 : defaultWeight, opacity: 0.9 }
                         }).on('loaded', e => {
@@ -718,10 +719,10 @@
                 const dlArea = document.createElement('div');
                 dlArea.className = 'download-area';
                 let dlHTML = `<div class="download-header"><span>📥</span> Last ned GPX</div><div class="download-links-container">`;
-                dlHTML += `<span class="dl-link" onclick="lastNedGPX('sommer_gpx/${topp.fil}', '${topp.fil}')">Hovedspor</span>`;
+                dlHTML += `<span class="dl-link" onclick="lastNedGPX('gpx/${topp.fil}', '${topp.fil}')">Hovedspor</span>`;
                 if (topp.ekstraSpor) {
                     topp.ekstraSpor.forEach((es, i) => {
-                        dlHTML += `<span class="dl-link" onclick="lastNedGPX('sommer_gpx/${es.fil}', '${es.fil}')">${es.tittel}</span>`;
+                        dlHTML += `<span class="dl-link" onclick="lastNedGPX('gpx/${es.fil}', '${es.fil}')">${es.tittel}</span>`;
                     });
                 }
                 dlHTML += `</div>`;
