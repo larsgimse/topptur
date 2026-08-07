@@ -155,6 +155,20 @@
     ]
   },
   {
+    "id": "mjeldskartindtraversen",
+    "navn": "Mjeldskartindtraversen",
+    "fil": "2026_08_06.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/reel/DbwQDa0IVQU/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19628594164",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a74a91cf45fe22c09e7d38a"
+  },
+  {
     "id": "nattmalsfjellet",
     "navn": "Nattmålsfjellet - Buren",
     "fil": "2026_07_31.gpx",
