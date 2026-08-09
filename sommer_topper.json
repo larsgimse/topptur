@@ -271,11 +271,17 @@
     "strava": "https://www.strava.com/activities/19231777586",
     "suunto": "https://maps.suunto.com/move/larsgimse/6a4e896bb971687d1acccd1d"
   },
-  {
+{
     "id": "sollidalsaksla",
     "navn": "Sollidalsaksla - Djupdalsgruve - Bønntuva",
     "fil": "2026_08_08.gpx",
     "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/reel/Dby6bMbIwnZ/",
+        "tittel": "Se video"
+      }
+    ],
     "strava": "https://www.strava.com/activities/19655610835",
     "suunto": "https://maps.suunto.com/move/larsgimse/6a773e3c598aa66b1c4866b2"
   },
