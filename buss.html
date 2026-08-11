@@ -10,10 +10,11 @@
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #111; color: #fff; }
         #map { width: 100vw; height: 100vh; }
         
+        /* Statusfelt i øverste høyre hjørne */
         #status-box {
             position: absolute;
             top: 15px;
-            left: 15px;
+            right: 15px;
             z-index: 1000;
             background: rgba(20, 20, 20, 0.9);
             padding: 12px 16px;
@@ -22,6 +23,7 @@
             font-size: 14px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             max-width: 300px;
+            text-align: right;
         }
         
         .status-ok { color: #4ade80; font-weight: bold; }
@@ -48,6 +50,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // Initiell visning (Tromsø)
         const map = L.map('map').setView([69.6492, 18.9553], 12);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -61,10 +64,12 @@
             const statusEl = document.getElementById('status-text');
             const countEl = document.getElementById('buss-count');
 
+            // Henter alle aktiverte kjøretøy i sanntid uten prefiks-sperre
             const graphqlQuery = {
                 query: `
                 {
-                  vehicles(codespace: "SVI") {
+                  vehicles {
+                    codespace
                     location {
                       latitude
                       longitude
@@ -94,38 +99,46 @@
                 }
 
                 const result = await res.json();
-                const busser = result?.data?.vehicles || [];
+                const alleBusser = result?.data?.vehicles || [];
 
                 busLayer.clearLayers();
                 let antallFunnet = 0;
 
-                busser.forEach(buss => {
+                alleBusser.forEach(buss => {
                     if (!buss.location) return;
 
                     const lat = buss.location.latitude;
                     const lon = buss.location.longitude;
-                    const linje = buss.line?.publicCode || '?';
-                    const dest = buss.destinationName || 'Ukjent';
 
-                    const marker = L.circleMarker([lat, lon], {
-                        radius: 7,
-                        fillColor: '#ef4444',
-                        color: '#ffffff',
-                        weight: 2,
-                        opacity: 1,
-                        fillOpacity: 0.9
-                    });
+                    // Hvis vi vil sjekke om bussen er i nærheten av kartet vi ser på:
+                    const mapBounds = map.getBounds();
+                    const point = L.latLng(lat, lon);
+                    
+                    // Viser kun busser som befinner seg i gjeldende kartutsnitt (eller hele SVI/Troms hvis ønskelig)
+                    if (mapBounds.contains(point)) {
+                        const linje = buss.line?.publicCode || '?';
+                        const dest = buss.destinationName || 'Ukjent';
 
-                    marker.bindPopup(`<b>Linje ${linje}</b><br>Destinasjon: ${dest}`);
-                    marker.bindTooltip(`L${linje}`, { permanent: true, direction: 'right', offset: [6, 0] });
+                        const marker = L.circleMarker([lat, lon], {
+                            radius: 7,
+                            fillColor: '#ef4444',
+                            color: '#ffffff',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.9
+                        });
 
-                    busLayer.addLayer(marker);
-                    antallFunnet++;
+                        marker.bindPopup(`<b>Linje ${linje}</b><br>Destinasjon: ${dest}<br><small>Codespace: ${buss.codespace}</small>`);
+                        marker.bindTooltip(`L${linje}`, { permanent: true, direction: 'right', offset: [6, 0] });
+
+                        busLayer.addLayer(marker);
+                        antallFunnet++;
+                    }
                 });
 
                 statusEl.className = 'status-ok';
                 statusEl.innerText = 'Tilkobling OK';
-                countEl.innerText = `Viser ${antallFunnet} busser (${new Date().toLocaleTimeString()})`;
+                countEl.innerText = `Viser ${antallFunnet} busser i kartområdet (${new Date().toLocaleTimeString()})`;
 
             } catch (err) {
                 console.error(err);
