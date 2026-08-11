@@ -295,9 +295,9 @@
 
         <!-- BUSS PANEL -->
         <div id="bus-panel" class="ui-panel">
-            <div class="row">Haler: <label class="switch"><input type="checkbox" id="busTrailSwitch"><span class="slider"></span></label></div>
-            <div class="row">Linjenr: <label class="switch"><input type="checkbox" id="busLineNumSwitch" checked><span class="slider"></span></label></div>
-            <div class="row">Forsinkelse: <label class="switch"><input type="checkbox" id="busDelaySwitch" checked><span class="slider"></span></label></div>
+            <div class="row">Linjenr: <label class="switch"><input type="checkbox" id="busLineSwitch" checked><span class="slider"></span></label></div>
+            <div class="row">Destinasjon: <label class="switch"><input type="checkbox" id="busDestSwitch" checked><span class="slider"></span></label></div>
+            <div class="row">Forsinkelse: <label class="switch"><input type="checkbox" id="busDelaySwitch"><span class="slider"></span></label></div>
         </div>
     </div>
 
@@ -730,23 +730,20 @@
         btnFly.addEventListener('click', toggleFlyVisning);
 
         /* ==========================================================================
-           BUSSRADAR FUNKSJONALITET (ENTUR VEHICLE & JOURNEY PATTERN API)
+           BUSSRADAR FUNKSJONALITET (ENTUR VEHICLE API / GRAPHQL)
            ========================================================================== */
         const btnBuss = document.getElementById('btn-buss');
         const busPanel = document.getElementById('bus-panel');
         const busCounterEl = document.getElementById('bus-counter');
-        const busTrailSwitch = document.getElementById('busTrailSwitch');
-        const busLineNumSwitch = document.getElementById('busLineNumSwitch');
-        const busDelaySwitch = document.getElementById('busDelaySwitch');
 
         let busesActive = false;
         let buses = {};
         let busInterval = null;
-        let currentRouteLayer = null;
 
         const busCanvas = L.DomUtil.create('canvas', 'leaflet-zoom-animated overlay-canvas');
         map.getPanes().overlayPane.appendChild(busCanvas);
         const busCtx = busCanvas.getContext('2d');
+        busCanvas.style.display = 'none'; // Sørg for at den er av som standard
 
         const VEHICLE_API = 'https://api.entur.io/realtime/v2/vehicles/graphql';
 
@@ -759,15 +756,6 @@
                 vehicles {
                     vehicleId
                     delay
-                    trip {
-                        id
-                        pattern {
-                            points {
-                                latitude
-                                longitude
-                            }
-                        }
-                    }
                     line {
                         publicCode
                         lineName
@@ -800,7 +788,6 @@
                 
                 let count = 0;
                 const activeIds = new Set();
-                const showTrails = busTrailSwitch.checked;
 
                 vehicles.forEach(bus => {
                     if (!bus.location || !bus.location.latitude || !bus.location.longitude) return;
@@ -813,34 +800,16 @@
                         const lineName = bus.line?.lineName || 'Troms Fylkestrafikk';
                         const vehicleId = bus.vehicleId || `${lineCode}-${lat}-${lon}`;
                         const delayMin = bus.delay ? Math.round(bus.delay / 60) : 0;
-                        
-                        let routePoints = [];
-                        if (bus.trip && bus.trip.pattern && bus.trip.pattern.points) {
-                            routePoints = bus.trip.pattern.points.map(p => [p.latitude, p.longitude]);
-                        }
 
                         activeIds.add(vehicleId);
 
-                        if (!buses[vehicleId]) {
-                            // Ny buss opprettes, start historikken tom slik at halen tegnes bakfra der bussen faktisk beveger seg
-                            buses[vehicleId] = { history: [[lat, lon]] };
-                        } else {
-                            // Sjekk om posisjonen har endret seg før vi legger til i historikken
-                            const lastPos = buses[vehicleId].history[buses[vehicleId].history.length - 1];
-                            if (!lastPos || lastPos[0] !== lat || lastPos[1] !== lon) {
-                                buses[vehicleId].history.push([lat, lon]);
-                                if (buses[vehicleId].history.length > 30) {
-                                    buses[vehicleId].history.shift();
-                                }
-                            }
-                        }
+                        if (!buses[vehicleId]) buses[vehicleId] = {};
 
                         buses[vehicleId].lat = lat;
                         buses[vehicleId].lon = lon;
                         buses[vehicleId].line = lineCode;
                         buses[vehicleId].name = lineName;
                         buses[vehicleId].delay = delayMin;
-                        buses[vehicleId].routePoints = routePoints;
 
                         count++;
                     }
@@ -864,9 +833,9 @@
             busCtx.clearRect(0, 0, busCanvas.width, busCanvas.height);
             const tl = map.latLngToLayerPoint(map.getBounds().getNorthWest());
             
-            const showTrails = busTrailSwitch.checked;
-            const showLineNum = busLineNumSwitch.checked;
-            const showDelay = busDelaySwitch.checked;
+            const showLine = document.getElementById('busLineSwitch').checked;
+            const showDest = document.getElementById('busDestSwitch').checked;
+            const showDelay = document.getElementById('busDelaySwitch').checked;
 
             for (let id in buses) {
                 const b = buses[id];
@@ -881,15 +850,12 @@
                 busCtx.lineWidth = 2;
                 busCtx.stroke();
 
-                // Tegn etikett (linjenr / forsinkelse)
                 let labels = [];
-                if (showLineNum) labels.push(`Linje ${b.line}`);
-                if (showDelay) {
-                    if (b.delay !== 0) {
-                        labels.push(`${b.delay > 0 ? '+' + b.delay : b.delay} min`);
-                    } else {
-                        labels.push(`I rute`);
-                    }
+                if (showLine) labels.push("Linje " + b.line);
+                if (showDest && b.name) labels.push(b.name);
+                if (showDelay && b.delay !== 0) {
+                    const delayTxt = b.delay > 0 ? `+${b.delay}m` : `${b.delay}m`;
+                    labels.push(delayTxt);
                 }
 
                 if (labels.length > 0) {
@@ -897,35 +863,11 @@
                     busCtx.fillStyle = "#fca5a5";
                     busCtx.fillText(labels.join(" | "), p.x - tl.x + 9, p.y - tl.y + 4);
                 }
-
-                // Tegn ekte bevegelseshale fra der bussen har kjørt
-                if (showTrails && b.history && b.history.length > 1) {
-                    busCtx.beginPath();
-                    busCtx.strokeStyle = "rgba(239, 68, 68, 0.5)";
-                    busCtx.lineWidth = 1.5;
-                    const pStart = map.latLngToLayerPoint(b.history[0]);
-                    busCtx.moveTo(pStart.x - tl.x, pStart.y - tl.y);
-                    for (let i = 1; i < b.history.length - 1; i++) {
-                        const pt = map.latLngToLayerPoint(b.history[i]);
-                        const next = map.latLngToLayerPoint(b.history[i+1]);
-                        busCtx.quadraticCurveTo(pt.x - tl.x, pt.y - tl.y, (pt.x + next.x)/2 - tl.x, (pt.y + next.y)/2 - tl.y);
-                    }
-                    busCtx.stroke();
-                }
             }
             requestAnimationFrame(drawBuses);
         }
 
-        // Nullstill haler når bryteren slås av
-        busTrailSwitch.addEventListener('change', function() {
-            if (!this.checked) {
-                for (let id in buses) {
-                    buses[id].history = [[buses[id].lat, buses[id].lon]];
-                }
-            }
-        });
-
-        // Klikk-håndtering for enkeltbuss (viser popup, zoomer inn til Tromsø-området og tegner rute)
+        // Klikk-håndtering for enkeltbuss (viser popup med informasjon)
         map.on('click', function(e) {
             if (!busesActive) return;
             
@@ -948,22 +890,7 @@
                 }
             }
 
-            if (currentRouteLayer) {
-                map.removeLayer(currentRouteLayer);
-                currentRouteLayer = null;
-            }
-
             if (clickedBus) {
-                map.setView([clickedBus.lat, clickedBus.lon], 14);
-
-                if (clickedBus.routePoints && clickedBus.routePoints.length > 0) {
-                    currentRouteLayer = L.polyline(clickedBus.routePoints, {
-                        color: '#3b82f6',
-                        weight: 4,
-                        opacity: 0.8
-                    }).addTo(map);
-                }
-
                 const delayText = clickedBus.delay !== 0 ? 
                     `<br>Forsinkelse: <span style="color:${clickedBus.delay > 0 ? '#ef4444' : '#34a853'}">${clickedBus.delay > 0 ? '+' + clickedBus.delay : clickedBus.delay} min</span>` : 
                     `<br>Forsinkelse: I rute`;
@@ -989,10 +916,6 @@
                 busCounterEl.innerText = "Busser: Laster...";
                 busCanvas.style.display = 'block';
 
-                busTrailSwitch.checked = false;
-                busLineNumSwitch.checked = true;
-                busDelaySwitch.checked = true;
-
                 updateCanvasPosition(busCanvas, busCtx, busesActive);
                 fetchBuses();
                 busInterval = setInterval(fetchBuses, 5000);
@@ -1009,13 +932,11 @@
                 busCtx.clearRect(0, 0, busCanvas.width, busCanvas.height);
                 buses = {};
 
-                if (currentRouteLayer) {
-                    map.removeLayer(currentRouteLayer);
-                    currentRouteLayer = null;
-                }
-
                 map.off('move zoom', handleBusMove);
             }
+
+            // Zoom inn til Tromsøya når buss-knappen klikkes
+            map.setView([69.6492, 18.9553], 13);
         }
 
         function handleBusMove() {
