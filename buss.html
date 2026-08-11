@@ -3,113 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busstest Tromsø</title>
+    <title>Busstest Tromsø - Best Practice</title>
+    
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #111; color: #fff; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #fff; }
         #map { width: 100vw; height: 100vh; }
         
+        /* Statuspanel øverst til høyre */
         #status-box {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 16px;
+            right: 16px;
             z-index: 1000;
-            background: rgba(20, 20, 20, 0.95);
+            background: rgba(24, 24, 27, 0.9);
+            backdrop-filter: blur(8px);
             padding: 12px 16px;
-            border-radius: 8px;
-            border: 1px solid #333;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             font-size: 13px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            max-width: 320px;
-        }
-        .status-ok { color: #4ade80; font-weight: bold; }
-        .status-error { color: #f87171; font-weight: bold; }
-        
-        #debug-log {
-            margin-top: 8px;
-            padding: 6px;
-            background: #000;
-            border: 1px solid #333;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 10px;
-            max-height: 90px;
-            overflow-y: auto;
-            color: #aaa;
-            white-space: pre-wrap;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            min-width: 200px;
         }
 
-        .leaflet-tooltip {
-            background: #222 !important;
-            color: #fff !important;
-            border: 1px solid #ef4444 !important;
-            font-size: 11px !important;
-            font-weight: bold;
-            padding: 2px 6px !important;
+        .status-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-weight: 600;
         }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #eab308; /* Venter/Gul */
+            display: inline-block;
+        }
+
+        .status-dot.ok { background-color: #22c55e; }
+        .status-dot.error { background-color: #ef4444; }
+
+        #buss-count {
+            margin-top: 6px;
+            font-size: 12px;
+            color: #a1a1aa;
+        }
+
+        /* Styling for buss-markører */
+        .bus-marker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ef4444;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 11px;
+            border: 2px solid #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s ease;
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: #18181b;
+            color: #f4f4f5;
+            border-radius: 8px;
+            border: 1px solid #3f3f46;
+        }
+        
+        .leaflet-popup-tip { background: #18181b; }
     </style>
 </head>
 <body>
 
     <div id="status-box">
-        <div><strong>Buss Tromsø:</strong> <span id="status-text">Initialiserer...</span></div>
-        <div id="buss-count" style="margin-top: 4px; color: #888;">-</div>
-        <div id="debug-log">Venter på kontakt...</div>
+        <div class="status-header">
+            <span>Buss Tromsø</span>
+            <span id="status-dot" class="status-dot"></span>
+        </div>
+        <div id="buss-count">Henter sanntidsdata...</div>
     </div>
 
     <div id="map"></div>
 
+    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const map = L.map('map').setView([69.6492, 18.9553], 12);
+        // Configuration Constants
+        const CONFIG = {
+            ENTUR_URL: 'https://api.entur.io/realtime/v1/rest/vm',
+            CLIENT_NAME: 'gimse-busstest',
+            POLL_INTERVAL_MS: 10000,
+            DEFAULT_CENTER: [69.6492, 18.9553], // Tromsø
+            DEFAULT_ZOOM: 12,
+            // Geografisk Bounding Box for Tromsø
+            BBOX: { minLat: 69.4, maxLat: 69.8, minLon: 18.3, maxLon: 19.3 }
+        };
 
+        // Kart-initialisering
+        const map = L.map('map', {
+            zoomControl: true
+        }).setView(CONFIG.DEFAULT_CENTER, CONFIG.DEFAULT_ZOOM);
+
+        // Mørk bakgrunn med korrekt attribution (NLOD / CC BY 4.0)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO &copy; Entur',
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://entur.no">Entur</a>',
             maxZoom: 19
         }).addTo(map);
 
-        const busLayer = L.layerGroup().addTo(map);
+        const busLayerGroup = L.layerGroup().addTo(map);
+        
+        // Map for gjenbruk av eksisterende markører (KjøretøyID -> Leaflet Marker)
+        const activeMarkers = new Map();
+        let currentAbortController = null;
 
-        function logg(tekst) {
-            const debugEl = document.getElementById('debug-log');
-            debugEl.innerText = `${new Date().toLocaleTimeString()}: ${tekst}\n` + debugEl.innerText;
+        // Opprett tilpasset DivIcon for buss
+        function createBusIcon(line) {
+            return L.divIcon({
+                className: 'bus-marker-wrapper',
+                html: `<div class="bus-marker" style="width: 30px; height: 22px;">L${line}</div>`,
+                iconSize: [30, 22],
+                iconAnchor: [15, 11]
+            });
         }
 
-        async function hentBussdata() {
-            const statusEl = document.getElementById('status-text');
+        // Hovedfunksjon for henting og oppdatering av data
+        async function fetchVehiclePositions() {
+            const statusDot = document.getElementById('status-dot');
             const countEl = document.getElementById('buss-count');
 
-            // Entur sin nasjonale SIRI Lite REST-tjeneste
-            const url = 'https://api.entur.io/realtime/v1/rest/vm';
+            // Avbryt forrige uavsluttede kall hvis det finnes
+            if (currentAbortController) {
+                currentAbortController.abort();
+            }
+            currentAbortController = new AbortController();
 
             try {
-                logg("Kaller Entur API...");
-
-                const res = await fetch(url, {
+                const response = await fetch(CONFIG.ENTUR_URL, {
                     method: 'GET',
                     headers: {
-                        'ET-Client-Name': 'gimse-busstest'
-                    }
+                        'ET-Client-Name': CONFIG.CLIENT_NAME
+                    },
+                    signal: currentAbortController.signal
                 });
 
-                if (!res.ok) {
-                    statusEl.className = 'status-error';
-                    statusEl.innerText = `HTTP ${res.status}`;
-                    logg(`Svar fra server: HTTP ${res.status}`);
-                    return;
+                if (!response.ok) {
+                    throw new Error(`HTTP-feil: ${response.status}`);
                 }
 
-                const json = await res.json();
-                const kjøretøy = json?.Siri?.ServiceDelivery?.VehicleMonitoringDelivery?.[0]?.VehicleActivity || [];
+                const data = await response.json();
+                const activities = data?.Siri?.ServiceDelivery?.VehicleMonitoringDelivery?.[0]?.VehicleActivity || [];
 
-                logg(`Mottok ${kjøretøy.length} kjøretøy fra hele landet.`);
+                const seenVehicleIds = new Set();
+                let tromsoCount = 0;
 
-                busLayer.clearLayers();
-                let antallTromso = 0;
-
-                kjøretøy.forEach(item => {
-                    const journey = item.MonitoredVehicleJourney;
+                activities.forEach((activity, index) => {
+                    const journey = activity.MonitoredVehicleJourney;
                     if (!journey || !journey.VehicleLocation) return;
 
                     const lat = parseFloat(journey.VehicleLocation.Latitude);
@@ -117,43 +171,76 @@
 
                     if (isNaN(lat) || isNaN(lon)) return;
 
-                    // Filtrerer geografisk for Tromsø og omegn
-                    if (lat >= 69.4 && lat <= 69.8 && lon >= 18.3 && lon <= 19.3) {
-                        const linje = journey.PublishedLineName?.[0]?.value || journey.LineRef || '?';
-                        const dest = journey.DestinationName?.[0]?.value || 'Ukjent';
+                    // Geografisk filtrering
+                    if (lat < CONFIG.BBOX.minLat || lat > CONFIG.BBOX.maxLat || 
+                        lon < CONFIG.BBOX.minLon || lon > CONFIG.BBOX.maxLon) {
+                        return;
+                    }
 
-                        const marker = L.circleMarker([lat, lon], {
-                            radius: 8,
-                            fillColor: '#ef4444',
-                            color: '#ffffff',
-                            weight: 2,
-                            opacity: 1,
-                            fillOpacity: 0.9
-                        });
+                    // Entydig nøkkel per kjøretøy/reise
+                    const vehicleId = journey.VehicleRef || 
+                                      journey.FramedVehicleJourneyRef?.DatedVehicleJourneyRef || 
+                                      `v_${journey.LineRef}_${index}`;
 
-                        marker.bindPopup(`<b>Linje ${linje}</b><br>Destinasjon: ${dest}`);
-                        marker.bindTooltip(`L${linje}`, { permanent: true, direction: 'right', offset: [8, 0] });
+                    const line = journey.PublishedLineName?.[0]?.value || journey.LineRef || '?';
+                    const destination = journey.DestinationName?.[0]?.value || 'Ukjent destinasjon';
 
-                        busLayer.addLayer(marker);
-                        antallTromso++;
+                    seenVehicleIds.add(vehicleId);
+                    tromsoCount++;
+
+                    const popupContent = `
+                        <div style="font-size: 13px;">
+                            <strong style="color: #ef4444;">Linje ${line}</strong><br>
+                            <strong>Destinasjon:</strong> ${destination}
+                        </div>
+                    `;
+
+                    // Hvis markøren finnes fra før: Flytt den glatt til ny posisjon
+                    if (activeMarkers.has(vehicleId)) {
+                        const existingMarker = activeMarkers.get(vehicleId);
+                        existingMarker.setLatLng([lat, lon]);
+                        existingMarker.setPopupContent(popupContent);
+                    } else {
+                        // Ny markør opprettes
+                        const newMarker = L.marker([lat, lon], {
+                            icon: createBusIcon(line),
+                            title: `Linje ${line} - ${destination}`
+                        }).bindPopup(popupContent);
+
+                        newMarker.addTo(busLayerGroup);
+                        activeMarkers.set(vehicleId, newMarker);
                     }
                 });
 
-                statusEl.className = 'status-ok';
-                statusEl.innerText = 'Tilkobling OK';
-                countEl.innerText = `Viser ${antallTromso} busser i Tromsø`;
-                logg(`Funnet ${antallTromso} busser i Tromsø-området.`);
+                // Opprydding: Fjern markører for busser som har gått ut av rute eller avgrensing
+                for (const [vId, marker] of activeMarkers.entries()) {
+                    if (!seenVehicleIds.has(vId)) {
+                        busLayerGroup.removeLayer(marker);
+                        activeMarkers.delete(vId);
+                    }
+                }
+
+                // Oppdater UI
+                statusDot.className = 'status-dot ok';
+                countEl.innerText = `Viser ${tromsoCount} busser (${new Date().toLocaleTimeString('no-NO')})`;
 
             } catch (err) {
-                console.error(err);
-                statusEl.className = 'status-error';
-                statusEl.innerText = 'Nettverksfeil / CORS';
-                logg(`Feil: ${err.message}`);
+                if (err.name === 'AbortError') return; // Ignorer avbrutte kall
+
+                console.error('Feil ved henting av bussdata:', err);
+                statusDot.className = 'status-dot error';
+                countEl.innerText = 'Feil ved oppdatering';
             }
         }
 
-        hentBussdata();
-        setInterval(hentBussdata, 10000);
+        // Start henting og sett opp fast periodisk oppdatering
+        fetchVehiclePositions();
+        const intervalId = setInterval(fetchVehiclePositions, CONFIG.POLL_INTERVAL_MS);
+
+        // Rydd opp timer dersom vinduet lukkes
+        window.addEventListener('beforeunload', () => {
+            clearInterval(intervalId);
+        });
     </script>
 </body>
 </html>
