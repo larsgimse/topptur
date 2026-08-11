@@ -731,12 +731,12 @@
         btnFly.addEventListener('click', toggleFlyVisning);
 
         /* ==========================================================================
-           BUSSRADAR FUNKSJONALITET (ENTUR GRAPHQL API)
+           BUSSRADAR FUNKSJONALITET (ENTUR / SVIPPER SANNTID)
            ========================================================================== */
         const btnBuss = document.getElementById('btn-buss');
         const busPanel = document.getElementById('bus-panel');
         const busCounterEl = document.getElementById('bus-counter');
-        
+
         let busesActive = false;
         let buses = {};
         let busInterval = null;
@@ -749,15 +749,10 @@
             if (!busesActive) return;
             const b = map.getBounds();
             
-            // GraphQL query for kjøretøy innenfor gjeldende kartsutsnitt
             const query = `
             {
-              vehicles(
-                minimumLatitude: ${b.getSouth()}
-                maximumLatitude: ${b.getNorth()}
-                minimumLongitude: ${b.getWest()}
-                maximumLongitude: ${b.getEast()}
-              ) {
+              vehicles(codespace: "SVI") {
+                vehicleId
                 lastUpdated
                 location {
                   latitude
@@ -770,16 +765,17 @@
                   frontText
                 }
                 delay
-                vehicleId
               }
             }`;
 
+            const targetUrl = 'https://api.entur.io/realtime/v1/graphql';
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+
             try {
-                const res = await fetch('https://api.entur.io/realtime/v1/graphql', {
+                const res = await fetch(proxyUrl, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'ET-Client-Name': 'toppturkart-bussvisning'
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ query })
                 });
@@ -798,18 +794,25 @@
                 vehicles.forEach(v => {
                     if (!v.location || isNaN(v.location.latitude) || isNaN(v.location.longitude)) return;
 
-                    const id = v.vehicleId || `${v.location.latitude}_${v.location.longitude}`;
+                    const lat = v.location.latitude;
+                    const lon = v.location.longitude;
+
+                    if (lat < b.getSouth() || lat > b.getNorth() || lon < b.getWest() || lon > b.getEast()) {
+                        return;
+                    }
+
+                    const id = v.vehicleId || `${lat}_${lon}`;
                     activeIds.add(id);
 
                     if (!buses[id]) buses[id] = { history: [] };
 
-                    buses[id].lat = v.location.latitude;
-                    buses[id].lon = v.location.longitude;
+                    buses[id].lat = lat;
+                    buses[id].lon = lon;
                     buses[id].line = v.line?.publicCode || '?';
                     buses[id].dest = v.destinationDisplay?.frontText || '';
                     buses[id].delay = v.delay ? Math.round(v.delay / 60) : 0;
 
-                    buses[id].history.push([v.location.latitude, v.location.longitude]);
+                    buses[id].history.push([lat, lon]);
                     if (buses[id].history.length > 30) buses[id].history.shift();
 
                     count++;
@@ -823,8 +826,8 @@
 
                 busCounterEl.innerText = "Busser synlige: " + count;
             } catch(e) {
-                console.error("Feil ved henting av bussdata:", e);
-                busCounterEl.innerText = "Buss-feil ved tilkobling";
+                console.error("Feil ved henting av Svipper-data:", e);
+                busCounterEl.innerText = "Tilkoblingsfeil buss";
             }
         }
 
@@ -844,15 +847,15 @@
                 
                 busCtx.fillStyle = "#ef4444";
                 busCtx.beginPath(); 
-                busCtx.arc(p.x - tl.x, p.y - tl.y, 5, 0, Math.PI * 2); 
+                busCtx.arc(p.x - tl.x, p.y - tl.y, 6, 0, Math.PI * 2); 
                 busCtx.fill();
                 
                 busCtx.strokeStyle = "#ffffff";
-                busCtx.lineWidth = 1.5;
+                busCtx.lineWidth = 2;
                 busCtx.stroke();
 
                 let labels = [];
-                if (showLine) labels.push("Linje " + b.line);
+                if (showLine) labels.push("L " + b.line);
                 if (showDest && b.dest) labels.push(b.dest);
                 if (showDelay && b.delay !== 0) {
                     const delayTxt = b.delay > 0 ? `+${b.delay}m` : `${b.delay}m`;
@@ -861,13 +864,19 @@
 
                 if (labels.length > 0) {
                     busCtx.font = "bold 11px -apple-system, sans-serif";
+                    
+                    const text = labels.join(" | ");
+                    const textWidth = busCtx.measureText(text).width;
+                    busCtx.fillStyle = "rgba(0,0,0,0.7)";
+                    busCtx.fillRect(p.x - tl.x + 10, p.y - tl.y - 10, textWidth + 8, 16);
+
                     busCtx.fillStyle = "#fca5a5";
-                    busCtx.fillText(labels.join(" | "), p.x - tl.x + 10, p.y - tl.y + 4);
+                    busCtx.fillText(text, p.x - tl.x + 14, p.y - tl.y + 2);
                 }
 
                 if (showTrails && b.history.length > 2) {
                     busCtx.beginPath();
-                    busCtx.strokeStyle = "rgba(239, 68, 68, 0.4)";
+                    busCtx.strokeStyle = "rgba(239, 68, 68, 0.5)";
                     busCtx.lineWidth = 2;
                     const pStart = map.latLngToLayerPoint(b.history[0]);
                     busCtx.moveTo(pStart.x - tl.x, pStart.y - tl.y);
@@ -894,7 +903,7 @@
 
                 updateCanvasPosition(busCanvas, busCtx, busesActive);
                 fetchBuses();
-                busInterval = setInterval(fetchBuses, 10000);
+                busInterval = setInterval(fetchBuses, 8000);
                 drawBuses();
 
                 map.on('move zoom', handleBusMove);
