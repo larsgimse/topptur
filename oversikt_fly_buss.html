@@ -768,14 +768,12 @@
               }
             }`;
 
-            const targetUrl = 'https://api.entur.io/realtime/v1/graphql';
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
-
             try {
-                const res = await fetch(proxyUrl, {
+                const res = await fetch('https://api.entur.io/realtime/v1/graphql', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'ET-Client-Name': 'personlig-toppturkart'
                     },
                     body: JSON.stringify({ query })
                 });
