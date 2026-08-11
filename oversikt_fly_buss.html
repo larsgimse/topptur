@@ -132,7 +132,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Container for paneler slik at de stabler seg loddrett */
         .panels-container {
             position: fixed;
             top: 75px;
@@ -141,7 +140,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            pointer-events: none; /* Lar klikk gå gjennom tomrom mellom panelene */
+            pointer-events: none;
         }
 
         .ui-panel {
@@ -157,7 +156,7 @@
             flex-direction: column; 
             gap: 8px;
             min-width: 180px;
-            pointer-events: auto; /* Aktiverer interaksjon på selve panelet */
+            pointer-events: auto;
         }
         
         .ui-panel.active { display: flex; }
@@ -282,7 +281,6 @@
         </div>
     </header>
 
-    <!-- CONTAINER FOR PANELENE SLIK AT DE KOMMER UNDER HVERANDRE -->
     <div class="panels-container">
         <!-- FLY PANEL -->
         <div id="flight-panel" class="ui-panel">
@@ -306,7 +304,7 @@
 
     <div class="counter-box">
         <div id="counter" class="counter">Fly synlige: 0</div>
-        <div id="bus-counter" class="counter">Busser synlige: 0</div>
+        <div id="bus-counter" class="counter">Busser: Laster...</div>
     </div>
 
     <div id="map-container">
@@ -751,20 +749,19 @@
             if (!busesActive) return;
             const b = map.getBounds();
             
-            const targetUrl = 'https://api.entur.io/realtime/v1/rest/vm';
-            const url = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
-            
             try {
-                const res = await fetch(url, {
+                // Direkte henting mot Entur API (støtter CORS med ET-Client-Name)
+                const res = await fetch('https://api.entur.io/realtime/v1/rest/vm', {
                     headers: {
-                        'ET-Client-Name': 'kartapp-bussvisning'
+                        'ET-Client-Name': 'toppturkart-bussvisning'
                     }
                 });
 
                 if (!res.ok) {
-                    console.warn("Entur svarte med status:", res.status);
+                    busCounterEl.innerText = "Buss-feil: " + res.status;
                     return;
                 }
+                
                 const data = await res.json();
                 
                 const siri = data.Siri || data.siri;
@@ -787,6 +784,7 @@
                     
                     if (isNaN(lat) || isNaN(lon)) return;
 
+                    // Sjekk om bussen er innenfor gjeldende kartsutsnitt
                     if (lat >= b.getSouth() && lat <= b.getNorth() && lon >= b.getWest() && lon <= b.getEast()) {
                         const id = journey.VehicleRef || journey.vehicleRef || item.RecordedAtTime || (lat + "_" + lon);
                         activeIds.add(id);
@@ -827,6 +825,7 @@
                     }
                 });
 
+                // Fjern busser som ikke lenger er aktive i utsnittet
                 for (let id in buses) {
                     if (!activeIds.has(id)) {
                         delete buses[id];
@@ -836,6 +835,7 @@
                 busCounterEl.innerText = "Busser synlige: " + count;
             } catch(e) {
                 console.error("Feil ved henting av bussdata:", e);
+                busCounterEl.innerText = "Buss-feil ved tilkobling";
             }
         }
 
@@ -900,6 +900,7 @@
                 btnBuss.classList.add('active');
                 busPanel.classList.add('active');
                 busCounterEl.classList.add('active');
+                busCounterEl.innerText = "Busser: Laster...";
                 busCanvas.style.display = 'block';
 
                 updateCanvasPosition(busCanvas, busCtx, busesActive);
