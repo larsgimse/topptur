@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busstest Tromsø - Best Practice</title>
+    <title>Busstest Tromsø - Nasjonalt API</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -13,7 +13,6 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #fff; }
         #map { width: 100vw; height: 100vh; }
         
-        /* Statuspanel øverst til høyre */
         #status-box {
             position: absolute;
             top: 16px;
@@ -27,7 +26,6 @@
             font-size: 13px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
             min-width: 220px;
-            max-width: 320px;
         }
 
         .status-header {
@@ -42,7 +40,7 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background-color: #eab308; /* Venter/Gul */
+            background-color: #eab308;
             display: inline-block;
         }
 
@@ -53,10 +51,8 @@
             margin-top: 6px;
             font-size: 12px;
             color: #a1a1aa;
-            word-break: break-word;
         }
 
-        /* Styling for buss-markører */
         .bus-marker {
             display: flex;
             align-items: center;
@@ -68,7 +64,6 @@
             border: 2px solid #ffffff;
             border-radius: 12px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-            transition: transform 0.3s ease;
         }
 
         .leaflet-popup-content-wrapper {
@@ -77,7 +72,6 @@
             border-radius: 8px;
             border: 1px solid #3f3f46;
         }
-        
         .leaflet-popup-tip { background: #18181b; }
     </style>
 </head>
@@ -93,37 +87,29 @@
 
     <div id="map"></div>
 
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Konfigurasjon
         const CONFIG = {
-            TARGET_URL: 'https://api.entur.io/realtime/v1/rest/vm',
-            PROXY_PREFIX: 'https://corsproxy.io/?',
+            // Enturs nasjonale GraphQL API
+            API_URL: 'https://api.entur.io/journey-planner/v3/graphql',
             CLIENT_NAME: 'gimse-busstest',
             POLL_INTERVAL_MS: 10000,
-            DEFAULT_CENTER: [69.6492, 18.9553], // Tromsø
-            DEFAULT_ZOOM: 12,
+            CENTER: [69.6492, 18.9553], // Tromsø
+            ZOOM: 12,
             // Geografisk Bounding Box for Tromsø
-            BBOX: { minLat: 69.4, maxLat: 69.8, minLon: 18.3, maxLon: 19.3 }
+            BBOX: { minLat: 69.5, maxLat: 69.8, minLon: 18.8, maxLon: 19.3 }
         };
 
-        // Kart-initialisering
-        const map = L.map('map', {
-            zoomControl: true
-        }).setView(CONFIG.DEFAULT_CENTER, CONFIG.DEFAULT_ZOOM);
+        const map = L.map('map').setView(CONFIG.CENTER, CONFIG.ZOOM);
 
-        // Mørk bakgrunn
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://entur.no">Entur</a>',
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://entur.no">Entur Nasjonalt API</a>',
             maxZoom: 19
         }).addTo(map);
 
         const busLayerGroup = L.layerGroup().addTo(map);
         const activeMarkers = new Map();
-        let currentAbortController = null;
 
-        // Opprett tilpasset ikon med linjenummer
         function createBusIcon(line) {
             return L.divIcon({
                 className: 'bus-marker-wrapper',
@@ -133,59 +119,67 @@
             });
         }
 
-        // Hovedfunksjon for henting og oppdatering av data
-        async function fetchVehiclePositions() {
+        async function hentBussdata() {
             const statusDot = document.getElementById('status-dot');
             const countEl = document.getElementById('buss-count');
 
-            if (currentAbortController) {
-                currentAbortController.abort();
-            }
-            currentAbortController = new AbortController();
-
-            // Rute gjennom CORS-proxy for å unngå preflight-sperre i nettleseren
-            const fetchUrl = CONFIG.PROXY_PREFIX + encodeURIComponent(CONFIG.TARGET_URL);
+            // GraphQL-spørring mot det nasjonale registeret
+            const graphqlQuery = {
+                query: `
+                query {
+                  vehicles {
+                    id
+                    location {
+                      latitude
+                      longitude
+                    }
+                    line {
+                      publicCode
+                    }
+                    destinationName
+                  }
+                }`
+            };
 
             try {
-                const response = await fetch(fetchUrl, {
-                    method: 'GET',
+                const response = await fetch(CONFIG.API_URL, {
+                    method: 'POST',
                     headers: {
+                        'Content-Type': 'application/json',
                         'ET-Client-Name': CONFIG.CLIENT_NAME
                     },
-                    signal: currentAbortController.signal
+                    body: JSON.stringify(graphqlQuery)
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status} (${response.statusText})`);
+                    throw new Error(`HTTP ${response.status}`);
                 }
 
-                const data = await response.json();
-                const activities = data?.Siri?.ServiceDelivery?.VehicleMonitoringDelivery?.[0]?.VehicleActivity || [];
+                const result = await response.json();
+                
+                if (result.errors) {
+                    throw new Error(result.errors[0]?.message || 'GraphQL-feil');
+                }
 
+                const vehicles = result?.data?.vehicles || [];
                 const seenVehicleIds = new Set();
                 let tromsoCount = 0;
 
-                activities.forEach((activity, index) => {
-                    const journey = activity.MonitoredVehicleJourney;
-                    if (!journey || !journey.VehicleLocation) return;
+                vehicles.forEach((buss, index) => {
+                    if (!buss.location) return;
 
-                    const lat = parseFloat(journey.VehicleLocation.Latitude);
-                    const lon = parseFloat(journey.VehicleLocation.Longitude);
+                    const lat = buss.location.latitude;
+                    const lon = buss.location.longitude;
 
-                    if (isNaN(lat) || isNaN(lon)) return;
-
-                    // Geografisk avskjæring for Tromsø
+                    // Filtrer utelukkende på Tromsø-området via GPS
                     if (lat < CONFIG.BBOX.minLat || lat > CONFIG.BBOX.maxLat || 
                         lon < CONFIG.BBOX.minLon || lon > CONFIG.BBOX.maxLon) {
                         return;
                     }
 
-                    const vehicleId = journey.VehicleRef || 
-                                      journey.FramedVehicleJourneyRef?.DatedVehicleJourneyRef || 
-                                      `v_${journey.LineRef}_${index}`;
-
-                    const line = journey.PublishedLineName?.[0]?.value || journey.LineRef || '?';
-                    const destination = journey.DestinationName?.[0]?.value || 'Ukjent destinasjon';
+                    const vehicleId = buss.id || `buss_${index}`;
+                    const line = buss.line?.publicCode || '?';
+                    const destination = buss.destinationName || 'Ukjent destinasjon';
 
                     seenVehicleIds.add(vehicleId);
                     tromsoCount++;
@@ -197,24 +191,23 @@
                         </div>
                     `;
 
-                    // Flytt eksisterende markør mykt
+                    // Oppdater posisjon dersom markøren allerede finnes
                     if (activeMarkers.has(vehicleId)) {
-                        const existingMarker = activeMarkers.get(vehicleId);
-                        existingMarker.setLatLng([lat, lon]);
-                        existingMarker.setPopupContent(popupContent);
+                        const marker = activeMarkers.get(vehicleId);
+                        marker.setLatLng([lat, lon]);
+                        marker.setPopupContent(popupContent);
                     } else {
-                        // Lag ny markør
-                        const newMarker = L.marker([lat, lon], {
+                        const marker = L.marker([lat, lon], {
                             icon: createBusIcon(line),
                             title: `Linje ${line} - ${destination}`
                         }).bindPopup(popupContent);
 
-                        newMarker.addTo(busLayerGroup);
-                        activeMarkers.set(vehicleId, newMarker);
+                        marker.addTo(busLayerGroup);
+                        activeMarkers.set(vehicleId, marker);
                     }
                 });
 
-                // Fjern busser som ikke lenger rapporteres
+                // Fjern markører som ikke lenger er i drift
                 for (const [vId, marker] of activeMarkers.entries()) {
                     if (!seenVehicleIds.has(vId)) {
                         busLayerGroup.removeLayer(marker);
@@ -226,21 +219,14 @@
                 countEl.innerText = `Viser ${tromsoCount} busser (${new Date().toLocaleTimeString('no-NO')})`;
 
             } catch (err) {
-                if (err.name === 'AbortError') return;
-
                 console.error('Feil ved henting:', err);
                 statusDot.className = 'status-dot error';
-                countEl.innerText = `Feil: ${err.message || 'Kunne ikke koble til'}`;
+                countEl.innerText = `Feil: ${err.message}`;
             }
         }
 
-        // Start henting og sett opp intervall
-        fetchVehiclePositions();
-        const intervalId = setInterval(fetchVehiclePositions, CONFIG.POLL_INTERVAL_MS);
-
-        window.addEventListener('beforeunload', () => {
-            clearInterval(intervalId);
-        });
+        hentBussdata();
+        setInterval(hentBussdata, CONFIG.POLL_INTERVAL_MS);
     </script>
 </body>
 </html>
