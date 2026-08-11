@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Buss i Sanntid – Tromsø</title>
+  <title>Buss i Sanntid – Tromsø (GraphQL)</title>
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -56,6 +56,7 @@
       align-items: center;
       justify-content: center;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+      transition: all 0.3s ease;
     }
     .status-error {
       color: #d32f2f;
@@ -67,7 +68,7 @@
 
   <div id="info-panel">
     <h1>Buss i Sanntid – Tromsø</h1>
-    <p id="status">Kobler til Entur sanntidsdata...</p>
+    <p id="status">Kobler til Entur GraphQL...</p>
   </div>
 
   <div id="map"></div>
@@ -81,66 +82,90 @@
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution: '&copy; OpenStreetMap | Data fra Entur (SIRI-VM)'
+      attribution: '&copy; OpenStreetMap | Data fra Entur GraphQL'
     }).addTo(map);
 
     const busMarkers = {};
-    const SIRI_VM_URL = 'https://api.entur.io/realtime/v1/rest/vm';
+    const ENTUR_GRAPHQL_URL = 'https://api.entur.io/realtime/v2/vehicles/graphql';
 
-    // Bounding Box for Tromsø (Kvaløya, Tromsøya og Fastlandet)
+    // Geografisk avgrensing til Tromsø og omegn
     function erITromso(lat, lon) {
       return lat >= 69.50 && lat <= 69.75 && lon >= 18.70 && lon <= 19.20;
     }
+
+    // GraphQL-spørring direkte mot Troms Fylkestrafikk (TRO)
+    const graphqlQuery = `
+      query GetTromsBusses {
+        vehicles(codespaces: ["TRO"]) {
+          vehicleId
+          lastUpdated
+          bearing
+          delay
+          line {
+            publicCode
+            lineName
+          }
+          location {
+            latitude
+            longitude
+          }
+        }
+      }
+    `;
 
     async function fetchBusses() {
       const statusEl = document.getElementById('status');
 
       try {
-        const response = await fetch(SIRI_VM_URL, {
+        const response = await fetch(ENTUR_GRAPHQL_URL, {
+          method: 'POST',
           headers: {
-            'ET-Client-Name': 'troms-fylke-tromso-busskart-github'
-          }
+            'Content-Type': 'application/json',
+            'ET-Client-Name': 'troms-fylke-tromso-busskart-graphql'
+          },
+          body: JSON.stringify({ query: graphqlQuery })
         });
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
 
-        const data = await response.json();
-        const delivery = data?.Siri?.ServiceDelivery?.VehicleMonitoringDelivery?.[0];
-        const activities = delivery?.VehicleActivity || [];
+        const json = await response.json();
+        const vehicles = json.data?.vehicles || [];
 
         const tromsoBusses = [];
 
-        activities.forEach(activity => {
-          const location = activity?.MonitoredVehicleJourney?.VehicleLocation;
-          if (!location) return;
+        vehicles.forEach(bus => {
+          if (!bus.location || !bus.location.latitude || !bus.location.longitude) return;
 
-          const lat = parseFloat(location.Latitude);
-          const lon = parseFloat(location.Longitude);
+          const lat = bus.location.latitude;
+          const lon = bus.location.longitude;
 
+          // Filtrer til Tromsø-området
           if (erITromso(lat, lon)) {
-            const journey = activity.MonitoredVehicleJourney;
-            const lineRef = journey?.PublishedLineName || journey?.LineRef?.value || 'Buss';
-            const vehicleRef = journey?.VehicleRef?.value || `${lat}-${lon}`;
-            const destination = journey?.DestinationName || 'Ukjent retning';
+            const lineCode = bus.line?.publicCode || 'Buss';
+            const lineName = bus.line?.lineName || 'Troms Fylkestrafikk';
+            const vehicleId = bus.vehicleId || `${lineCode}-${lat}-${lon}`;
+            const delayMin = bus.delay ? Math.round(bus.delay / 60) : 0;
 
             tromsoBusses.push({
-              id: vehicleRef,
+              id: vehicleId,
               lat: lat,
               lon: lon,
-              line: lineRef,
-              destination: destination
+              line: lineCode,
+              name: lineName,
+              delay: delayMin,
+              bearing: bus.bearing || 0
             });
           }
         });
 
         oppdaterKart(tromsoBusses);
-        statusEl.innerText = `Sist oppdatert kl. ${new Date().toLocaleTimeString()} (${tromsoBusses.length} busser på veien)`;
+        statusEl.innerText = `Sist oppdatert kl. ${new Date().toLocaleTimeString()} (${tromsoBusses.length} busser i Tromsø)`;
 
       } catch (err) {
-        console.error('Kunne ikke hente bussdata:', err);
-        statusEl.innerHTML = `<span class="status-error">Midlertidig feil ved henting av bussdata. Prøver igjen...</span>`;
+        console.error('Feil ved henting av GraphQL-data:', err);
+        statusEl.innerHTML = `<span class="status-error">Midlertidig feil ved tilkobling til Entur. Prøver igjen...</span>`;
       }
     }
 
@@ -150,15 +175,22 @@
       busses.forEach(bus => {
         activeIds.add(bus.id);
 
+        const delayText = bus.delay > 0 
+          ? `<br><span style="color: #d32f2f;">+${bus.delay} min forsinket</span>` 
+          : (bus.delay < 0 ? `<br><span style="color: #2e7d32;">${Math.abs(bus.delay)} min foran rute</span>` : '<br>I rute');
+
         const popupContent = `
           <strong>Linje ${bus.line}</strong><br>
-          <em>Retning:</em> ${bus.destination}
+          ${bus.name}
+          ${delayText}
         `;
 
         if (busMarkers[bus.id]) {
+          // Oppdater posisjon
           busMarkers[bus.id].setLatLng([bus.lat, bus.lon]);
           busMarkers[bus.id].getPopup().setContent(popupContent);
         } else {
+          // Lag ny markør
           const customIcon = L.divIcon({
             className: 'bus-icon',
             html: `<span>${bus.line}</span>`,
@@ -174,7 +206,7 @@
         }
       });
 
-      // Fjern busser som ikke lenger rapporteres
+      // Fjern busser som ikke lenger er aktive
       Object.keys(busMarkers).forEach(id => {
         if (!activeIds.has(id)) {
           map.removeLayer(busMarkers[id]);
@@ -183,11 +215,11 @@
       });
     }
 
-    // Første henting
+    // Første henting ved oppstart
     fetchBusses();
 
-    // Automatisk oppdatering hvert 8. sekund
-    setInterval(fetchBusses, 8000);
+    // Oppdater automatisk hvert 5. sekund (mye lavere serverbelastning med GraphQL)
+    setInterval(fetchBusses, 5000);
   </script>
 </body>
 </html>
