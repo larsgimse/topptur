@@ -731,7 +731,7 @@
         btnFly.addEventListener('click', toggleFlyVisning);
 
         /* ==========================================================================
-           BUSSRADAR FUNKSJONALITET (ENTUR / SVIPPER SANNTID)
+           BUSSRADAR FUNKSJONALITET (ENTUR SIRI LITE REST-API)
            ========================================================================== */
         const btnBuss = document.getElementById('btn-buss');
         const busPanel = document.getElementById('bus-panel');
@@ -748,34 +748,15 @@
         async function fetchBuses() {
             if (!busesActive) return;
             const b = map.getBounds();
-            
-            const query = `
-            {
-              vehicles(codespace: "SVI") {
-                vehicleId
-                lastUpdated
-                location {
-                  latitude
-                  longitude
-                }
-                line {
-                  publicCode
-                }
-                destinationDisplay {
-                  frontText
-                }
-                delay
-              }
-            }`;
+
+            // Bruker Enturs SIRI Lite REST JSON-endepunkt for Svipper (codespace SVI)
+            const url = 'https://api.entur.io/realtime/v1/rest/vm?datasetId=SVI';
 
             try {
-                const res = await fetch('https://api.entur.io/realtime/v1/graphql', {
-                    method: 'POST',
+                const res = await fetch(url, {
                     headers: {
-                        'Content-Type': 'application/json',
                         'ET-Client-Name': 'personlig-toppturkart'
-                    },
-                    body: JSON.stringify({ query })
+                    }
                 });
 
                 if (!res.ok) {
@@ -784,31 +765,42 @@
                 }
 
                 const json = await res.json();
-                const vehicles = json?.data?.vehicles || [];
+                const vehicleActivities = json?.Siri?.ServiceDelivery?.VehicleMonitoringDelivery?.[0]?.VehicleActivity || [];
                 
                 let count = 0;
                 const activeIds = new Set();
 
-                vehicles.forEach(v => {
-                    if (!v.location || isNaN(v.location.latitude) || isNaN(v.location.longitude)) return;
+                vehicleActivities.forEach(act => {
+                    const journey = act.MonitoredVehicleJourney;
+                    if (!journey || !journey.VehicleLocation) return;
 
-                    const lat = v.location.latitude;
-                    const lon = v.location.longitude;
+                    const lat = parseFloat(journey.VehicleLocation.Latitude);
+                    const lon = parseFloat(journey.VehicleLocation.Longitude);
 
+                    if (isNaN(lat) || isNaN(lon)) return;
+
+                    // Filtrer på kartutsnitt
                     if (lat < b.getSouth() || lat > b.getNorth() || lon < b.getWest() || lon > b.getEast()) {
                         return;
                     }
 
-                    const id = v.vehicleId || `${lat}_${lon}`;
+                    const id = journey.VehicleRef || `${lat}_${lon}`;
                     activeIds.add(id);
 
                     if (!buses[id]) buses[id] = { history: [] };
 
                     buses[id].lat = lat;
                     buses[id].lon = lon;
-                    buses[id].line = v.line?.publicCode || '?';
-                    buses[id].dest = v.destinationDisplay?.frontText || '';
-                    buses[id].delay = v.delay ? Math.round(v.delay / 60) : 0;
+                    buses[id].line = journey.PublishedLineName?.[0]?.value || journey.LineRef || '?';
+                    buses[id].dest = journey.DestinationName?.[0]?.value || '';
+                    
+                    // Delay oppgis i ISO 8601 varighet eller sekunder om tilgjengelig
+                    let delayMin = 0;
+                    if (journey.Delay) {
+                        const seconds = parseInt(journey.Delay, 10);
+                        if (!isNaN(seconds)) delayMin = Math.round(seconds / 60);
+                    }
+                    buses[id].delay = delayMin;
 
                     buses[id].history.push([lat, lon]);
                     if (buses[id].history.length > 30) buses[id].history.shift();
