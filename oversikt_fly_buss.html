@@ -132,11 +132,19 @@
             to { transform: rotate(360deg); }
         }
 
-        .ui-panel {
-            position: fixed; 
-            top: 75px; 
-            right: 10px; 
+        /* Container for paneler slik at de stabler seg loddrett */
+        .panels-container {
+            position: fixed;
+            top: 75px;
+            right: 10px;
             z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none; /* Lar klikk gå gjennom tomrom mellom panelene */
+        }
+
+        .ui-panel {
             background: var(--panel-bg); 
             padding: 12px 15px; 
             border-radius: 12px; 
@@ -149,6 +157,7 @@
             flex-direction: column; 
             gap: 8px;
             min-width: 180px;
+            pointer-events: auto; /* Aktiverer interaksjon på selve panelet */
         }
         
         .ui-panel.active { display: flex; }
@@ -247,7 +256,7 @@
                 bottom: auto;
                 top: 20px;
             }
-            .ui-panel {
+            .panels-container {
                 top: 10px;
                 right: 10px;
                 max-width: 200px;
@@ -273,23 +282,26 @@
         </div>
     </header>
 
-    <!-- FLY PANEL -->
-    <div id="flight-panel" class="ui-panel">
-        <div class="row">Haler: <label class="switch"><input type="checkbox" id="trailSwitch" checked><span class="slider"></span></label></div>
-        <div class="row">Flynr: <label class="switch"><input type="checkbox" id="flightNumSwitch"><span class="slider"></span></label></div>
-        <div class="row">Kallesignal: <label class="switch"><input type="checkbox" id="callsignSwitch"><span class="slider"></span></label></div>
-        <div class="row">Registrering: <label class="switch"><input type="checkbox" id="regSwitch"><span class="slider"></span></label></div>
-        <div class="row">Høyde (Av/Fot/m): <input type="range" id="altSlider" class="alt-slider" min="0" max="2" value="0"></div>
-        <div class="row">Fra: <label class="switch"><input type="checkbox" id="originSwitch"><span class="slider"></span></label></div>
-        <div class="row">Til: <label class="switch"><input type="checkbox" id="destSwitch"><span class="slider"></span></label></div>
-    </div>
+    <!-- CONTAINER FOR PANELENE SLIK AT DE KOMMER UNDER HVERANDRE -->
+    <div class="panels-container">
+        <!-- FLY PANEL -->
+        <div id="flight-panel" class="ui-panel">
+            <div class="row">Haler: <label class="switch"><input type="checkbox" id="trailSwitch" checked><span class="slider"></span></label></div>
+            <div class="row">Flynr: <label class="switch"><input type="checkbox" id="flightNumSwitch"><span class="slider"></span></label></div>
+            <div class="row">Kallesignal: <label class="switch"><input type="checkbox" id="callsignSwitch"><span class="slider"></span></label></div>
+            <div class="row">Registrering: <label class="switch"><input type="checkbox" id="regSwitch"><span class="slider"></span></label></div>
+            <div class="row">Høyde (Av/Fot/m): <input type="range" id="altSlider" class="alt-slider" min="0" max="2" value="0"></div>
+            <div class="row">Fra: <label class="switch"><input type="checkbox" id="originSwitch"><span class="slider"></span></label></div>
+            <div class="row">Til: <label class="switch"><input type="checkbox" id="destSwitch"><span class="slider"></span></label></div>
+        </div>
 
-    <!-- BUSS PANEL -->
-    <div id="bus-panel" class="ui-panel">
-        <div class="row">Haler: <label class="switch"><input type="checkbox" id="busTrailSwitch" checked><span class="slider"></span></label></div>
-        <div class="row">Linjenr: <label class="switch"><input type="checkbox" id="busLineSwitch" checked><span class="slider"></span></label></div>
-        <div class="row">Destinasjon: <label class="switch"><input type="checkbox" id="busDestSwitch" checked><span class="slider"></span></label></div>
-        <div class="row">Forsinkelse: <label class="switch"><input type="checkbox" id="busDelaySwitch"><span class="slider"></span></label></div>
+        <!-- BUSS PANEL -->
+        <div id="bus-panel" class="ui-panel">
+            <div class="row">Haler: <label class="switch"><input type="checkbox" id="busTrailSwitch" checked><span class="slider"></span></label></div>
+            <div class="row">Linjenr: <label class="switch"><input type="checkbox" id="busLineSwitch" checked><span class="slider"></span></label></div>
+            <div class="row">Destinasjon: <label class="switch"><input type="checkbox" id="busDestSwitch" checked><span class="slider"></span></label></div>
+            <div class="row">Forsinkelse: <label class="switch"><input type="checkbox" id="busDelaySwitch"><span class="slider"></span></label></div>
+        </div>
     </div>
 
     <div class="counter-box">
@@ -568,6 +580,18 @@
         });
 
         /* ==========================================================================
+           FELLES FUNKSJON FOR CANVAS POSISJON
+           ========================================================================== */
+        function updateCanvasPosition(c, ctx, active) {
+            if (!active) return;
+            const b = map.getBounds(), size = map.getSize(), tl = map.latLngToLayerPoint(b.getNorthWest());
+            c.style.left = tl.x + 'px'; 
+            c.style.top = tl.y + 'px';
+            c.width = size.x; 
+            c.height = size.y;
+        }
+
+        /* ==========================================================================
            FLYRADAR FUNKSJONALITET
            ========================================================================== */
         const btnFly = document.getElementById('btn-fly');
@@ -581,15 +605,6 @@
         const flightCanvas = L.DomUtil.create('canvas', 'leaflet-zoom-animated overlay-canvas');
         map.getPanes().overlayPane.appendChild(flightCanvas);
         const flightCtx = flightCanvas.getContext('2d');
-
-        function updateCanvasPosition(c, ctx, active) {
-            if (!active) return;
-            const b = map.getBounds(), size = map.getSize(), tl = map.latLngToLayerPoint(b.getNorthWest());
-            c.style.left = tl.x + 'px'; 
-            c.style.top = tl.y + 'px';
-            c.width = size.x; 
-            c.height = size.y;
-        }
 
         async function fetchFlights() {
             if (!flightsActive) return;
@@ -694,7 +709,7 @@
                 flightInterval = setInterval(fetchFlights, 15000);
                 drawFlights();
 
-                map.on('move zoom', () => updateCanvasPosition(flightCanvas, flightCtx, flightsActive));
+                map.on('move zoom', handleFlightMove);
                 map.on('moveend', fetchFlights);
             } else {
                 btnFly.classList.remove('active');
@@ -705,13 +720,20 @@
                 if (flightInterval) clearInterval(flightInterval);
                 flightCtx.clearRect(0, 0, flightCanvas.width, flightCanvas.height);
                 flights = {};
+
+                map.off('move zoom', handleFlightMove);
+                map.off('moveend', fetchFlights);
             }
+        }
+
+        function handleFlightMove() {
+            updateCanvasPosition(flightCanvas, flightCtx, flightsActive);
         }
 
         btnFly.addEventListener('click', toggleFlyVisning);
 
         /* ==========================================================================
-           BUSSRADAR FUNKSJONALITET (ENTUR API FIX)
+           BUSSRADAR FUNKSJONALITET (ENTUR API)
            ========================================================================== */
         const btnBuss = document.getElementById('btn-buss');
         const busPanel = document.getElementById('bus-panel');
@@ -729,19 +751,22 @@
             if (!busesActive) return;
             const b = map.getBounds();
             
-            // Bruker corsproxy for å omgå CORS-blokkering i nettleser
             const targetUrl = 'https://api.entur.io/realtime/v1/rest/vm';
             const url = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
             
             try {
-                const res = await fetch(url);
+                const res = await fetch(url, {
+                    headers: {
+                        'ET-Client-Name': 'kartapp-bussvisning'
+                    }
+                });
+
                 if (!res.ok) {
-                    console.warn("Svar fra Entur ikke OK:", res.status);
+                    console.warn("Entur svarte med status:", res.status);
                     return;
                 }
                 const data = await res.json();
                 
-                // Robust håndtering av store/små bokstaver i SIRI-JSON
                 const siri = data.Siri || data.siri;
                 const delivery = siri?.ServiceDelivery || siri?.serviceDelivery;
                 const vmDelivery = delivery?.VehicleMonitoringDelivery?.[0] || delivery?.vehicleMonitoringDelivery?.[0];
@@ -762,7 +787,6 @@
                     
                     if (isNaN(lat) || isNaN(lon)) return;
 
-                    // Filtrer på om bussen befinner seg innenfor kartutsnittet
                     if (lat >= b.getSouth() && lat <= b.getNorth() && lon >= b.getWest() && lon <= b.getEast()) {
                         const id = journey.VehicleRef || journey.vehicleRef || item.RecordedAtTime || (lat + "_" + lon);
                         activeIds.add(id);
@@ -772,17 +796,14 @@
                         buses[id].lat = lat;
                         buses[id].lon = lon;
                         
-                        // Hent ut linjenummer (f.eks "34")
                         let lineName = journey.PublishedLineName || journey.publishedLineName || journey.LineRef || journey.lineRef || '?';
                         if (typeof lineName === 'string' && lineName.includes(':')) {
                             lineName = lineName.split(':').pop();
                         }
                         buses[id].line = lineName;
                         
-                        // Destinasjon
                         buses[id].dest = journey.DestinationName || journey.destinationName || '';
                         
-                        // Parse forsinkelse fra ISO-8601 durasjon (f.eks "PT1M20S" eller sekunder)
                         let delayMin = 0;
                         const rawDelay = journey.Delay || journey.delay;
                         if (typeof rawDelay === 'number') {
@@ -806,7 +827,6 @@
                     }
                 });
 
-                // Fjern busser som ikke lenger sender posisjon
                 for (let id in buses) {
                     if (!activeIds.has(id)) {
                         delete buses[id];
@@ -815,7 +835,7 @@
                 
                 busCounterEl.innerText = "Busser synlige: " + count;
             } catch(e) {
-                console.error("Feil ved henting/parsing av bussdata fra Entur:", e);
+                console.error("Feil ved henting av bussdata:", e);
             }
         }
 
@@ -833,7 +853,6 @@
                 const b = buses[id];
                 const p = map.latLngToLayerPoint([b.lat, b.lon]);
                 
-                // Rød sirkel for buss
                 busCtx.fillStyle = "#ef4444";
                 busCtx.beginPath(); 
                 busCtx.arc(p.x - tl.x, p.y - tl.y, 5, 0, Math.PI * 2); 
@@ -857,7 +876,6 @@
                     busCtx.fillText(labels.join(" | "), p.x - tl.x + 10, p.y - tl.y + 4);
                 }
 
-                // Tegn historikk-hale
                 if (showTrails && b.history.length > 2) {
                     busCtx.beginPath();
                     busCtx.strokeStyle = "rgba(239, 68, 68, 0.4)";
@@ -887,8 +905,9 @@
                 updateCanvasPosition(busCanvas, busCtx, busesActive);
                 fetchBuses();
                 busInterval = setInterval(fetchBuses, 10000);
+                drawBuses();
 
-                map.on('move zoom', () => updateCanvasPosition(busCanvas, busCtx, busesActive));
+                map.on('move zoom', handleBusMove);
                 map.on('moveend', fetchBuses);
             } else {
                 btnBuss.classList.remove('active');
@@ -899,7 +918,14 @@
                 if (busInterval) clearInterval(busInterval);
                 busCtx.clearRect(0, 0, busCanvas.width, busCanvas.height);
                 buses = {};
+
+                map.off('move zoom', handleBusMove);
+                map.off('moveend', fetchBuses);
             }
+        }
+
+        function handleBusMove() {
+            updateCanvasPosition(busCanvas, busCtx, busesActive);
         }
 
         btnBuss.addEventListener('click', toggleBussVisning);
