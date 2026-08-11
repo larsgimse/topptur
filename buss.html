@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busstest - Åpent API</title>
+    <title>Busstest Tromsø</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -21,7 +21,7 @@
             border: 1px solid #333;
             font-size: 14px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            max-width: 300px;
+            max-width: 320px;
             text-align: right;
         }
         
@@ -41,7 +41,7 @@
 <body>
 
     <div id="status-box">
-        <div><strong>Buss-status:</strong> <span id="status-text">Kobler til API...</span></div>
+        <div><strong>Buss Tromsø:</strong> <span id="status-text">Kobler til...</span></div>
         <div id="buss-count" style="margin-top: 4px; font-size: 12px; color: #aaa;">-</div>
     </div>
 
@@ -49,25 +49,33 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Sentrerer kartet over et område med åpent live-API
-        const map = L.map('map').setView([42.3601, -71.0589], 12);
+        // Sentrert på Tromsø sentrum
+        const map = L.map('map').setView([69.6492, 18.9553], 13);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO &copy; MBTA Live Data',
+            attribution: '&copy; OpenStreetMap &copy; CARTO &copy; Entur / Svipper',
             maxZoom: 19
         }).addTo(map);
 
         const busLayer = L.layerGroup().addTo(map);
 
-        async function hentBussdata() {
+        async function hentTromsoBusser() {
             const statusEl = document.getElementById('status-text');
             const countEl = document.getElementById('buss-count');
 
-            // Åpent sanntids-API for busser (route_type=3 tilsvarer buss)
-            const url = 'https://api-v3.mbta.com/vehicles?filter[route_type]=3';
+            // Entur SIRI Lite REST for Svipper / Troms
+            const enturUrl = 'https://api.entur.io/realtime/v1/rest/vm?datasetId=SVI';
+            
+            // Hovedproxy og sekundærproxy
+            const primaryProxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(enturUrl);
+            const secondaryProxy = 'https://corsproxy.io/?' + encodeURIComponent(enturUrl);
 
             try {
-                const res = await fetch(url);
+                let res = await fetch(primaryProxy);
+
+                if (!res.ok) {
+                    res = await fetch(secondaryProxy);
+                }
 
                 if (!res.ok) {
                     statusEl.className = 'status-error';
@@ -76,22 +84,25 @@
                 }
 
                 const json = await res.json();
-                const busser = json.data || [];
+                const kjøretøy = json?.Siri?.ServiceDelivery?.VehicleMonitoringDelivery?.[0]?.VehicleActivity || [];
 
                 busLayer.clearLayers();
                 let antallFunnet = 0;
 
-                busser.forEach(item => {
-                    const attr = item.attributes;
-                    if (!attr || !attr.latitude || !attr.longitude) return;
+                kjøretøy.forEach(item => {
+                    const journey = item.MonitoredVehicleJourney;
+                    if (!journey || !journey.VehicleLocation) return;
 
-                    const lat = attr.latitude;
-                    const lon = attr.longitude;
-                    const id = attr.label || item.id;
-                    const status = attr.current_status || 'I rute';
+                    const lat = parseFloat(journey.VehicleLocation.Latitude);
+                    const lon = parseFloat(journey.VehicleLocation.Longitude);
+
+                    if (isNaN(lat) || isNaN(lon)) return;
+
+                    const linje = journey.PublishedLineName?.[0]?.value || journey.LineRef || '?';
+                    const dest = journey.DestinationName?.[0]?.value || 'Ukjent destinasjon';
 
                     const marker = L.circleMarker([lat, lon], {
-                        radius: 7,
+                        radius: 8,
                         fillColor: '#ef4444',
                         color: '#ffffff',
                         weight: 2,
@@ -99,8 +110,8 @@
                         fillOpacity: 0.9
                     });
 
-                    marker.bindPopup(`<b>Buss ID: ${id}</b><br>Status: ${status}`);
-                    marker.bindTooltip(`Buss ${id}`, { permanent: false, direction: 'right', offset: [6, 0] });
+                    marker.bindPopup(`<b>Linje ${linje}</b><br>Destinasjon: ${dest}`);
+                    marker.bindTooltip(`L${linje}`, { permanent: true, direction: 'right', offset: [8, 0] });
 
                     busLayer.addLayer(marker);
                     antallFunnet++;
@@ -113,12 +124,12 @@
             } catch (err) {
                 console.error(err);
                 statusEl.className = 'status-error';
-                statusEl.innerText = 'Nettverksfeil / CORS';
+                statusEl.innerText = 'Tilkoblingsfeil';
             }
         }
 
-        hentBussdata();
-        setInterval(hentBussdata, 10000);
+        hentTromsoBusser();
+        setInterval(hentTromsoBusser, 10000);
     </script>
 </body>
 </html>
