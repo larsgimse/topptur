@@ -711,7 +711,7 @@
         btnFly.addEventListener('click', toggleFlyVisning);
 
         /* ==========================================================================
-           BUSSRADAR FUNKSJONALITET (ENTUR API)
+           BUSSRADAR FUNKSJONALITET (ENTUR API FIX)
            ========================================================================== */
         const btnBuss = document.getElementById('btn-buss');
         const busPanel = document.getElementById('bus-panel');
@@ -729,47 +729,93 @@
             if (!busesActive) return;
             const b = map.getBounds();
             
-            // Entur SIRI VehicleMonitoring API (SIRI Lite REST)
-            const url = `https://api.entur.io/realtime/v1/rest/vm?dataset=SVI`; // SVI = Svipper (Troms)
+            // Bruker corsproxy for å omgå CORS-blokkering i nettleser
+            const targetUrl = 'https://api.entur.io/realtime/v1/rest/vm';
+            const url = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
             
             try {
-                const res = await fetch(url, {
-                    headers: { 'ET-Client-Name': 'personal-map-toppturer' }
-                });
-                if (!res.ok) return;
+                const res = await fetch(url);
+                if (!res.ok) {
+                    console.warn("Svar fra Entur ikke OK:", res.status);
+                    return;
+                }
                 const data = await res.json();
                 
-                const vehicles = data?.Siri?.ServiceDelivery?.VehicleMonitoringDelivery?.[0]?.VehicleActivity || [];
-                let count = 0;
+                // Robust håndtering av store/små bokstaver i SIRI-JSON
+                const siri = data.Siri || data.siri;
+                const delivery = siri?.ServiceDelivery || siri?.serviceDelivery;
+                const vmDelivery = delivery?.VehicleMonitoringDelivery?.[0] || delivery?.vehicleMonitoringDelivery?.[0];
+                const activities = vmDelivery?.VehicleActivity || vmDelivery?.vehicleActivity || [];
                 
-                vehicles.forEach(item => {
-                    const journey = item.MonitoredVehicleJourney;
-                    if (!journey || !journey.VehicleLocation) return;
+                let count = 0;
+                const activeIds = new Set();
+                
+                activities.forEach(item => {
+                    const journey = item.MonitoredVehicleJourney || item.monitoredVehicleJourney;
+                    if (!journey) return;
                     
-                    const lat = journey.VehicleLocation.Latitude;
-                    const lon = journey.VehicleLocation.Longitude;
+                    const loc = journey.VehicleLocation || journey.vehicleLocation;
+                    if (!loc) return;
                     
-                    // Filtrer på om bussen er innenfor kartets grenser
+                    const lat = parseFloat(loc.Latitude ?? loc.latitude);
+                    const lon = parseFloat(loc.Longitude ?? loc.longitude);
+                    
+                    if (isNaN(lat) || isNaN(lon)) return;
+
+                    // Filtrer på om bussen befinner seg innenfor kartutsnittet
                     if (lat >= b.getSouth() && lat <= b.getNorth() && lon >= b.getWest() && lon <= b.getEast()) {
-                        const id = journey.VehicleRef || item.RecordedAtTime || Math.random().toString();
+                        const id = journey.VehicleRef || journey.vehicleRef || item.RecordedAtTime || (lat + "_" + lon);
+                        activeIds.add(id);
                         
                         if (!buses[id]) buses[id] = { history: [] };
                         
                         buses[id].lat = lat;
                         buses[id].lon = lon;
-                        buses[id].line = journey.PublishedLineName || journey.LineRef || '?';
-                        buses[id].dest = journey.DestinationName || '';
-                        buses[id].delay = journey.Delay ? Math.round(journey.Delay / 60) : 0; // i minutter
-                        buses[id].history.push([lat, lon]);
                         
+                        // Hent ut linjenummer (f.eks "34")
+                        let lineName = journey.PublishedLineName || journey.publishedLineName || journey.LineRef || journey.lineRef || '?';
+                        if (typeof lineName === 'string' && lineName.includes(':')) {
+                            lineName = lineName.split(':').pop();
+                        }
+                        buses[id].line = lineName;
+                        
+                        // Destinasjon
+                        buses[id].dest = journey.DestinationName || journey.destinationName || '';
+                        
+                        // Parse forsinkelse fra ISO-8601 durasjon (f.eks "PT1M20S" eller sekunder)
+                        let delayMin = 0;
+                        const rawDelay = journey.Delay || journey.delay;
+                        if (typeof rawDelay === 'number') {
+                            delayMin = Math.round(rawDelay / 60);
+                        } else if (typeof rawDelay === 'string') {
+                            const isNegative = rawDelay.includes('-');
+                            const m = rawDelay.match(/PT(?:(-?\d+)M)?(?:(-?\d+)S)?/i);
+                            if (m) {
+                                const mins = parseInt(m[1] || 0);
+                                const secs = parseInt(m[2] || 0);
+                                delayMin = mins + Math.round(secs / 60);
+                                if (isNegative && delayMin > 0) delayMin = -delayMin;
+                            }
+                        }
+                        buses[id].delay = delayMin;
+                        
+                        buses[id].history.push([lat, lon]);
                         if (buses[id].history.length > 30) buses[id].history.shift();
+                        
                         count++;
                     }
                 });
+
+                // Fjern busser som ikke lenger sender posisjon
+                for (let id in buses) {
+                    if (!activeIds.has(id)) {
+                        delete buses[id];
+                    }
+                }
                 
                 busCounterEl.innerText = "Busser synlige: " + count;
             } catch(e) {
-                console.warn("Feil ved henting av bussdata:", e);
+                console.error("Feil ved henting/parsing av bussdata fra Entur:", e);
             }
         }
 
@@ -787,7 +833,7 @@
                 const b = buses[id];
                 const p = map.latLngToLayerPoint([b.lat, b.lon]);
                 
-                // Tegn buss-sirkel (Rød/Oransje)
+                // Rød sirkel for buss
                 busCtx.fillStyle = "#ef4444";
                 busCtx.beginPath(); 
                 busCtx.arc(p.x - tl.x, p.y - tl.y, 5, 0, Math.PI * 2); 
@@ -811,7 +857,7 @@
                     busCtx.fillText(labels.join(" | "), p.x - tl.x + 10, p.y - tl.y + 4);
                 }
 
-                // Spor-hale
+                // Tegn historikk-hale
                 if (showTrails && b.history.length > 2) {
                     busCtx.beginPath();
                     busCtx.strokeStyle = "rgba(239, 68, 68, 0.4)";
@@ -840,8 +886,7 @@
 
                 updateCanvasPosition(busCanvas, busCtx, busesActive);
                 fetchBuses();
-                busInterval = setInterval(fetchBuses, 10000); // Oppdaterer hvert 10. sekund
-                drawBuses();
+                busInterval = setInterval(fetchBuses, 10000);
 
                 map.on('move zoom', () => updateCanvasPosition(busCanvas, busCtx, busesActive));
                 map.on('moveend', fetchBuses);
