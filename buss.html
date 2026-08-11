@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busstest</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #111; color: #fff; }
+        #map { width: 100vw; height: 100vh; }
+        
+        #status-box {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 1000;
+            background: rgba(20, 20, 20, 0.9);
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            max-width: 300px;
+        }
+        
+        .status-ok { color: #4ade80; font-weight: bold; }
+        .status-error { color: #f87171; font-weight: bold; }
+        
+        .leaflet-tooltip {
+            background: #222 !important;
+            color: #fff !important;
+            border: 1px solid #ef4444 !important;
+            font-size: 11px !important;
+            font-weight: bold;
+            padding: 2px 6px !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="status-box">
+        <div><strong>Buss-status:</strong> <span id="status-text">Kobler til Entur...</span></div>
+        <div id="buss-count" style="margin-top: 4px; font-size: 12px; color: #aaa;">-</div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initiell visning (Tromsø)
+        const map = L.map('map').setView([69.6492, 18.9553], 12);
+
+        // Mørkt bakgrunnskart
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO &copy; Entur',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Egen LayerGroup for buss-markørene
+        const busLayer = L.layerGroup().addTo(map);
+
+        async function hentBussdata() {
+            const statusEl = document.getElementById('status-text');
+            const countEl = document.getElementById('buss-count');
+
+            // SIRI Lite REST-API for Svipper / Troms
+            const url = 'https://api.entur.io/realtime/v1/rest/vm?datasetId=SVI';
+
+            try {
+                const res = await fetch(url, {
+                    headers: {
+                        'ET-Client-Name': 'github-busstest'
+                    }
+                });
+
+                if (!res.ok) {
+                    statusEl.className = 'status-error';
+                    statusEl.innerText = `HTTP Feil (${res.status})`;
+                    return;
+                }
+
+                const json = await res.json();
+                const kjøretøy = json?.Siri?.ServiceDelivery?.VehicleMonitoringDelivery?.[0]?.VehicleActivity || [];
+
+                // Tøm eksisterende markører før ny tegning
+                busLayer.clearLayers();
+
+                let antallFunnet = 0;
+
+                kjøretøy.forEach(item => {
+                    const journey = item.MonitoredVehicleJourney;
+                    if (!journey || !journey.VehicleLocation) return;
+
+                    const lat = parseFloat(journey.VehicleLocation.Latitude);
+                    const lon = parseFloat(journey.VehicleLocation.Longitude);
+
+                    if (isNaN(lat) || isNaN(lon)) return;
+
+                    const linje = journey.PublishedLineName?.[0]?.value || journey.LineRef || '?';
+                    const dest = journey.DestinationName?.[0]?.value || 'Ukjent destinasjon';
+
+                    // Lag rød sirkelmarkør
+                    const marker = L.circleMarker([lat, lon], {
+                        radius: 7,
+                        fillColor: '#ef4444',
+                        color: '#ffffff',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.9
+                    });
+
+                    // Popup ved klikk / Tooltip med linjenummer
+                    marker.bindPopup(`<b>Linje ${linje}</b><br>Destinasjon: ${dest}`);
+                    marker.bindTooltip(`L${linje}`, { permanent: true, direction: 'right', offset: [6, 0] });
+
+                    busLayer.addLayer(marker);
+                    antallFunnet++;
+                });
+
+                statusEl.className = 'status-ok';
+                statusEl.innerText = 'Tilkobling OK';
+                countEl.innerText = `Viser ${antallFunnet} busser (${new Date().toLocaleTimeString()})`;
+
+            } catch (err) {
+                console.error(err);
+                statusEl.className = 'status-error';
+                statusEl.innerText = 'Nettverksfeil / CORS-blokkering';
+            }
+        }
+
+        // Hent første gang og oppdater hvert 10. sekund
+        hentBussdata();
+        setInterval(hentBussdata, 10000);
+    </script>
+</body>
+</html>
