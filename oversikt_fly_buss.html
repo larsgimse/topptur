@@ -731,7 +731,7 @@
         btnFly.addEventListener('click', toggleFlyVisning);
 
         /* ==========================================================================
-           BUSSRADAR FUNKSJONALITET (ENTUR SIRI LITE REST-API)
+           BUSSRADAR FUNKSJONALITET (ENTUR VEHICLE API / GRAPHQL)
            ========================================================================== */
         const btnBuss = document.getElementById('btn-buss');
         const busPanel = document.getElementById('bus-panel');
@@ -745,67 +745,79 @@
         map.getPanes().overlayPane.appendChild(busCanvas);
         const busCtx = busCanvas.getContext('2d');
 
+        const VEHICLE_API = 'https://api.entur.io/realtime/v2/vehicles/graphql';
+
+        // Utvidet geografisk boks-sjekk for Tromsø (fra buss.html)
+        function erITromso(lat, lon) {
+            return lat >= 69.55 && lat <= 69.78 && lon >= 18.80 && lon <= 19.25;
+        }
+
+        const vehicleQuery = `
+            {
+                vehicles {
+                    vehicleId
+                    delay
+                    line {
+                        publicCode
+                        lineName
+                    }
+                    location {
+                        latitude
+                        longitude
+                    }
+                }
+            }
+        `;
+
         async function fetchBuses() {
             if (!busesActive) return;
-            const b = map.getBounds();
-
-            // Bruker Enturs SIRI Lite REST JSON-endepunkt for Svipper (codespace SVI)
-            const url = 'https://api.entur.io/realtime/v1/rest/vm?datasetId=SVI';
 
             try {
-                const res = await fetch(url, {
+                const response = await fetch(VEHICLE_API, {
+                    method: 'POST',
                     headers: {
-                        'ET-Client-Name': 'personlig-toppturkart'
-                    }
+                        'Content-Type': 'application/json',
+                        'ET-Client-Name': 'tromso-busskart-realtime'
+                    },
+                    body: JSON.stringify({ query: vehicleQuery })
                 });
 
-                if (!res.ok) {
-                    busCounterEl.innerText = "Buss-feil: " + res.status;
-                    return;
-                }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-                const json = await res.json();
-                const vehicleActivities = json?.Siri?.ServiceDelivery?.VehicleMonitoringDelivery?.[0]?.VehicleActivity || [];
+                const json = await response.json();
+                const vehicles = json.data?.vehicles || [];
                 
                 let count = 0;
                 const activeIds = new Set();
 
-                vehicleActivities.forEach(act => {
-                    const journey = act.MonitoredVehicleJourney;
-                    if (!journey || !journey.VehicleLocation) return;
+                vehicles.forEach(bus => {
+                    if (!bus.location || !bus.location.latitude || !bus.location.longitude) return;
 
-                    const lat = parseFloat(journey.VehicleLocation.Latitude);
-                    const lon = parseFloat(journey.VehicleLocation.Longitude);
+                    const lat = bus.location.latitude;
+                    const lon = bus.location.longitude;
 
-                    if (isNaN(lat) || isNaN(lon)) return;
+                    // Filtrer til Tromsø-området
+                    if (erITromso(lat, lon)) {
+                        const lineCode = bus.line?.publicCode || 'Buss';
+                        const lineName = bus.line?.lineName || 'Troms Fylkestrafikk';
+                        const vehicleId = bus.vehicleId || `${lineCode}-${lat}-${lon}`;
+                        const delayMin = bus.delay ? Math.round(bus.delay / 60) : 0;
 
-                    // Filtrer på kartutsnitt
-                    if (lat < b.getSouth() || lat > b.getNorth() || lon < b.getWest() || lon > b.getEast()) {
-                        return;
+                        activeIds.add(vehicleId);
+
+                        if (!buses[vehicleId]) buses[vehicleId] = { history: [] };
+
+                        buses[vehicleId].lat = lat;
+                        buses[vehicleId].lon = lon;
+                        buses[vehicleId].line = lineCode;
+                        buses[vehicleId].name = lineName;
+                        buses[vehicleId].delay = delayMin;
+
+                        buses[vehicleId].history.push([lat, lon]);
+                        if (buses[vehicleId].history.length > 30) buses[vehicleId].history.shift();
+
+                        count++;
                     }
-
-                    const id = journey.VehicleRef || `${lat}_${lon}`;
-                    activeIds.add(id);
-
-                    if (!buses[id]) buses[id] = { history: [] };
-
-                    buses[id].lat = lat;
-                    buses[id].lon = lon;
-                    buses[id].line = journey.PublishedLineName?.[0]?.value || journey.LineRef || '?';
-                    buses[id].dest = journey.DestinationName?.[0]?.value || '';
-                    
-                    // Delay oppgis i ISO 8601 varighet eller sekunder om tilgjengelig
-                    let delayMin = 0;
-                    if (journey.Delay) {
-                        const seconds = parseInt(journey.Delay, 10);
-                        if (!isNaN(seconds)) delayMin = Math.round(seconds / 60);
-                    }
-                    buses[id].delay = delayMin;
-
-                    buses[id].history.push([lat, lon]);
-                    if (buses[id].history.length > 30) buses[id].history.shift();
-
-                    count++;
                 });
 
                 for (let id in buses) {
@@ -816,7 +828,7 @@
 
                 busCounterEl.innerText = "Busser synlige: " + count;
             } catch(e) {
-                console.error("Feil ved henting av Svipper-data:", e);
+                console.error("Feil ved henting av bussdata:", e);
                 busCounterEl.innerText = "Tilkoblingsfeil buss";
             }
         }
@@ -845,8 +857,8 @@
                 busCtx.stroke();
 
                 let labels = [];
-                if (showLine) labels.push("L " + b.line);
-                if (showDest && b.dest) labels.push(b.dest);
+                if (showLine) labels.push("Linje " + b.line);
+                if (showDest && b.name) labels.push(b.name);
                 if (showDelay && b.delay !== 0) {
                     const delayTxt = b.delay > 0 ? `+${b.delay}m` : `${b.delay}m`;
                     labels.push(delayTxt);
@@ -893,11 +905,10 @@
 
                 updateCanvasPosition(busCanvas, busCtx, busesActive);
                 fetchBuses();
-                busInterval = setInterval(fetchBuses, 8000);
+                busInterval = setInterval(fetchBuses, 5000); // 5 sekunders intervall som i buss.html
                 drawBuses();
 
                 map.on('move zoom', handleBusMove);
-                map.on('moveend', fetchBuses);
             } else {
                 btnBuss.classList.remove('active');
                 busPanel.classList.remove('active');
@@ -909,7 +920,6 @@
                 buses = {};
 
                 map.off('move zoom', handleBusMove);
-                map.off('moveend', fetchBuses);
             }
         }
 
