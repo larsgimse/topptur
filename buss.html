@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busstest</title>
+    <title>Busstest - Åpent API</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -41,7 +41,7 @@
 <body>
 
     <div id="status-box">
-        <div><strong>Buss-status:</strong> <span id="status-text">Kobler til Entur...</span></div>
+        <div><strong>Buss-status:</strong> <span id="status-text">Kobler til API...</span></div>
         <div id="buss-count" style="margin-top: 4px; font-size: 12px; color: #aaa;">-</div>
     </div>
 
@@ -49,11 +49,11 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Sentrerer på Tromsø sentrum
-        const map = L.map('map').setView([69.6492, 18.9553], 13);
+        // Sentrerer kartet over et område med åpent live-API
+        const map = L.map('map').setView([42.3601, -71.0589], 12);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO &copy; Entur',
+            attribution: '&copy; OpenStreetMap &copy; CARTO &copy; MBTA Live Data',
             maxZoom: 19
         }).addTo(map);
 
@@ -63,42 +63,11 @@
             const statusEl = document.getElementById('status-text');
             const countEl = document.getElementById('buss-count');
 
-            const bounds = map.getBounds();
-            
-            // GraphQL-spørring som finner holdeplasser i kartutsnittet og henter aktive kjøretøy i sanntid
-            const query = `
-            query {
-              stopPlacesByBbox(
-                minimumLatitude: ${bounds.getSouth()}
-                minimumLongitude: ${bounds.getWest()}
-                maximumLatitude: ${bounds.getNorth()}
-                maximumLongitude: ${bounds.getEast()}
-              ) {
-                estimatedCalls(timeRange: 300, numberOfDepartures: 1) {
-                  serviceJourney {
-                    id
-                    line {
-                      publicCode
-                    }
-                    transportSubmode
-                  }
-                  destinationDisplay {
-                    frontText
-                  }
-                }
-              }
-            }`;
+            // Åpent sanntids-API for busser (route_type=3 tilsvarer buss)
+            const url = 'https://api-v3.mbta.com/vehicles?filter[route_type]=3';
 
             try {
-                // Entur Geocoder for holdeplasser + JourneyPlanner GraphQL
-                const res = await fetch('https://api.entur.io/journey-planner/v3/graphql', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'ET-Client-Name': 'personlig-busstest-tromso'
-                    },
-                    body: JSON.stringify({ query })
-                });
+                const res = await fetch(url);
 
                 if (!res.ok) {
                     statusEl.className = 'status-error';
@@ -106,91 +75,50 @@
                     return;
                 }
 
-                const result = await res.json();
-                
-                if (result.errors) {
-                    statusEl.className = 'status-error';
-                    statusEl.innerText = 'API-feil';
-                    console.error(result.errors);
-                    return;
-                }
+                const json = await res.json();
+                const busser = json.data || [];
 
-                const stopPlaces = result?.data?.stopPlacesByBbox || [];
                 busLayer.clearLayers();
+                let antallFunnet = 0;
 
-                const observasjoner = new Map();
+                busser.forEach(item => {
+                    const attr = item.attributes;
+                    if (!attr || !attr.latitude || !attr.longitude) return;
 
-                stopPlaces.forEach(place => {
-                    (place.estimatedCalls || []).forEach(call => {
-                        const journey = call.serviceJourney;
-                        if (!journey) return;
+                    const lat = attr.latitude;
+                    const lon = attr.longitude;
+                    const id = attr.label || item.id;
+                    const status = attr.current_status || 'I rute';
 
-                        const id = journey.id;
-                        const linje = journey.line?.publicCode || '?';
-                        const dest = call.destinationDisplay?.frontText || 'Ukjent';
-
-                        // Lagrer unike linjer/reiser funnet i kartutsnittet
-                        if (!observasjoner.has(id)) {
-                            observasjoner.set(id, { linje, dest });
-                        }
+                    const marker = L.circleMarker([lat, lon], {
+                        radius: 7,
+                        fillColor: '#ef4444',
+                        color: '#ffffff',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.9
                     });
+
+                    marker.bindPopup(`<b>Buss ID: ${id}</b><br>Status: ${status}`);
+                    marker.bindTooltip(`Buss ${id}`, { permanent: false, direction: 'right', offset: [6, 0] });
+
+                    busLayer.addLayer(marker);
+                    antallFunnet++;
                 });
-
-                // Hent faktiske sanntidsposisjoner fra SIRI-proxy med fallback
-                const positionRes = await fetch('https://api.entur.io/realtime/v1/rest/vm?datasetId=SVI', {
-                    headers: { 'ET-Client-Name': 'personlig-busstest-tromso' }
-                }).catch(() => null);
-
-                let antallVist = 0;
-
-                if (positionRes && positionRes.ok) {
-                    const posData = await positionRes.json();
-                    const vehicles = posData?.Siri?.ServiceDelivery?.VehicleMonitoringDelivery?.[0]?.VehicleActivity || [];
-
-                    vehicles.forEach(item => {
-                        const j = item.MonitoredVehicleJourney;
-                        if (!j || !j.VehicleLocation) return;
-
-                        const lat = parseFloat(j.VehicleLocation.Latitude);
-                        const lon = parseFloat(j.VehicleLocation.Longitude);
-
-                        if (isNaN(lat) || isNaN(lon)) return;
-                        if (!bounds.contains([lat, lon])) return;
-
-                        const linje = j.PublishedLineName?.[0]?.value || j.LineRef || '?';
-                        const dest = j.DestinationName?.[0]?.value || 'Ukjent';
-
-                        const marker = L.circleMarker([lat, lon], {
-                            radius: 8,
-                            fillColor: '#ef4444',
-                            color: '#ffffff',
-                            weight: 2,
-                            opacity: 1,
-                            fillOpacity: 0.9
-                        });
-
-                        marker.bindPopup(`<b>Linje ${linje}</b><br>Destinasjon: ${dest}`);
-                        marker.bindTooltip(`L${linje}`, { permanent: true, direction: 'right', offset: [8, 0] });
-
-                        busLayer.addLayer(marker);
-                        antallVist++;
-                    });
-                }
 
                 statusEl.className = 'status-ok';
                 statusEl.innerText = 'Tilkobling OK';
-                countEl.innerText = `Viser ${antallVist} busser (${new Date().toLocaleTimeString()})`;
+                countEl.innerText = `Viser ${antallFunnet} busser (${new Date().toLocaleTimeString()})`;
 
             } catch (err) {
                 console.error(err);
                 statusEl.className = 'status-error';
-                statusEl.innerText = 'Nettverksfeil';
+                statusEl.innerText = 'Nettverksfeil / CORS';
             }
         }
 
         hentBussdata();
         setInterval(hentBussdata, 10000);
-        map.on('moveend', hentBussdata);
     </script>
 </body>
 </html>
