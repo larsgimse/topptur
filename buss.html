@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busstest</title>
+    <title>Busstest - Entur GraphQL</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -48,30 +48,43 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Initiell visning (Tromsø)
         const map = L.map('map').setView([69.6492, 18.9553], 12);
 
-        // Mørkt bakgrunnskart
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; OpenStreetMap &copy; CARTO &copy; Entur',
             maxZoom: 19
         }).addTo(map);
 
-        // Egen LayerGroup for buss-markørene
         const busLayer = L.layerGroup().addTo(map);
 
         async function hentBussdata() {
             const statusEl = document.getElementById('status-text');
             const countEl = document.getElementById('buss-count');
 
-            // SIRI Lite REST-API for Svipper / Troms
-            const url = 'https://api.entur.io/realtime/v1/rest/vm?datasetId=SVI';
+            const graphqlQuery = {
+                query: `
+                {
+                  vehicles(codespace: "SVI") {
+                    location {
+                      latitude
+                      longitude
+                    }
+                    line {
+                      publicCode
+                    }
+                    destinationName
+                  }
+                }`
+            };
 
             try {
-                const res = await fetch(url, {
+                const res = await fetch('https://api.entur.io/journey-planner/v3/graphql', {
+                    method: 'POST',
                     headers: {
-                        'ET-Client-Name': 'github-busstest'
-                    }
+                        'Content-Type': 'application/json',
+                        'ET-Client-Name': 'personlig-busstest_tromso'
+                    },
+                    body: JSON.stringify(graphqlQuery)
                 });
 
                 if (!res.ok) {
@@ -80,27 +93,20 @@
                     return;
                 }
 
-                const json = await res.json();
-                const kjøretøy = json?.Siri?.ServiceDelivery?.VehicleMonitoringDelivery?.[0]?.VehicleActivity || [];
+                const result = await res.json();
+                const busser = result?.data?.vehicles || [];
 
-                // Tøm eksisterende markører før ny tegning
                 busLayer.clearLayers();
-
                 let antallFunnet = 0;
 
-                kjøretøy.forEach(item => {
-                    const journey = item.MonitoredVehicleJourney;
-                    if (!journey || !journey.VehicleLocation) return;
+                busser.forEach(buss => {
+                    if (!buss.location) return;
 
-                    const lat = parseFloat(journey.VehicleLocation.Latitude);
-                    const lon = parseFloat(journey.VehicleLocation.Longitude);
+                    const lat = buss.location.latitude;
+                    const lon = buss.location.longitude;
+                    const linje = buss.line?.publicCode || '?';
+                    const dest = buss.destinationName || 'Ukjent';
 
-                    if (isNaN(lat) || isNaN(lon)) return;
-
-                    const linje = journey.PublishedLineName?.[0]?.value || journey.LineRef || '?';
-                    const dest = journey.DestinationName?.[0]?.value || 'Ukjent destinasjon';
-
-                    // Lag rød sirkelmarkør
                     const marker = L.circleMarker([lat, lon], {
                         radius: 7,
                         fillColor: '#ef4444',
@@ -110,7 +116,6 @@
                         fillOpacity: 0.9
                     });
 
-                    // Popup ved klikk / Tooltip med linjenummer
                     marker.bindPopup(`<b>Linje ${linje}</b><br>Destinasjon: ${dest}`);
                     marker.bindTooltip(`L${linje}`, { permanent: true, direction: 'right', offset: [6, 0] });
 
@@ -125,11 +130,10 @@
             } catch (err) {
                 console.error(err);
                 statusEl.className = 'status-error';
-                statusEl.innerText = 'Nettverksfeil / CORS-blokkering';
+                statusEl.innerText = 'Nettverksfeil / CORS';
             }
         }
 
-        // Hent første gang og oppdater hvert 10. sekund
         hentBussdata();
         setInterval(hentBussdata, 10000);
     </script>
