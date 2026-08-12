@@ -11,8 +11,7 @@
         "dato": "2020_08_23"
       }
     ],
-    "beskrivelse": "Fin tur med god utsikt over Ersfjorden.",
-    "veiBeskrivelse": "Parkering ved Ersfjordbotn."
+    "beskrivelse": "Fin tur med god utsikt over Ersfjorden."
   },
   {
     "id": "bonntuva",
@@ -27,8 +26,7 @@
       }
     ],
     "strava": "https://www.strava.com/activities/19286411884",
-    "beskrivelse": "Flott tur opp fra nedre Fjellheisstasjon.",
-    "veiBeskrivelse": "Parkering ved Movegen i Kroken."
+    "beskrivelse": "Flott tur opp fra nedre Fjellheisstasjon."
   },
   {
     "id": "djeveltanna",
@@ -40,8 +38,7 @@
         "tittel": "Se video"
       }
     ],
-    "beskrivelse": "Klassisk og luftig tur på Kvaløya.",
-    "veiBeskrivelse": "Parkering ved Kattfjordeidet."
+    "beskrivelse": "Klassisk og luftig tur på Kvaløya."
   },
   {
     "id": "djupdalgruver",
