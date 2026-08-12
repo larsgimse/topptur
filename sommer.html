@@ -613,7 +613,7 @@
                             }
 
                             if (topp.video && topp.video.length > 0) {
-                                topper.video.forEach(v => {
+                                topp.video.forEach(v => {
                                     const vBtn = document.createElement('a');
                                     vBtn.className = 'video-link-btn'; vBtn.href = v.url; vBtn.target = '_blank';
                                     const ikon = v.type === 'photo' ? '📷' : '🎥';
@@ -672,7 +672,7 @@
                             dlHTML += `<span class="dl-link" onclick="lastNedGPX('gpx/${topp.fil}', '${topp.navn}')">${topp.navn}</span>`;
 
                             if (topp.ekstraSpor) {
-                                topper.ekstraSpor.forEach(ekstra => {
+                                topp.ekstraSpor.forEach(ekstra => {
                                     dlHTML += `<span class="dl-link" onclick="lastNedGPX('gpx/${ekstra.fil}', '${topp.navn} - ${ekstra.tittel}')">${topp.navn} (${ekstra.tittel})</span>`;
                                 });
                             }
