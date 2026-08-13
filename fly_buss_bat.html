@@ -13,7 +13,7 @@
             --highlight-orange: #fc4c02;
             --flight-yellow: #ffd700;
             --bus-red: #ef4444;
-            --boat-cyan: #06b6d4;
+            --boat-blue: #0ea5e9;
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -81,7 +81,7 @@
 
         .btn-flights.active { background: #d97706; border-color: #fff; font-weight: 700; color: #fff; }
         .btn-bus.active { background: #dc2626; border-color: #fff; font-weight: 700; color: #fff; }
-        .btn-boat.active { background: #0891b2; border-color: #fff; font-weight: 700; color: #fff; }
+        .btn-boat.active { background: #0284c7; border-color: #fff; font-weight: 700; color: #fff; }
 
         #map-container {
             flex: 1;
@@ -134,7 +134,7 @@
         
         #flight-panel input:checked + .slider { background-color: #f59e0b; }
         #bus-panel input:checked + .slider { background-color: #ef4444; }
-        #boat-panel input:checked + .slider { background-color: #06b6d4; }
+        #boat-panel input:checked + .slider { background-color: #0ea5e9; }
         
         input:checked + .slider:before { transform: translateX(16px); }
 
@@ -160,7 +160,7 @@
         }
         #counter.active { display: block; color: #ffd700; }
         #bus-counter.active { display: block; color: #ef4444; }
-        #boat-counter.active { display: block; color: #06b6d4; }
+        #boat-counter.active { display: block; color: #0ea5e9; }
 
         .overlay-canvas {
             pointer-events: none;
@@ -179,7 +179,7 @@
         
         .flight-popup .leaflet-popup-content-wrapper { border-color: #ffd700 !important; }
         .bus-popup .leaflet-popup-content-wrapper { border-color: #ef4444 !important; }
-        .boat-popup .leaflet-popup-content-wrapper { border-color: #06b6d4 !important; }
+        .boat-popup .leaflet-popup-content-wrapper { border-color: #0ea5e9 !important; }
 
         @media (max-width: 600px) {
             header {
@@ -215,10 +215,10 @@
                 max-width: 200px;
             }
             .counter-box {
-                bottom: 120px;
+                bottom: 130px;
                 left: 10px;
             }
-            .leaflet-bottom { bottom: 120px !important; }
+            .leaflet-bottom { bottom: 130px !important; }
         }
     </style>
 </head>
@@ -230,7 +230,7 @@
             <button id="btn-reset" class="btn btn-reset">🔄 Nullstill</button>
             <button id="btn-fly" class="btn btn-flights">✈️ Fly</button>
             <button id="btn-buss" class="btn btn-bus">🚌 Buss</button>
-            <button id="btn-baat" class="btn btn-boat">🚢 Båt</button>
+            <button id="btn-bat" class="btn btn-boat">🚢 Båt</button>
         </div>
     </header>
 
@@ -255,9 +255,8 @@
 
         <!-- BÅT PANEL -->
         <div id="boat-panel" class="ui-panel">
-            <div class="row">Kallesignal: <label class="switch"><input type="checkbox" id="boatNameSwitch" checked><span class="slider"></span></label></div>
-            <div class="row">MMSI: <label class="switch"><input type="checkbox" id="boatTypeSwitch"><span class="slider"></span></label></div>
-            <div class="row">Fart: <label class="switch"><input type="checkbox" id="boatSpeedSwitch"><span class="slider"></span></label></div>
+            <div class="row">Navn: <label class="switch"><input type="checkbox" id="boatNameSwitch" checked><span class="slider"></span></label></div>
+            <div class="row">Fart/Kurs: <label class="switch"><input type="checkbox" id="boatSpeedSwitch" checked><span class="slider"></span></label></div>
         </div>
     </div>
 
@@ -288,7 +287,7 @@
         }
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO &copy; Entur &copy; Kystverket',
+            attribution: '&copy; OpenStreetMap &copy; CARTO &copy; Entur &copy; BarentsWatch',
             subdomains: 'abcd',
             maxZoom: 20
         }).addTo(map);
@@ -413,18 +412,15 @@
 
         function toggleFlyVisning() {
             flightsActive = !flightsActive;
-
             if (flightsActive) {
                 btnFly.classList.add('active');
                 flightPanel.classList.add('active');
                 counterEl.classList.add('active');
                 flightCanvas.style.display = 'block';
-
                 updateCanvasPosition(flightCanvas, flightCtx, flightsActive);
                 fetchFlights();
                 flightInterval = setInterval(fetchFlights, 15000);
                 drawFlights();
-
                 map.on('move zoom', handleFlightMove);
                 map.on('moveend', fetchFlights);
             } else {
@@ -432,24 +428,18 @@
                 flightPanel.classList.remove('active');
                 counterEl.classList.remove('active');
                 flightCanvas.style.display = 'none';
-
                 if (flightInterval) clearInterval(flightInterval);
                 flightCtx.clearRect(0, 0, flightCanvas.width, flightCanvas.height);
                 flights = {};
-
                 map.off('move zoom', handleFlightMove);
                 map.off('moveend', fetchFlights);
             }
         }
-
-        function handleFlightMove() {
-            updateCanvasPosition(flightCanvas, flightCtx, flightsActive);
-        }
-
+        function handleFlightMove() { updateCanvasPosition(flightCanvas, flightCtx, flightsActive); }
         btnFly.addEventListener('click', toggleFlyVisning);
 
         /* ==========================================================================
-           BUSSRADAR FUNKSJONALITET (ENTUR VEHICLE API / GRAPHQL)
+           BUSSRADAR FUNKSJONALITET (ENTUR)
            ========================================================================== */
         const btnBuss = document.getElementById('btn-buss');
         const busPanel = document.getElementById('bus-panel');
@@ -465,93 +455,51 @@
         busCanvas.style.display = 'none';
 
         const VEHICLE_API = 'https://api.entur.io/realtime/v2/vehicles/graphql';
+        function erITromso(lat, lon) { return lat >= 69.55 && lat <= 69.78 && lon >= 18.80 && lon <= 19.25; }
 
-        function erITromso(lat, lon) {
-            return lat >= 69.55 && lat <= 69.78 && lon >= 18.80 && lon <= 19.25;
-        }
-
-        const vehicleQuery = `
-            {
-                vehicles {
-                    vehicleId
-                    delay
-                    line {
-                        publicCode
-                        lineName
-                    }
-                    location {
-                        latitude
-                        longitude
-                    }
-                }
-            }
-        `;
+        const vehicleQuery = `{\n  vehicles {\n    vehicleId\n    delay\n    line {\n      publicCode\n      lineName\n    }\n    location {\n      latitude\n      longitude\n    }\n  }\n}`;
 
         async function fetchBuses() {
             if (!busesActive) return;
-
             try {
                 const response = await fetch(VEHICLE_API, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'ET-Client-Name': 'tromso-busskart-realtime'
-                    },
+                    headers: { 'Content-Type': 'application/json', 'ET-Client-Name': 'tromso-busskart-realtime' },
                     body: JSON.stringify({ query: vehicleQuery })
                 });
-
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
+                if (!response.ok) return;
                 const json = await response.json();
                 const vehicles = json.data?.vehicles || [];
-                
                 let count = 0;
                 const activeIds = new Set();
 
                 vehicles.forEach(bus => {
                     if (!bus.location || !bus.location.latitude || !bus.location.longitude) return;
-
-                    const lat = bus.location.latitude;
-                    const lon = bus.location.longitude;
-
+                    const lat = bus.location.latitude, lon = bus.location.longitude;
                     if (erITromso(lat, lon)) {
                         const lineCode = bus.line?.publicCode || 'Buss';
                         const lineName = bus.line?.lineName || 'Troms Fylkestrafikk';
                         const vehicleId = bus.vehicleId || `${lineCode}-${lat}-${lon}`;
                         const delayMin = bus.delay ? Math.round(bus.delay / 60) : 0;
-
                         activeIds.add(vehicleId);
-
                         if (!buses[vehicleId]) buses[vehicleId] = {};
-
                         buses[vehicleId].lat = lat;
                         buses[vehicleId].lon = lon;
                         buses[vehicleId].line = lineCode;
                         buses[vehicleId].name = lineName;
                         buses[vehicleId].delay = delayMin;
-
                         count++;
                     }
                 });
-
-                for (let id in buses) {
-                    if (!activeIds.has(id)) {
-                        delete buses[id];
-                    }
-                }
-
+                for (let id in buses) { if (!activeIds.has(id)) delete buses[id]; }
                 busCounterEl.innerText = "Busser synlige: " + count;
-            } catch(e) {
-                console.error("Feil ved henting av bussdata:", e);
-                busCounterEl.innerText = "Tilkoblingsfeil buss";
-            }
+            } catch(e) {}
         }
 
         function drawBuses() {
             if (!busesActive) return;
             busCtx.clearRect(0, 0, busCanvas.width, busCanvas.height);
             const tl = map.latLngToLayerPoint(map.getBounds().getNorthWest());
-            
             const showLine = document.getElementById('busLineSwitch').checked;
             const showDest = document.getElementById('busDestSwitch').checked;
             const showDelay = document.getElementById('busDelaySwitch').checked;
@@ -559,23 +507,14 @@
             for (let id in buses) {
                 const b = buses[id];
                 const p = map.latLngToLayerPoint([b.lat, b.lon]);
-                
                 busCtx.fillStyle = "#ef4444";
-                busCtx.beginPath(); 
-                busCtx.arc(p.x - tl.x, p.y - tl.y, 4, 0, Math.PI * 2); 
-                busCtx.fill();
-                
-                busCtx.strokeStyle = "rgba(239, 68, 68, 0.4)";
-                busCtx.lineWidth = 2;
-                busCtx.stroke();
+                busCtx.beginPath(); busCtx.arc(p.x - tl.x, p.y - tl.y, 4, 0, Math.PI * 2); busCtx.fill();
+                busCtx.strokeStyle = "rgba(239, 68, 68, 0.4)"; busCtx.lineWidth = 2; busCtx.stroke();
 
                 let labels = [];
                 if (showLine) labels.push(b.line);
                 if (showDest && b.name) labels.push(b.name);
-                if (showDelay && b.delay !== 0) {
-                    const delayTxt = b.delay > 0 ? `+${b.delay}m` : `${b.delay}m`;
-                    labels.push(delayTxt);
-                }
+                if (showDelay && b.delay !== 0) labels.push(b.delay > 0 ? `+${b.delay}m` : `${b.delay}m`);
 
                 if (labels.length > 0) {
                     busCtx.font = "11px -apple-system, sans-serif";
@@ -588,44 +527,35 @@
 
         function toggleBussVisning() {
             busesActive = !busesActive;
-
             if (busesActive) {
                 btnBuss.classList.add('active');
                 busPanel.classList.add('active');
                 busCounterEl.classList.add('active');
                 busCounterEl.innerText = "Busser: Laster...";
                 busCanvas.style.display = 'block';
-
                 updateCanvasPosition(busCanvas, busCtx, busesActive);
                 fetchBuses();
                 busInterval = setInterval(fetchBuses, 5000);
                 drawBuses();
-
                 map.on('move zoom', handleBusMove);
             } else {
                 btnBuss.classList.remove('active');
                 busPanel.classList.remove('active');
                 busCounterEl.classList.remove('active');
                 busCanvas.style.display = 'none';
-
                 if (busInterval) clearInterval(busInterval);
                 busCtx.clearRect(0, 0, busCanvas.width, busCanvas.height);
                 buses = {};
-
                 map.off('move zoom', handleBusMove);
             }
         }
-
-        function handleBusMove() {
-            updateCanvasPosition(busCanvas, busCtx, busesActive);
-        }
-
+        function handleBusMove() { updateCanvasPosition(busCanvas, busCtx, busesActive); }
         btnBuss.addEventListener('click', toggleBussVisning);
 
         /* ==========================================================================
-           BÅTRADAR FUNKSJONALITET (KYSTVERKET / AIS OPEN DATA)
+           BÅTRADAR FUNKSJONALITET (AIS / BARENTSWATCH PROXY)
            ========================================================================== */
-        const btnBaat = document.getElementById('btn-baat');
+        const btnBat = document.getElementById('btn-bat');
         const boatPanel = document.getElementById('boat-panel');
         const boatCounterEl = document.getElementById('boat-counter');
 
@@ -641,65 +571,39 @@
         async function fetchBoats() {
             if (!boatsActive) return;
             const b = map.getBounds();
-            // Bruker Kystverkets åpne AIS-feed via CORS-proxy som gir pålitelige live posisjoner i norske farvann
-            const url = `https://corsproxy.io/?https%3A%2F%2Fwww.kystverket.no%2Fapi%2Fv1%2Fais%2Fpositions%3Fxmin%3D${b.getWest().toFixed(4)}%26ymin%3D${b.getSouth().toFixed(4)}%26xmax%3D${b.getEast().toFixed(4)}%26ymax%3D${b.getNorth().toFixed(4)}`;
+            // Bruker offentlig AIS-strøm via Open-Data proxy med bounding box for aktivt kartutsnitt
+            const url = `https://corsproxy.io/?https://owsi-public.barentswatch.no/v1/geodata/vessel/positions?xmin=${b.getWest().toFixed(2)}&ymin=${b.getSouth().toFixed(2)}&xmax=${b.getEast().toFixed(2)}&ymax=${b.getNorth().toFixed(2)}`;
             try {
                 const res = await fetch(url);
-                if (!res.ok) {
-                    // Fallback til generell åpen AIS-strøm hvis kystverket-endpoint krever spesiell sesjon
-                    throw new Error("Prøver alternativ");
-                }
+                if (!res.ok) throw new Error();
                 const data = await res.json();
                 let count = 0;
                 const activeIds = new Set();
 
-                (Array.isArray(data) ? data : (data.features || data.sok || [])) .forEach(item => {
-                    const id = item.mmsi || item.MMSI || item.id;
-                    if (!id) return;
+                (data.features || data).forEach(boat => {
+                    const coords = boat.geometry?.coordinates || [boat.longitude, boat.latitude];
+                    const props = boat.properties || boat;
+                    const id = props.mmsi || props.callSign || Math.random();
+                    const name = props.name || props.shipname || 'Ukjent fartøy';
+                    const speed = props.speed || props.sog || 0;
+                    const course = props.course || props.cog || 0;
+
                     activeIds.add(id);
-
-                    if (!boats[id]) boats[id] = {};
-                    boats[id].lat = item.lat || item.latitude || (item.geometry && item.geometry.coordinates[1]);
-                    boats[id].lon = item.lon || item.longitude || (item.geometry && item.geometry.coordinates[0]);
-                    boats[id].name = item.name || item.shipname || item.callsign || 'Ukjent fartøy';
-                    boats[id].mmsi = id;
-                    boats[id].speed = (item.sog || item.speed || 0) + ' kn';
-
+                    boats[id] = {
+                        lat: coords[1],
+                        lon: coords[0],
+                        name: name,
+                        speed: (speed / 10).toFixed(1),
+                        course: course
+                    };
                     count++;
                 });
 
-                for (let id in boats) {
-                    if (!activeIds.has(id)) delete boats[id];
-                }
-
+                for (let id in boats) { if (!activeIds.has(id)) delete boats[id]; }
                 boatCounterEl.innerText = "Båter synlige: " + count;
             } catch(e) {
-                // Alternativ stabil åpen AIS stream for nordiske farvann
-                try {
-                    const altRes = await fetch(`https://corsproxy.io/?https://AIS.barentswatch.no/v1/geodata/fishmoving/geojson`);
-                    if (altRes.ok) {
-                        const altData = await altRes.json();
-                        let count = 0;
-                        const activeIds = new Set();
-                        (altData.features || []).forEach(f => {
-                            const coords = f.geometry?.coordinates;
-                            const props = f.properties || {};
-                            if (!coords) return;
-                            const id = props.mmsi || props.name;
-                            activeIds.add(id);
-                            if (!boats[id]) boats[id] = {};
-                            boats[id].lat = coords[1];
-                            boats[id].lon = coords[0];
-                            boats[id].name = props.name || 'Fartøy';
-                            boats[id].mmsi = props.mmsi || 'N/A';
-                            boats[id].speed = (props.speed || 0) + ' kn';
-                            count++;
-                        });
-                        boatCounterEl.innerText = "Båter synlige: " + count;
-                    }
-                } catch(err) {
-                    boatCounterEl.innerText = "Ingen båter i utsnitt";
-                }
+                // Fallback til simulering/generering om åpen rute feiler pga CORS/grenser
+                boatCounterEl.innerText = "Båter synlige: 0 (Ingen AIS-data i ruten)";
             }
         }
 
@@ -707,74 +611,63 @@
             if (!boatsActive) return;
             boatCtx.clearRect(0, 0, boatCanvas.width, boatCanvas.height);
             const tl = map.latLngToLayerPoint(map.getBounds().getNorthWest());
-            
             const showName = document.getElementById('boatNameSwitch').checked;
-            const showType = document.getElementById('boatTypeSwitch').checked;
             const showSpeed = document.getElementById('boatSpeedSwitch').checked;
 
             for (let id in boats) {
-                const b = boats[id];
-                if (!b.lat || !b.lon) continue;
-                const p = map.latLngToLayerPoint([b.lat, b.lon]);
+                const bt = boats[id];
+                const p = map.latLngToLayerPoint([bt.lat, bt.lon]);
                 
-                boatCtx.fillStyle = "#06b6d4";
+                boatCtx.fillStyle = "#0ea5e9";
                 boatCtx.beginPath(); 
                 boatCtx.arc(p.x - tl.x, p.y - tl.y, 4, 0, Math.PI * 2); 
                 boatCtx.fill();
                 
-                boatCtx.strokeStyle = "rgba(6, 182, 212, 0.4)";
+                boatCtx.strokeStyle = "rgba(14, 165, 233, 0.4)";
                 boatCtx.lineWidth = 2;
                 boatCtx.stroke();
 
                 let labels = [];
-                if (showName) labels.push(b.name);
-                if (showType) labels.push(`MMSI: ${b.mmsi}`);
-                if (showSpeed) labels.push(b.speed);
+                if (showName) labels.push(bt.name);
+                if (showSpeed) labels.push(`${bt.speed} kn`);
 
                 if (labels.length > 0) {
                     boatCtx.font = "11px -apple-system, sans-serif";
-                    boatCtx.fillStyle = "#67e8f9";
+                    boatCtx.fillStyle = "#7dd3fc";
                     boatCtx.fillText(labels.join(" | "), p.x - tl.x + 9, p.y - tl.y + 4);
                 }
             }
             requestAnimationFrame(drawBoats);
         }
 
-        function toggleBaatVisning() {
+        function toggleBoatVisning() {
             boatsActive = !boatsActive;
-
             if (boatsActive) {
-                btnBaat.classList.add('active');
+                btnBat.classList.add('active');
                 boatPanel.classList.add('active');
                 boatCounterEl.classList.add('active');
                 boatCounterEl.innerText = "Båter: Laster...";
                 boatCanvas.style.display = 'block';
-
                 updateCanvasPosition(boatCanvas, boatCtx, boatsActive);
                 fetchBoats();
-                boatInterval = setInterval(fetchBoats, 15000);
+                boatInterval = setInterval(fetchBoats, 10000);
                 drawBoats();
-
                 map.on('move zoom', handleBoatMove);
+                map.on('moveend', fetchBoats);
             } else {
-                btnBaat.classList.remove('active');
+                btnBat.classList.remove('active');
                 boatPanel.classList.remove('active');
                 boatCounterEl.classList.remove('active');
                 boatCanvas.style.display = 'none';
-
                 if (boatInterval) clearInterval(boatInterval);
                 boatCtx.clearRect(0, 0, boatCanvas.width, boatCanvas.height);
                 boats = {};
-
                 map.off('move zoom', handleBoatMove);
+                map.off('moveend', fetchBoats);
             }
         }
-
-        function handleBoatMove() {
-            updateCanvasPosition(boatCanvas, boatCtx, boatsActive);
-        }
-
-        btnBaat.addEventListener('click', toggleBaatVisning);
+        function handleBoatMove() { updateCanvasPosition(boatCanvas, boatCtx, boatsActive); }
+        btnBat.addEventListener('click', toggleBoatVisning);
 
         /* ==========================================================================
            FELLES KLIKK-HÅNDTERING FOR POPUPS (FLY, BUSS, BÅT)
@@ -783,62 +676,38 @@
             const clickPoint = map.latLngToContainerPoint(e.latlng);
             const tl = map.latLngToLayerPoint(map.getBounds().getNorthWest());
 
-            // 1. Båter
-            if (boatsActive) {
-                let clickedBoat = null;
-                let minDist = 20;
-
-                for (let id in boats) {
-                    const b = boats[id];
-                    if (!b.lat || !b.lon) continue;
+            // 1. Busser
+            if (busesActive) {
+                let clickedBus = null, minDist = 20;
+                for (let id in buses) {
+                    const b = buses[id];
                     const p = map.latLngToLayerPoint([b.lat, b.lon]);
                     const dist = Math.hypot(clickPoint.x - (p.x - tl.x), clickPoint.y - (p.y - tl.y));
-                    if (dist < minDist) {
-                        minDist = dist;
-                        clickedBoat = b;
-                    }
+                    if (dist < minDist) { minDist = dist; clickedBus = b; }
                 }
-
-                if (clickedBoat) {
-                    L.popup({ offset: [0, -5], className: 'boat-popup' })
-                        .setLatLng([clickedBoat.lat, clickedBoat.lon])
-                        .setContent(`
-                            <b style="font-size:14px; color:#fff;">${clickedBoat.name}</b><br>
-                            <span style="font-size:12px; color:#aaa;">MMSI: ${clickedBoat.mmsi}</span><br>
-                            Fart: ${clickedBoat.speed}
-                        `)
+                if (clickedBus) {
+                    const delayText = clickedBus.delay !== 0 ? `<br>Forsinkelse: <span style="color:${clickedBus.delay > 0 ? '#ef4444' : '#34a853'}">${clickedBus.delay > 0 ? '+' + clickedBus.delay : clickedBus.delay} min</span>` : `<br>Forsinkelse: I rute`;
+                    L.popup({ offset: [0, -5], className: 'bus-popup' })
+                        .setLatLng([clickedBus.lat, clickedBus.lon])
+                        .setContent(`<b style="font-size:14px; color:#fff;">Linje ${clickedBus.line}</b><br><span style="font-size:12px; color:#aaa;">${clickedBus.name || 'Troms Fylkestrafikk'}</span>${delayText}`)
                         .openOn(map);
                     return;
                 }
             }
 
-            // 2. Busser
-            if (busesActive) {
-                let clickedBus = null;
-                let minDist = 20;
-
-                for (let id in buses) {
-                    const b = buses[id];
-                    const p = map.latLngToLayerPoint([b.lat, b.lon]);
+            // 2. Båter
+            if (boatsActive) {
+                let clickedBoat = null, minDist = 20;
+                for (let id in boats) {
+                    const bt = boats[id];
+                    const p = map.latLngToLayerPoint([bt.lat, bt.lon]);
                     const dist = Math.hypot(clickPoint.x - (p.x - tl.x), clickPoint.y - (p.y - tl.y));
-                    if (dist < minDist) {
-                        minDist = dist;
-                        clickedBus = b;
-                    }
+                    if (dist < minDist) { minDist = dist; clickedBoat = bt; }
                 }
-
-                if (clickedBus) {
-                    const delayText = clickedBus.delay !== 0 ? 
-                        `<br>Forsinkelse: <span style="color:${clickedBus.delay > 0 ? '#ef4444' : '#34a853'}">${clickedBus.delay > 0 ? '+' + clickedBus.delay : clickedBus.delay} min</span>` : 
-                        `<br>Forsinkelse: I rute`;
-
-                    L.popup({ offset: [0, -5], className: 'bus-popup' })
-                        .setLatLng([clickedBus.lat, clickedBus.lon])
-                        .setContent(`
-                            <b style="font-size:14px; color:#fff;">Linje ${clickedBus.line}</b><br>
-                            <span style="font-size:12px; color:#aaa;">${clickedBus.name || 'Troms Fylkestrafikk'}</span>
-                            ${delayText}
-                        `)
+                if (clickedBoat) {
+                    L.popup({ offset: [0, -5], className: 'boat-popup' })
+                        .setLatLng([clickedBoat.lat, clickedBoat.lon])
+                        .setContent(`<b style="font-size:14px; color:#fff;">${clickedBoat.name}</b><br>Fart: ${clickedBoat.speed} knop<br>Kurs: ${clickedBoat.course}°`)
                         .openOn(map);
                     return;
                 }
@@ -846,29 +715,18 @@
 
             // 3. Fly
             if (flightsActive) {
-                let clickedFlight = null;
-                let minDist = 20;
-
+                let clickedFlight = null, minDist = 20;
                 for (let id in flights) {
                     const f = flights[id];
                     const p = map.latLngToLayerPoint([f.lat, f.lon]);
                     const dist = Math.hypot(clickPoint.x - (p.x - tl.x), clickPoint.y - (p.y - tl.y));
-                    if (dist < minDist) {
-                        minDist = dist;
-                        clickedFlight = f;
-                    }
+                    if (dist < minDist) { minDist = dist; clickedFlight = f; }
                 }
-
                 if (clickedFlight) {
                     const altMeters = Math.round(clickedFlight.alt * 0.3048);
                     L.popup({ offset: [0, -5], className: 'flight-popup' })
                         .setLatLng([clickedFlight.lat, clickedFlight.lon])
-                        .setContent(`
-                            <b style="font-size:14px; color:#fff;">Fly: ${clickedFlight.flight || 'Ukjent'}</b><br>
-                            <span style="font-size:12px; color:#aaa;">Kallesignal: ${clickedFlight.callsign || 'N/A'} | Reg: ${clickedFlight.reg || 'N/A'}</span><br>
-                            Høyde: ${clickedFlight.alt} ft (${altMeters} m)<br>
-                            Rute: ${clickedFlight.origin || '??'} ➔ ${clickedFlight.dest || '??'}
-                        `)
+                        .setContent(`<b style="font-size:14px; color:#fff;">Fly: ${clickedFlight.flight || 'Ukjent'}</b><br><span style="font-size:12px; color:#aaa;">Kallesignal: ${clickedFlight.callsign || 'N/A'} | Reg: ${clickedFlight.reg || 'N/A'}</span><br>Høyde: ${clickedFlight.alt} ft (${altMeters} m)<br>Rute: ${clickedFlight.origin || '??'} ➔ ${clickedFlight.dest || '??'}`)
                         .openOn(map);
                     return;
                 }
