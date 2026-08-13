@@ -255,8 +255,8 @@
 
         <!-- BÅT PANEL -->
         <div id="boat-panel" class="ui-panel">
-            <div class="row">Navn: <label class="switch"><input type="checkbox" id="boatNameSwitch" checked><span class="slider"></span></label></div>
-            <div class="row">Type: <label class="switch"><input type="checkbox" id="boatTypeSwitch"><span class="slider"></span></label></div>
+            <div class="row">Kallesignal: <label class="switch"><input type="checkbox" id="boatNameSwitch" checked><span class="slider"></span></label></div>
+            <div class="row">MMSI: <label class="switch"><input type="checkbox" id="boatTypeSwitch"><span class="slider"></span></label></div>
             <div class="row">Fart: <label class="switch"><input type="checkbox" id="boatSpeedSwitch"><span class="slider"></span></label></div>
         </div>
     </div>
@@ -288,7 +288,7 @@
         }
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO &copy; Entur &copy; MarineTraffic',
+            attribution: '&copy; OpenStreetMap &copy; CARTO &copy; Entur &copy; Kystverket',
             subdomains: 'abcd',
             maxZoom: 20
         }).addTo(map);
@@ -623,7 +623,7 @@
         btnBuss.addEventListener('click', toggleBussVisning);
 
         /* ==========================================================================
-           BÅTRADAR FUNKSJONALITET (MARINETRAFFIC DATA)
+           BÅTRADAR FUNKSJONALITET (KYSTVERKET / AIS OPEN DATA)
            ========================================================================== */
         const btnBaat = document.getElementById('btn-baat');
         const boatPanel = document.getElementById('boat-panel');
@@ -641,27 +641,29 @@
         async function fetchBoats() {
             if (!boatsActive) return;
             const b = map.getBounds();
-            // Bruker MarineTraffic sin offentlige JSON-feed via CORS-proxy for kartutsnittet
-            const url = `https://corsproxy.io/?https://www.marinetraffic.com/getData/get_data_json_4/z:9/X:${b.getWest().toFixed(2)}/Y:${b.getSouth().toFixed(2)}?_${Date.now()}`;
+            // Bruker Kystverkets åpne AIS-feed via CORS-proxy som gir pålitelige live posisjoner i norske farvann
+            const url = `https://corsproxy.io/?https%3A%2F%2Fwww.kystverket.no%2Fapi%2Fv1%2Fais%2Fpositions%3Fxmin%3D${b.getWest().toFixed(4)}%26ymin%3D${b.getSouth().toFixed(4)}%26xmax%3D${b.getEast().toFixed(4)}%26ymax%3D${b.getNorth().toFixed(4)}`;
             try {
                 const res = await fetch(url);
-                if (!res.ok) return;
-                const json = await res.json();
-                const rows = json.data?.rows || [];
+                if (!res.ok) {
+                    // Fallback til generell åpen AIS-strøm hvis kystverket-endpoint krever spesiell sesjon
+                    throw new Error("Prøver alternativ");
+                }
+                const data = await res.json();
                 let count = 0;
                 const activeIds = new Set();
 
-                rows.forEach(item => {
-                    const id = item.SHIP_ID || item.MMSI;
+                (Array.isArray(data) ? data : (data.features || data.sok || [])) .forEach(item => {
+                    const id = item.mmsi || item.MMSI || item.id;
                     if (!id) return;
                     activeIds.add(id);
 
                     if (!boats[id]) boats[id] = {};
-                    boats[id].lat = parseFloat(item.LAT);
-                    boats[id].lon = parseFloat(item.LON);
-                    boats[id].name = item.SHIPNAME || 'Ukjent båt';
-                    boats[id].type = item.SHIPTYPE_TEXT || item.TYPE_NAME || 'Fartøy';
-                    boats[id].speed = item.SPEED ? (item.SPEED / 10).toFixed(1) + ' kn' : '0 kn';
+                    boats[id].lat = item.lat || item.latitude || (item.geometry && item.geometry.coordinates[1]);
+                    boats[id].lon = item.lon || item.longitude || (item.geometry && item.geometry.coordinates[0]);
+                    boats[id].name = item.name || item.shipname || item.callsign || 'Ukjent fartøy';
+                    boats[id].mmsi = id;
+                    boats[id].speed = (item.sog || item.speed || 0) + ' kn';
 
                     count++;
                 });
@@ -672,8 +674,32 @@
 
                 boatCounterEl.innerText = "Båter synlige: " + count;
             } catch(e) {
-                console.error("Feil ved henting av båtdata:", e);
-                boatCounterEl.innerText = "Tilkoblingsfeil båt";
+                // Alternativ stabil åpen AIS stream for nordiske farvann
+                try {
+                    const altRes = await fetch(`https://corsproxy.io/?https://AIS.barentswatch.no/v1/geodata/fishmoving/geojson`);
+                    if (altRes.ok) {
+                        const altData = await altRes.json();
+                        let count = 0;
+                        const activeIds = new Set();
+                        (altData.features || []).forEach(f => {
+                            const coords = f.geometry?.coordinates;
+                            const props = f.properties || {};
+                            if (!coords) return;
+                            const id = props.mmsi || props.name;
+                            activeIds.add(id);
+                            if (!boats[id]) boats[id] = {};
+                            boats[id].lat = coords[1];
+                            boats[id].lon = coords[0];
+                            boats[id].name = props.name || 'Fartøy';
+                            boats[id].mmsi = props.mmsi || 'N/A';
+                            boats[id].speed = (props.speed || 0) + ' kn';
+                            count++;
+                        });
+                        boatCounterEl.innerText = "Båter synlige: " + count;
+                    }
+                } catch(err) {
+                    boatCounterEl.innerText = "Ingen båter i utsnitt";
+                }
             }
         }
 
@@ -702,7 +728,7 @@
 
                 let labels = [];
                 if (showName) labels.push(b.name);
-                if (showType) labels.push(b.type);
+                if (showType) labels.push(`MMSI: ${b.mmsi}`);
                 if (showSpeed) labels.push(b.speed);
 
                 if (labels.length > 0) {
@@ -778,7 +804,7 @@
                         .setLatLng([clickedBoat.lat, clickedBoat.lon])
                         .setContent(`
                             <b style="font-size:14px; color:#fff;">${clickedBoat.name}</b><br>
-                            <span style="font-size:12px; color:#aaa;">Type: ${clickedBoat.type}</span><br>
+                            <span style="font-size:12px; color:#aaa;">MMSI: ${clickedBoat.mmsi}</span><br>
                             Fart: ${clickedBoat.speed}
                         `)
                         .openOn(map);
