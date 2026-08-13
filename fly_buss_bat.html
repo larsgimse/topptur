@@ -73,12 +73,7 @@
             white-space: nowrap;
         }
         
-        .btn-reset {
-            background: #222;
-            border-color: #444;
-            color: #ccc;
-        }
-
+        .btn-reset { background: #222; border-color: #444; color: #ccc; }
         .btn-flights.active { background: #d97706; border-color: #fff; font-weight: 700; color: #fff; }
         .btn-bus.active { background: #dc2626; border-color: #fff; font-weight: 700; color: #fff; }
         .btn-boat.active { background: #0284c7; border-color: #fff; font-weight: 700; color: #fff; }
@@ -134,10 +129,8 @@
         
         #flight-panel input:checked + .slider { background-color: #f59e0b; }
         #bus-panel input:checked + .slider { background-color: #ef4444; }
-        #boat-panel input:checked + .slider { background-color: #0ea5e9; }
         
         input:checked + .slider:before { transform: translateX(16px); }
-
         .alt-slider { width: 60px; cursor: pointer; accent-color: #f59e0b; }
         
         .counter-box { 
@@ -162,10 +155,7 @@
         #bus-counter.active { display: block; color: #ef4444; }
         #boat-counter.active { display: block; color: #0ea5e9; }
 
-        .overlay-canvas {
-            pointer-events: none;
-            z-index: 450;
-        }
+        .overlay-canvas { pointer-events: none; z-index: 450; }
 
         .leaflet-popup-content-wrapper {
             background: #1a1a1a !important;
@@ -173,51 +163,20 @@
             border: 1px solid var(--highlight-orange);
             border-radius: 6px;
         }
-        .leaflet-popup-tip {
-            background: #1a1a1a !important;
-        }
-        
+        .leaflet-popup-tip { background: #1a1a1a !important; }
         .flight-popup .leaflet-popup-content-wrapper { border-color: #ffd700 !important; }
         .bus-popup .leaflet-popup-content-wrapper { border-color: #ef4444 !important; }
-        .boat-popup .leaflet-popup-content-wrapper { border-color: #0ea5e9 !important; }
 
         @media (max-width: 600px) {
             header {
-                top: auto;
-                bottom: 20px;
-                flex-direction: column;
-                gap: 8px;
-                align-items: center;
-                background: rgba(20, 20, 20, 0.95);
-                box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-                min-height: auto;
+                top: auto; bottom: 20px; flex-direction: column; gap: 8px; align-items: center;
+                background: rgba(20, 20, 20, 0.95); box-shadow: 0 4px 20px rgba(0,0,0,0.6); min-height: auto;
             }
-            h1 { 
-                position: static; 
-                transform: none; 
-                font-size: 0.9rem; 
-                text-align: center;
-            }
-            .nav-buttons {
-                width: 100%;
-                justify-content: space-between;
-                flex-wrap: wrap;
-            }
-            .btn {
-                flex: 1;
-                text-align: center;
-                padding: 8px 4px;
-                font-size: 0.75rem;
-            }
-            .panels-container {
-                top: 10px;
-                right: 10px;
-                max-width: 200px;
-            }
-            .counter-box {
-                bottom: 130px;
-                left: 10px;
-            }
+            h1 { position: static; transform: none; font-size: 0.9rem; text-align: center; }
+            .nav-buttons { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+            .btn { flex: 1; text-align: center; padding: 8px 4px; font-size: 0.75rem; }
+            .panels-container { top: 10px; right: 10px; max-width: 200px; }
+            .counter-box { bottom: 130px; left: 10px; }
             .leaflet-bottom { bottom: 130px !important; }
         }
     </style>
@@ -241,7 +200,7 @@
             <div class="row">Flynr: <label class="switch"><input type="checkbox" id="flightNumSwitch"><span class="slider"></span></label></div>
             <div class="row">Kallesignal: <label class="switch"><input type="checkbox" id="callsignSwitch"><span class="slider"></span></label></div>
             <div class="row">Registrering: <label class="switch"><input type="checkbox" id="regSwitch"><span class="slider"></span></label></div>
-            <div class="row">Høyde (Av/Fot/m): <input type="range" id="altSlider" class="alt-slider" min="0" max="2" value="0"></div>
+            <div class="row">Høyde: <input type="range" id="altSlider" class="alt-slider" min="0" max="2" value="0"></div>
             <div class="row">Fra: <label class="switch"><input type="checkbox" id="originSwitch"><span class="slider"></span></label></div>
             <div class="row">Til: <label class="switch"><input type="checkbox" id="destSwitch"><span class="slider"></span></label></div>
         </div>
@@ -252,18 +211,12 @@
             <div class="row">Destinasjon: <label class="switch"><input type="checkbox" id="busDestSwitch"><span class="slider"></span></label></div>
             <div class="row">Forsinkelse: <label class="switch"><input type="checkbox" id="busDelaySwitch"><span class="slider"></span></label></div>
         </div>
-
-        <!-- BÅT PANEL -->
-        <div id="boat-panel" class="ui-panel">
-            <div class="row">Navn: <label class="switch"><input type="checkbox" id="boatNameSwitch" checked><span class="slider"></span></label></div>
-            <div class="row">Fart/Kurs: <label class="switch"><input type="checkbox" id="boatSpeedSwitch" checked><span class="slider"></span></label></div>
-        </div>
     </div>
 
     <div class="counter-box">
         <div id="counter" class="counter">Fly synlige: 0</div>
         <div id="bus-counter" class="counter">Busser: Laster...</div>
-        <div id="boat-counter" class="counter">Båter: Laster...</div>
+        <div id="boat-counter" class="counter">Båtradar aktiv (Kystverket)</div>
     </div>
 
     <div id="map-container">
@@ -282,12 +235,10 @@
             renderer: minRenderer
         }).setView([69.65, 18.95], 9);
 
-        if (isTouchDevice) {
-            map.zoomControl.setPosition('topleft');
-        }
+        if (isTouchDevice) map.zoomControl.setPosition('topleft');
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO &copy; Entur &copy; BarentsWatch',
+            attribution: '&copy; OpenStreetMap &copy; CARTO &copy; Entur &copy; Kystverket',
             subdomains: 'abcd',
             maxZoom: 20
         }).addTo(map);
@@ -299,22 +250,17 @@
         function updateCanvasPosition(c, ctx, active) {
             if (!active) return;
             const b = map.getBounds(), size = map.getSize(), tl = map.latLngToLayerPoint(b.getNorthWest());
-            c.style.left = tl.x + 'px'; 
-            c.style.top = tl.y + 'px';
-            c.width = size.x; 
-            c.height = size.y;
+            c.style.left = tl.x + 'px'; c.style.top = tl.y + 'px';
+            c.width = size.x; c.height = size.y;
         }
 
         /* ==========================================================================
-           FLYRADAR FUNKSJONALITET
+           FLYRADAR
            ========================================================================== */
         const btnFly = document.getElementById('btn-fly');
         const flightPanel = document.getElementById('flight-panel');
         const counterEl = document.getElementById('counter');
-        
-        let flightsActive = false;
-        let flights = {};
-        let flightInterval = null;
+        let flightsActive = false, flights = {}, flightInterval = null;
 
         const flightCanvas = L.DomUtil.create('canvas', 'leaflet-zoom-animated overlay-canvas');
         map.getPanes().overlayPane.appendChild(flightCanvas);
@@ -353,7 +299,6 @@
             if (!flightsActive) return;
             flightCtx.clearRect(0, 0, flightCanvas.width, flightCanvas.height);
             const tl = map.latLngToLayerPoint(map.getBounds().getNorthWest());
-            
             const showTrails = document.getElementById('trailSwitch').checked;
             const showFlight = document.getElementById('flightNumSwitch').checked;
             const showCallsign = document.getElementById('callsignSwitch').checked;
@@ -365,24 +310,16 @@
             for (let id in flights) {
                 const f = flights[id];
                 const p = map.latLngToLayerPoint([f.lat, f.lon]);
-                
                 flightCtx.fillStyle = "#ffd700";
-                flightCtx.beginPath(); 
-                flightCtx.arc(p.x - tl.x, p.y - tl.y, 4, 0, Math.PI * 2); 
-                flightCtx.fill();
-                
-                flightCtx.strokeStyle = "rgba(255, 215, 0, 0.4)";
-                flightCtx.lineWidth = 2;
-                flightCtx.stroke();
+                flightCtx.beginPath(); flightCtx.arc(p.x - tl.x, p.y - tl.y, 4, 0, Math.PI * 2); flightCtx.fill();
+                flightCtx.strokeStyle = "rgba(255, 215, 0, 0.4)"; flightCtx.lineWidth = 2; flightCtx.stroke();
 
                 let labels = [];
                 if (showFlight) labels.push(f.flight);
                 if (showCallsign) labels.push(f.callsign);
                 if (showReg) labels.push(f.reg || "N/A");
-                
                 if (altMode == 1) labels.push(f.alt + "ft");
                 else if (altMode == 2) labels.push(Math.round(f.alt * 0.3048) + "m");
-                
                 if (showOrigin && showDest) labels.push(`${f.origin || '??'} → ${f.dest || '??'}`);
                 else if (showOrigin) labels.push(`${f.origin || '??'} →`);
                 else if (showDest) labels.push(`→ ${f.dest || '??'}`);
@@ -413,41 +350,26 @@
         function toggleFlyVisning() {
             flightsActive = !flightsActive;
             if (flightsActive) {
-                btnFly.classList.add('active');
-                flightPanel.classList.add('active');
-                counterEl.classList.add('active');
-                flightCanvas.style.display = 'block';
-                updateCanvasPosition(flightCanvas, flightCtx, flightsActive);
-                fetchFlights();
-                flightInterval = setInterval(fetchFlights, 15000);
-                drawFlights();
-                map.on('move zoom', handleFlightMove);
+                btnFly.classList.add('active'); flightPanel.classList.add('active'); counterEl.classList.add('active');
+                flightCanvas.style.display = 'block'; updateCanvasPosition(flightCanvas, flightCtx, flightsActive);
+                fetchFlights(); flightInterval = setInterval(fetchFlights, 15000); drawFlights();
+                map.on('move zoom', () => updateCanvasPosition(flightCanvas, flightCtx, flightsActive));
                 map.on('moveend', fetchFlights);
             } else {
-                btnFly.classList.remove('active');
-                flightPanel.classList.remove('active');
-                counterEl.classList.remove('active');
-                flightCanvas.style.display = 'none';
-                if (flightInterval) clearInterval(flightInterval);
-                flightCtx.clearRect(0, 0, flightCanvas.width, flightCanvas.height);
-                flights = {};
-                map.off('move zoom', handleFlightMove);
-                map.off('moveend', fetchFlights);
+                btnFly.classList.remove('active'); flightPanel.classList.remove('active'); counterEl.classList.remove('active');
+                flightCanvas.style.display = 'none'; if (flightInterval) clearInterval(flightInterval);
+                flightCtx.clearRect(0, 0, flightCanvas.width, flightCanvas.height); flights = {};
             }
         }
-        function handleFlightMove() { updateCanvasPosition(flightCanvas, flightCtx, flightsActive); }
         btnFly.addEventListener('click', toggleFlyVisning);
 
         /* ==========================================================================
-           BUSSRADAR FUNKSJONALITET (ENTUR)
+           BUSSRADAR (ENTUR)
            ========================================================================== */
         const btnBuss = document.getElementById('btn-buss');
         const busPanel = document.getElementById('bus-panel');
         const busCounterEl = document.getElementById('bus-counter');
-
-        let busesActive = false;
-        let buses = {};
-        let busInterval = null;
+        let busesActive = false, buses = {}, busInterval = null;
 
         const busCanvas = L.DomUtil.create('canvas', 'leaflet-zoom-animated overlay-canvas');
         map.getPanes().overlayPane.appendChild(busCanvas);
@@ -455,9 +377,8 @@
         busCanvas.style.display = 'none';
 
         const VEHICLE_API = 'https://api.entur.io/realtime/v2/vehicles/graphql';
-        function erITromso(lat, lon) { return lat >= 69.55 && lat <= 69.78 && lon >= 18.80 && lon <= 19.25; }
-
         const vehicleQuery = `{\n  vehicles {\n    vehicleId\n    delay\n    line {\n      publicCode\n      lineName\n    }\n    location {\n      latitude\n      longitude\n    }\n  }\n}`;
+        function erITromso(lat, lon) { return lat >= 69.55 && lat <= 69.78 && lon >= 18.80 && lon <= 19.25; }
 
         async function fetchBuses() {
             if (!busesActive) return;
@@ -474,20 +395,18 @@
                 const activeIds = new Set();
 
                 vehicles.forEach(bus => {
-                    if (!bus.location || !bus.location.latitude || !bus.location.longitude) return;
+                    if (!bus.location?.latitude || !bus.location?.longitude) return;
                     const lat = bus.location.latitude, lon = bus.location.longitude;
                     if (erITromso(lat, lon)) {
                         const lineCode = bus.line?.publicCode || 'Buss';
-                        const lineName = bus.line?.lineName || 'Troms Fylkestrafikk';
                         const vehicleId = bus.vehicleId || `${lineCode}-${lat}-${lon}`;
-                        const delayMin = bus.delay ? Math.round(bus.delay / 60) : 0;
                         activeIds.add(vehicleId);
                         if (!buses[vehicleId]) buses[vehicleId] = {};
                         buses[vehicleId].lat = lat;
                         buses[vehicleId].lon = lon;
                         buses[vehicleId].line = lineCode;
-                        buses[vehicleId].name = lineName;
-                        buses[vehicleId].delay = delayMin;
+                        buses[vehicleId].name = bus.line?.lineName || '';
+                        buses[vehicleId].delay = bus.delay ? Math.round(bus.delay / 60) : 0;
                         count++;
                     }
                 });
@@ -528,155 +447,57 @@
         function toggleBussVisning() {
             busesActive = !busesActive;
             if (busesActive) {
-                btnBuss.classList.add('active');
-                busPanel.classList.add('active');
-                busCounterEl.classList.add('active');
-                busCounterEl.innerText = "Busser: Laster...";
-                busCanvas.style.display = 'block';
+                btnBuss.classList.add('active'); busPanel.classList.add('active'); busCounterEl.classList.add('active');
+                busCounterEl.innerText = "Busser: Laster..."; busCanvas.style.display = 'block';
                 updateCanvasPosition(busCanvas, busCtx, busesActive);
-                fetchBuses();
-                busInterval = setInterval(fetchBuses, 5000);
-                drawBuses();
-                map.on('move zoom', handleBusMove);
+                fetchBuses(); busInterval = setInterval(fetchBuses, 5000); drawBuses();
+                map.on('move zoom', () => updateCanvasPosition(busCanvas, busCtx, busesActive));
             } else {
-                btnBuss.classList.remove('active');
-                busPanel.classList.remove('active');
-                busCounterEl.classList.remove('active');
-                busCanvas.style.display = 'none';
-                if (busInterval) clearInterval(busInterval);
-                busCtx.clearRect(0, 0, busCanvas.width, busCanvas.height);
-                buses = {};
-                map.off('move zoom', handleBusMove);
+                btnBuss.classList.remove('active'); busPanel.classList.remove('active'); busCounterEl.classList.remove('active');
+                busCanvas.style.display = 'none'; if (busInterval) clearInterval(busInterval);
+                busCtx.clearRect(0, 0, busCanvas.width, busCanvas.height); buses = {};
             }
         }
-        function handleBusMove() { updateCanvasPosition(busCanvas, busCtx, busesActive); }
         btnBuss.addEventListener('click', toggleBussVisning);
 
         /* ==========================================================================
-           BÅTRADAR FUNKSJONALITET (AIS / BARENTSWATCH PROXY)
+           BÅTRADAR (KYSTVERKET NAIS WMS-LAG)
            ========================================================================== */
         const btnBat = document.getElementById('btn-bat');
-        const boatPanel = document.getElementById('boat-panel');
         const boatCounterEl = document.getElementById('boat-counter');
-
         let boatsActive = false;
-        let boats = {};
-        let boatInterval = null;
 
-        const boatCanvas = L.DomUtil.create('canvas', 'leaflet-zoom-animated overlay-canvas');
-        map.getPanes().overlayPane.appendChild(boatCanvas);
-        const boatCtx = boatCanvas.getContext('2d');
-        boatCanvas.style.display = 'none';
-
-        async function fetchBoats() {
-            if (!boatsActive) return;
-            const b = map.getBounds();
-            // Bruker offentlig AIS-strøm via Open-Data proxy med bounding box for aktivt kartutsnitt
-            const url = `https://corsproxy.io/?https://owsi-public.barentswatch.no/v1/geodata/vessel/positions?xmin=${b.getWest().toFixed(2)}&ymin=${b.getSouth().toFixed(2)}&xmax=${b.getEast().toFixed(2)}&ymax=${b.getNorth().toFixed(2)}`;
-            try {
-                const res = await fetch(url);
-                if (!res.ok) throw new Error();
-                const data = await res.json();
-                let count = 0;
-                const activeIds = new Set();
-
-                (data.features || data).forEach(boat => {
-                    const coords = boat.geometry?.coordinates || [boat.longitude, boat.latitude];
-                    const props = boat.properties || boat;
-                    const id = props.mmsi || props.callSign || Math.random();
-                    const name = props.name || props.shipname || 'Ukjent fartøy';
-                    const speed = props.speed || props.sog || 0;
-                    const course = props.course || props.cog || 0;
-
-                    activeIds.add(id);
-                    boats[id] = {
-                        lat: coords[1],
-                        lon: coords[0],
-                        name: name,
-                        speed: (speed / 10).toFixed(1),
-                        course: course
-                    };
-                    count++;
-                });
-
-                for (let id in boats) { if (!activeIds.has(id)) delete boats[id]; }
-                boatCounterEl.innerText = "Båter synlige: " + count;
-            } catch(e) {
-                // Fallback til simulering/generering om åpen rute feiler pga CORS/grenser
-                boatCounterEl.innerText = "Båter synlige: 0 (Ingen AIS-data i ruten)";
-            }
-        }
-
-        function drawBoats() {
-            if (!boatsActive) return;
-            boatCtx.clearRect(0, 0, boatCanvas.width, boatCanvas.height);
-            const tl = map.latLngToLayerPoint(map.getBounds().getNorthWest());
-            const showName = document.getElementById('boatNameSwitch').checked;
-            const showSpeed = document.getElementById('boatSpeedSwitch').checked;
-
-            for (let id in boats) {
-                const bt = boats[id];
-                const p = map.latLngToLayerPoint([bt.lat, bt.lon]);
-                
-                boatCtx.fillStyle = "#0ea5e9";
-                boatCtx.beginPath(); 
-                boatCtx.arc(p.x - tl.x, p.y - tl.y, 4, 0, Math.PI * 2); 
-                boatCtx.fill();
-                
-                boatCtx.strokeStyle = "rgba(14, 165, 233, 0.4)";
-                boatCtx.lineWidth = 2;
-                boatCtx.stroke();
-
-                let labels = [];
-                if (showName) labels.push(bt.name);
-                if (showSpeed) labels.push(`${bt.speed} kn`);
-
-                if (labels.length > 0) {
-                    boatCtx.font = "11px -apple-system, sans-serif";
-                    boatCtx.fillStyle = "#7dd3fc";
-                    boatCtx.fillText(labels.join(" | "), p.x - tl.x + 9, p.y - tl.y + 4);
-                }
-            }
-            requestAnimationFrame(drawBoats);
-        }
+        // Kystverket stiller til rådighet WMS/karttjenester for AIS-posisjoner
+        const boatLayer = L.tileLayer.wms('https://wms.kystverket.no/wms.py', {
+            layers: 'ais_positions', // Standard lag for AIS-posisjoner i Kystverkets WMS
+            format: 'image/png',
+            transparent: true,
+            version: '1.3.0',
+            attribution: '&copy; Kystverket',
+            maxZoom: 20
+        });
 
         function toggleBoatVisning() {
             boatsActive = !boatsActive;
             if (boatsActive) {
                 btnBat.classList.add('active');
-                boatPanel.classList.add('active');
                 boatCounterEl.classList.add('active');
-                boatCounterEl.innerText = "Båter: Laster...";
-                boatCanvas.style.display = 'block';
-                updateCanvasPosition(boatCanvas, boatCtx, boatsActive);
-                fetchBoats();
-                boatInterval = setInterval(fetchBoats, 10000);
-                drawBoats();
-                map.on('move zoom', handleBoatMove);
-                map.on('moveend', fetchBoats);
+                boatLayer.addTo(map);
             } else {
                 btnBat.classList.remove('active');
-                boatPanel.classList.remove('active');
                 boatCounterEl.classList.remove('active');
-                boatCanvas.style.display = 'none';
-                if (boatInterval) clearInterval(boatInterval);
-                boatCtx.clearRect(0, 0, boatCanvas.width, boatCanvas.height);
-                boats = {};
-                map.off('move zoom', handleBoatMove);
-                map.off('moveend', fetchBoats);
+                map.removeLayer(boatLayer);
             }
         }
-        function handleBoatMove() { updateCanvasPosition(boatCanvas, boatCtx, boatsActive); }
         btnBat.addEventListener('click', toggleBoatVisning);
 
         /* ==========================================================================
-           FELLES KLIKK-HÅNDTERING FOR POPUPS (FLY, BUSS, BÅT)
+           KLIKK-HÅNDTERING FOR POPUPS (FLY, BUSS)
            ========================================================================== */
         map.on('click', function(e) {
             const clickPoint = map.latLngToContainerPoint(e.latlng);
             const tl = map.latLngToLayerPoint(map.getBounds().getNorthWest());
 
-            // 1. Busser
             if (busesActive) {
                 let clickedBus = null, minDist = 20;
                 for (let id in buses) {
@@ -695,25 +516,6 @@
                 }
             }
 
-            // 2. Båter
-            if (boatsActive) {
-                let clickedBoat = null, minDist = 20;
-                for (let id in boats) {
-                    const bt = boats[id];
-                    const p = map.latLngToLayerPoint([bt.lat, bt.lon]);
-                    const dist = Math.hypot(clickPoint.x - (p.x - tl.x), clickPoint.y - (p.y - tl.y));
-                    if (dist < minDist) { minDist = dist; clickedBoat = bt; }
-                }
-                if (clickedBoat) {
-                    L.popup({ offset: [0, -5], className: 'boat-popup' })
-                        .setLatLng([clickedBoat.lat, clickedBoat.lon])
-                        .setContent(`<b style="font-size:14px; color:#fff;">${clickedBoat.name}</b><br>Fart: ${clickedBoat.speed} knop<br>Kurs: ${clickedBoat.course}°`)
-                        .openOn(map);
-                    return;
-                }
-            }
-
-            // 3. Fly
             if (flightsActive) {
                 let clickedFlight = null, minDist = 20;
                 for (let id in flights) {
