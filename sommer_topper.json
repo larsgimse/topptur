@@ -1,19 +1,5 @@
 [
   {
-    "id": "buren",
-    "navn": "Buren",
-    "fil": "2025_10_06.gpx",
-    "overrideAar": "2020",
-    "video": [
-      {
-        "url": "https://youtu.be/-m3sEIIIUHg",
-        "tittel": "Se video",
-        "dato": "2020_08_23"
-      }
-    ],
-    "beskrivelse": "Fin tur med god utsikt over Ersfjorden."
-  },
-  {
     "id": "bonntuva",
     "navn": "Bønntuva",
     "fil": "2026_07_12.gpx",
@@ -27,6 +13,20 @@
     ],
     "strava": "https://www.strava.com/activities/19286411884",
     "beskrivelse": "Flott tur opp fra nedre Fjellheisstasjon."
+  },
+  {
+    "id": "buren",
+    "navn": "Buren",
+    "fil": "2025_10_06.gpx",
+    "overrideAar": "2020",
+    "video": [
+      {
+        "url": "https://youtu.be/-m3sEIIIUHg",
+        "tittel": "Se video",
+        "dato": "2020_08_23"
+      }
+    ],
+    "beskrivelse": "Fin tur med god utsikt over Ersfjorden."
   },
   {
     "id": "djeveltanna",
@@ -129,6 +129,41 @@
         "tittel": "Se video"
       }
     ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "lilleblamann",
+    "navn": "Steinskartinden - Lille blåmann",
+    "fil": "2020_10_03.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/CF4-OgAszLj",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/4145027242",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "lillehaifinnen",
+    "navn": "Steinskartinden travers - Lille haifinnen",
+    "fil": "2026_07_27.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DbWwNpko0rQ/",
+        "tittel": "Se video",
+        "dato": "2026_07_27"
+      },
+      {
+        "url": "https://www.instagram.com/p/DbTrZpfIR0s/",
+        "tittel": "Gjeste video",
+        "dato": "@da.explorer"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19486664714",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a6775ba7c5e1b17030b6440",
     "beskrivelse": "Kommer mer info snart..."
   },
   {
@@ -349,41 +384,6 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
-    "id": "lilleblamann",
-    "navn": "Steinskartinden - Lille blåmann",
-    "fil": "2020_10_03.gpx",
-    "video": [
-      {
-        "url": "https://www.instagram.com/p/CF4-OgAszLj",
-        "tittel": "Se bilder",
-        "type": "photo"
-      }
-    ],
-    "strava": "https://www.strava.com/activities/4145027242",
-    "beskrivelse": "Kommer mer info snart..."
-  },
-  {
-    "id": "lillehaifinnen",
-    "navn": "Steinskartinden travers - Lille haifinnen",
-    "fil": "2026_07_27.gpx",
-    "overrideAar": "2026",
-    "video": [
-      {
-        "url": "https://www.instagram.com/p/DbWwNpko0rQ/",
-        "tittel": "Se video",
-        "dato": "2026_07_27"
-      },
-      {
-        "url": "https://www.instagram.com/p/DbTrZpfIR0s/",
-        "tittel": "Gjeste video",
-        "dato": "@da.explorer"
-      }
-    ],
-    "strava": "https://www.strava.com/activities/19486664714",
-    "suunto": "https://maps.suunto.com/move/larsgimse/6a6775ba7c5e1b17030b6440",
-    "beskrivelse": "Kommer mer info snart..."
-  },
-  {
     "id": "storeblamann",
     "navn": "Store Blåmann",
     "fil": "2026_07_25.gpx",
@@ -430,6 +430,14 @@
         "type": "photo"
       }
     ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "styrmannstinden",
+    "navn": "Styrmannstinden",
+    "fil": "2019_07_11.gpx",
+    "strava": "https://www.strava.com/activities/2523226931",
+    "suunto": "https://maps.suunto.com/move/larsgimse/5d27433b17683ac68a41c012",
     "beskrivelse": "Kommer mer info snart..."
   },
   {
