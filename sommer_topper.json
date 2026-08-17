@@ -183,6 +183,21 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
+    "id": "middagsskarshaugen-mikkelshaugen",
+    "navn": "Middagsskarshaugen nord - Mikkelshaugen",
+    "fil": "2021_06_05.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/CPxh5ImMS_m",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/5418052303",
+    "suunto": "https://maps.suunto.com/move/larsgimse/60bb90ba5002fb141306aa4f",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "middagstinden",
     "navn": "Middagstinden",
     "fil": "2026_07_13.gpx",
