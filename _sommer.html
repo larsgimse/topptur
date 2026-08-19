@@ -97,7 +97,7 @@
             display: flex; align-items: center; justify-content: center; gap: 4px;
         }
 
-        .ui-hidden .video-link-btn, .ui-hidden .control-row-container, .ui-hidden .search-link-btn, .ui-hidden .download-area, .ui-hidden .desc-box, .ui-hidden .gallery-link-btn { display: none !important; }
+        .ui-hidden .video-link-btn, .ui-hidden .control-row-container, .ui-hidden .search-link-btn, .ui-hidden .download-area, .ui-hidden .desc-box { display: none !important; }
 
         /* Nederste rad med gimse.info */
         .footer-row {
@@ -226,7 +226,7 @@
         
         .badge-2026 { background: var(--strava-orange) !important; }
 
-        .video-link-btn, .search-link-btn, .gallery-link-btn {
+        .video-link-btn, .search-link-btn {
             background: rgba(255, 255, 255, 0.95); padding: 8px 12px; border-radius: 8px; 
             font-weight: 700; text-decoration: none; font-size: 12px; border: 2.5px solid var(--insta-pink);
             display: flex; align-items: center; gap: 5px; color: var(--insta-pink); 
@@ -236,7 +236,6 @@
         .strava-link-btn { border-color: var(--strava-orange); color: var(--strava-orange); }
         .suunto-link-btn { border: 2.5px solid #000; color: var(--dark-grey); }
         .suunto-icon { color: var(--suunto-red); font-size: 10px; }
-        .gallery-link-btn { border-color: var(--hover-blue); color: var(--hover-blue); }
 
         /* Stil for turbeskrivelse og veibeskrivelse */
         .desc-box {
@@ -292,39 +291,6 @@
         .info-popup-text h2 { font-size: 18px; margin-top: 15px; }
         .info-popup-text h3 { font-size: 15px; margin-top: 12px; }
         .info-popup-text p { font-size: 14px; line-height: 1.5; color: #475569; white-space: pre-wrap; }
-
-        /* Stil for Bildegalleri Pop-up Lightbox */
-        .gallery-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9); z-index: 100000; display: none;
-            flex-direction: column; justify-content: center; align-items: center;
-        }
-        .gallery-modal.open { display: flex; }
-        .gallery-modal-close {
-            position: absolute; top: 20px; right: 25px; color: white;
-            font-size: 35px; cursor: pointer; font-weight: bold; z-index: 100001;
-            user-select: none;
-        }
-        .gallery-content {
-            position: relative; max-width: 90vw; max-height: 80vh;
-            display: flex; justify-content: center; align-items: center;
-        }
-        .gallery-image {
-            max-width: 100%; max-height: 80vh; object-fit: contain;
-            border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .gallery-nav-btn {
-            position: absolute; top: 50%; transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.2); color: white; border: none;
-            padding: 15px 12px; font-size: 24px; cursor: pointer; border-radius: 8px;
-            user-select: none; transition: background 0.2s; z-index: 100001;
-        }
-        .gallery-nav-btn:hover { background: rgba(255, 255, 255, 0.5); }
-        .gallery-nav-prev { left: 15px; }
-        .gallery-nav-next { right: 15px; }
-        .gallery-counter {
-            color: white; margin-top: 15px; font-size: 14px; font-weight: 600;
-        }
     </style>
 </head>
 <body>
@@ -368,17 +334,6 @@
         </div>
     </div>
 
-    <!-- Modal for Bildegalleri -->
-    <div class="gallery-modal" id="galleryModal">
-        <span class="gallery-modal-close" id="closeGalleryBtn">&times;</span>
-        <button class="gallery-nav-btn gallery-nav-prev" id="prevImgBtn">&#10094;</button>
-        <div class="gallery-content">
-            <img src="" alt="Bilde" class="gallery-image" id="galleryImg" />
-        </div>
-        <button class="gallery-nav-btn gallery-nav-next" id="nextImgBtn">&#10095;</button>
-        <div class="gallery-counter" id="galleryCounter"></div>
-    </div>
-
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
@@ -410,55 +365,6 @@
         let totalTracksCount = 0;
         let loadedTracksCount = 0;
         let topper = [];
-
-        /* Galleri Variabler & Funksjonalitet */
-        let nuværendeBilder = [];
-        let nuværendeBildeMappe = '';
-        let aktivBildeIndex = 0;
-
-        const galleryModal = document.getElementById('galleryModal');
-        const galleryImg = document.getElementById('galleryImg');
-        const galleryCounter = document.getElementById('galleryCounter');
-
-        function visBilde(index) {
-            if (!nuværendeBilder || nuværendeBilder.length === 0) return;
-            if (index < 0) index = nuværendeBilder.length - 1;
-            if (index >= nuværendeBilder.length) index = 0;
-            aktivBildeIndex = index;
-
-            let mappe = nuværendeBildeMappe.startsWith('/') ? nuværendeBildeMappe.substring(1) : nuværendeBildeMappe;
-            if (mappe && !mappe.endsWith('/')) mappe += '/';
-
-            galleryImg.src = mappe + nuværendeBilder[aktivBildeIndex];
-            galleryCounter.innerText = `${aktivBildeIndex + 1} / ${nuværendeBilder.length}`;
-        }
-
-        function åpneGalleri(bildeMappe, bilder) {
-            nuværendeBildeMappe = bildeMappe;
-            nuværendeBilder = bilder;
-            aktivBildeIndex = 0;
-            visBilde(0);
-            galleryModal.classList.add('open');
-        }
-
-        function lukkGalleri() {
-            galleryModal.classList.remove('open');
-        }
-
-        document.getElementById('closeGalleryBtn').onclick = lukkGalleri;
-        document.getElementById('prevImgBtn').onclick = () => visBilde(aktivBildeIndex - 1);
-        document.getElementById('nextImgBtn').onclick = () => visBilde(aktivBildeIndex + 1);
-
-        galleryModal.onclick = (e) => {
-            if (e.target === galleryModal) lukkGalleri();
-        };
-
-        document.addEventListener('keydown', (e) => {
-            if (!galleryModal.classList.contains('open')) return;
-            if (e.key === 'ArrowLeft') visBilde(aktivBildeIndex - 1);
-            if (e.key === 'ArrowRight') visBilde(aktivBildeIndex + 1);
-            if (e.key === 'Escape') lukkGalleri();
-        });
 
         const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { attribution: '© Kartverket' }).addTo(map);
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
@@ -620,6 +526,7 @@
             shadowSize: [30, 30]
         });
 
+        // Henter relevante bokstaver og hvilket ord som hører til den bokstaven
         function hentStorBokstavMapping(navn) {
             const deler = navn.split(/\s*[-–—/]\s*/);
             const mapping = []; 
@@ -927,29 +834,6 @@
                                 veiBox.className = 'desc-box';
                                 veiBox.innerHTML = `<div class="desc-box-title"><span>🚗</span> Veibeskrivelse</div>${topp.veiBeskrivelse}`;
                                 videoContainer.appendChild(veiBox);
-                            }
-
-                            // Ekstra bilder fra JSON-peker
-                            if (topp.ekstraBilder) {
-                                const datoNavn = topp.ekstraBilder.replace('.json', '');
-                                const jsonSti = `media/${datoNavn}/${topp.ekstraBilder}`;
-                                fetch(jsonSti)
-                                    .then(res => {
-                                        if (!res.ok) throw new Error('Kunne ikke laste bilde-json');
-                                        return res.json();
-                                    })
-                                    .then(bildeData => {
-                                        if (bildeData && bildeData.bilder && bildeData.bilder.length > 0) {
-                                            const galleryBtn = document.createElement('button');
-                                            galleryBtn.className = 'gallery-link-btn';
-                                            galleryBtn.innerHTML = `<span>🖼️</span> Bildegalleri (${bildeData.antallBilder || bildeData.bilder.length})`;
-                                            galleryBtn.onclick = () => {
-                                                åpneGalleri(bildeData.bildeMappe, bildeData.bilder);
-                                            };
-                                            videoContainer.appendChild(galleryBtn);
-                                        }
-                                    })
-                                    .catch(err => console.warn("Fant ikke eller kunne ikke laste ekstraBilder:", err));
                             }
 
                             if (topp.video && topp.video.length > 0) {
