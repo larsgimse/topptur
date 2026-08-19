@@ -518,10 +518,11 @@
     "suunto": "https://maps.suunto.com/move/larsgimse/6a5e4a27cd2f1e2674613256",
     "beskrivelse": "Kommer mer info snart..."
   },
-  {
+{
     "id": "vengsoytraversen",
     "navn": "Vengsøytraversen",
     "fil": "2021_09_19.gpx",
+    "ekstraBilder": "2021_09_19.json",
     "video": [
       {
         "url": "https://www.instagram.com/p/CUBLxmXM02y",
@@ -529,6 +530,8 @@
         "type": "photo"
       }
     ],
+    "strava": "https://www.strava.com/activities/5985836919",
+    "suunto": "https://maps.suunto.com/move/larsgimse/614740626a2c4447e2fbbb26",
     "beskrivelse": "Kommer mer info snart..."
   }
 ]
