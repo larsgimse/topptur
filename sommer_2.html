@@ -31,7 +31,6 @@
         .subtitle { font-size: 15px; font-weight: 600; margin: 0; color: #475569; order: 2; }
         .info-text { font-size: 13px; font-weight: 400; margin: 4px 0 15px 0; color: #64748b; order: 3; }
 
-        /* Container for knapper og skygge-effekt */
         .buttons-wrapper { 
             position: relative; 
             width: 100%; 
@@ -43,7 +42,6 @@
         
         #controls-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; order: 5; position: relative; z-index: 10; }
         
-        /* Søkefelt-stil */
         .search-input-wrapper {
             position: relative;
             display: flex;
@@ -99,12 +97,10 @@
 
         .ui-hidden .video-link-btn, .ui-hidden .control-row-container, .ui-hidden .search-link-btn, .ui-hidden .download-area, .ui-hidden .desc-box { display: none !important; }
 
-        /* Nederste rad med gimse.info */
         .footer-row {
             order: 8; margin-top: 25px; display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap;
         }
 
-        /* Bokstavknapp & Undermeny-stiler */
         .letter-dropdown {
             position: relative;
             display: inline-block;
@@ -269,7 +265,6 @@
         .info-popup-text h3 { font-size: 15px; margin-top: 12px; }
         .info-popup-text p { font-size: 14px; line-height: 1.5; color: #475569; white-space: pre-wrap; }
 
-        /* Stil for Bilde-popup Modal */
         .image-modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.88); display: flex; justify-content: center;
@@ -348,7 +343,6 @@
         </div>
     </div>
 
-    <!-- Modal for Bildevisning -->
     <div class="image-modal-overlay" id="imageModal">
         <div class="image-modal-content">
             <button class="image-modal-close" id="closeImageModal">×</button>
@@ -410,7 +404,6 @@
         const knapperMap = {};
         const gpxLagMap = {};
 
-        /* --- Bilde-Modal Logikk --- */
         let gjeldendeBilder = [];
         let aktueltBildeIndex = 0;
 
@@ -754,7 +747,6 @@
                     buttonsContainer.appendChild(wrapper);
                 });
 
-                // Last inn GPX-spor
                 topper.forEach(topp => {
                     const mainTrackColor = topp.navn === "Nordfjellet - Tromsø geografiske midtpunkt" ? 'var(--strava-green)' : 'var(--summer-green)';
 
@@ -849,14 +841,23 @@
                                 () => visProfil(l, topp.navn, topp.fil)
                             ));
 
-                            // SJEKKER BILDER / MEDIA KOBLET TIL TOPPEN
+                            // HÅNDTERER BILDER FRA `bildeMappe` OG/ELLER `bilder`
                             let bildeListe = [];
-                            const mappeNavn = topp.bildeMappe || (topp.fil ? topp.fil.replace(/\.gpx$/i, '') : null);
 
                             if (topp.bilder && Array.isArray(topp.bilder) && topp.bilder.length > 0) {
+                                let baseMappe = topp.bildeMappe ? topp.bildeMappe.trim() : '';
+                                if (!baseMappe && topp.fil) {
+                                    baseMappe = `media/${topp.fil.replace(/\.gpx$/i, '')}`;
+                                }
+
+                                baseMappe = baseMappe.replace(/\/+$/, '');
+
                                 bildeListe = topp.bilder.map(img => {
-                                    if (img.startsWith('http') || img.startsWith('media/') || img.startsWith('/media/')) return img;
-                                    return `media/${mappeNavn}/${img}`;
+                                    const trimmedImg = img.trim();
+                                    if (/^(https?:\/\/|\/media\/|media\/)/i.test(trimmedImg)) {
+                                        return trimmedImg;
+                                    }
+                                    return baseMappe ? `${baseMappe}/${trimmedImg.replace(/^\/+/, '')}` : trimmedImg;
                                 });
                             }
 
