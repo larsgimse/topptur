@@ -284,18 +284,21 @@
     ],
     "beskrivelse": "Kommer mer info snart..."
   },
-  {
-    "id": "orvasstinden",
-    "navn": "Orvasstinden",
-    "fil": "2025_09_25.gpx",
-    "video": [
-      {
-        "url": "https://www.instagram.com/p/DPKU6TiCH9y/",
-        "tittel": "Se video"
-      }
-    ],
-    "beskrivelse": "Kommer mer info snart..."
-  },
+{
+  "id": "orvasstinden",
+  "navn": "Orvasstinden",
+  "fil": "2025_09_28.gpx",
+  "ekstraBilder": "2025_09_28.json",
+  "video": [
+    {
+      "url": "https://www.instagram.com/p/DPKU6TiCH9y/",
+      "tittel": "Se video"
+    }
+  ],
+  "strava": "https://www.strava.com/activities/15966140993",
+  "suunto": "https://maps.suunto.com/move/larsgimse/68d94a0425685b076a22ab2f",
+  "beskrivelse": "Kommer mer info snart..."
+},
   {
     "id": "rodekorshytta",
     "navn": "Rødekorshytta - Djupdalsgruve - Sollidalsaksla - Bønntuva - kanten av Gryta",
