@@ -521,8 +521,8 @@
 {
     "id": "vengsoytraversen",
     "navn": "Vengsøytraversen",
-    "fil": "2021_09_19.gpx",
-    "ekstraBilder": "2021_09_19.json",
+    "fil": "2017_09_02.gpx",
+    "ekstraBilder": "2017_09_02.json",
     "video": [
       {
         "url": "https://www.instagram.com/p/CUBLxmXM02y",
@@ -530,8 +530,14 @@
         "type": "photo"
       }
     ],
-    "strava": "https://www.strava.com/activities/5985836919",
-    "suunto": "https://maps.suunto.com/move/larsgimse/614740626a2c4447e2fbbb26",
+    "strava": "https://www.strava.com/activities/1164234306",
+    "suunto": "https://maps.suunto.com/move/larsgimse/59aa9cea205b9b07dd9b3b6f",
+    "ekstraSpor": [
+      {
+        "tittel": "Tur 2 (2021)",
+        "fil": "2021_09_19.gpx"
+      }
+    ],
     "beskrivelse": "Kommer mer info snart..."
   }
 ]
