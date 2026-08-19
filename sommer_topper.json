@@ -484,10 +484,11 @@
     "suunto": "https://maps.suunto.com/move/larsgimse/5d27433b17683ac68a41c012",
     "beskrivelse": "Kommer mer info snart..."
   },
-  {
+{
     "id": "synnovjordtinden",
     "navn": "Synnøvjordtinden - Nattmålstuva - Mjeldskartinden",
     "fil": "2024_08_07.gpx",
+    "ekstraBilder": "2024_08_07.json",
     "strava": "https://www.strava.com/activities/12089034557",
     "beskrivelse": "Kommer mer info snart..."
   },
