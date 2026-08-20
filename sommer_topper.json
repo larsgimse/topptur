@@ -1,5 +1,14 @@
 [
   {
+    "id": "blaisvannet",
+    "navn": "Blåisvannet",
+    "fil": "2019_08_11.gpx",
+    "ekstraBilder": "2019_08_11.json",
+    "strava": "https://www.strava.com/activities/2610435920",
+    "suunto": "https://maps.suunto.com/move/larsgimse/5d5040fba65c7412ae40f6c5",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "bonntuva",
     "navn": "Bønntuva",
     "fil": "2026_07_12.gpx",
