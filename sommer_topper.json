@@ -464,6 +464,15 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
+    "id": "storholten-middagsfjellet",
+    "navn": "Storholten - Middagsfjellet",
+    "fil": "2016_07_12.gpx",
+    "ekstraBilder": "2016_07_12.json",
+    "strava": "https://www.strava.com/activities/638901805",
+    "suunto": "https://maps.suunto.com/move/larsgimse/598ffb8ff1757228de9a5790",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "storsteinen",
     "navn": "Storsteinen",
     "fil": "2022_05_22.gpx",
