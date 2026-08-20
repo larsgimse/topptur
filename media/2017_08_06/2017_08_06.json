@@ -1,0 +1,13 @@
+{
+  "bildeMappe": "/media/2017_08_06",
+  "bilderMappejson": "2017_08_06.json",
+  "gpxFil": "2017_08_06.gpx",
+  "antallBilder": 5,
+  "bilder": [
+    "68DCBC16-791F-4C94-B8C9-A947950EAA7F.jpg",
+    "7528BB63-A6D8-4608-9622-B15E70D2D11F.jpg",
+    "75860AAD-5E85-4582-8507-5DA80D11D978.jpg",
+    "3AE02CCA-EB7E-4CB7-82EF-8601730429E1.jpg",
+    "66EE50C7-9886-472D-836F-FDE633C2EBE1.jpg"
+  ]
+}
