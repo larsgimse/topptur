@@ -137,6 +137,15 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
+    "id": "kjolen-rodtinden",
+    "navn": "Kjølen - Rødtinden",
+    "fil": "2016_07_25.gpx",
+    "ekstraBilder": "2016_07_25.json",
+    "strava": "https://www.strava.com/activities/653400470",
+    "suunto": "https://maps.suunto.com/move/larsgimse/598ffb7f205b9b07ddaa5ca8",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "kloftbakken",
     "navn": "Kløftbakken",
     "fil": "2025_02_28.gpx",
