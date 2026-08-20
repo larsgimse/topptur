@@ -15,14 +15,6 @@
     "beskrivelse": "Flott tur opp fra nedre Fjellheisstasjon."
   },
   {
-    "id": "bruna-brattfjellet",
-    "navn": "Bruna - Brattfjellet",
-    "fil": "2024_07_17.gpx",
-    "ekstraBilder": "2024_07_17.json",
-    "strava": "https://www.strava.com/activities/11912080614",
-    "beskrivelse": "Kommer mer info snart..."
-  },
-  {
     "id": "buren",
     "navn": "Buren",
     "fil": "2025_10_06.gpx",
@@ -183,7 +175,7 @@
     "suunto": "https://maps.suunto.com/move/larsgimse/6a6775ba7c5e1b17030b6440",
     "beskrivelse": "Kommer mer info snart..."
   },
-  {
+{
     "id": "mellomtinden-tromtinden",
     "navn": "Mellomtinden - Tromtinden",
     "fil": "2025_07_05.gpx",
@@ -293,21 +285,21 @@
     ],
     "beskrivelse": "Kommer mer info snart..."
   },
-  {
-    "id": "orvasstinden",
-    "navn": "Orvasstinden",
-    "fil": "2025_09_28.gpx",
-    "ekstraBilder": "2025_09_28.json",
-    "video": [
-      {
-        "url": "https://www.instagram.com/p/DPKU6TiCH9y/",
-        "tittel": "Se video"
-      }
-    ],
-    "strava": "https://www.strava.com/activities/15966140993",
-    "suunto": "https://maps.suunto.com/move/larsgimse/68d94a0425685b076a22ab2f",
-    "beskrivelse": "Kommer mer info snart..."
-  },
+{
+  "id": "orvasstinden",
+  "navn": "Orvasstinden",
+  "fil": "2025_09_28.gpx",
+  "ekstraBilder": "2025_09_28.json",
+  "video": [
+    {
+      "url": "https://www.instagram.com/p/DPKU6TiCH9y/",
+      "tittel": "Se video"
+    }
+  ],
+  "strava": "https://www.strava.com/activities/15966140993",
+  "suunto": "https://maps.suunto.com/move/larsgimse/68d94a0425685b076a22ab2f",
+  "beskrivelse": "Kommer mer info snart..."
+},
   {
     "id": "rodekorshytta",
     "navn": "Rødekorshytta - Djupdalsgruve - Sollidalsaksla - Bønntuva - kanten av Gryta",
@@ -492,7 +484,7 @@
     "suunto": "https://maps.suunto.com/move/larsgimse/5d27433b17683ac68a41c012",
     "beskrivelse": "Kommer mer info snart..."
   },
-  {
+{
     "id": "synnovjordtinden",
     "navn": "Synnøvjordtinden - Nattmålstuva - Mjeldskartinden",
     "fil": "2024_08_07.gpx",
@@ -528,7 +520,7 @@
     "suunto": "https://maps.suunto.com/move/larsgimse/6a5e4a27cd2f1e2674613256",
     "beskrivelse": "Kommer mer info snart..."
   },
-  {
+{
     "id": "vengsoytraversen",
     "navn": "Vengsøytraversen",
     "fil": "2017_09_02.gpx",
