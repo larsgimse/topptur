@@ -43,22 +43,25 @@
         
         #controls-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; order: 5; position: relative; z-index: 10; }
         
-        /* Styling for å tilpasse BMC-knappen til resten av raden */
-        .bmc-button-wrapper {
+        /* Ren CSS-knapp for Buy Me a Coffee */
+        .custom-bmc-btn {
             display: inline-flex;
             align-items: center;
+            gap: 6px;
+            background-color: #FFDD00;
+            color: #000000;
+            font-weight: 700;
+            font-size: 13px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            transition: transform 0.1s ease, background-color 0.2s;
         }
-
-        .bmc-button-wrapper a.bmc-button {
-            height: 35px !important;
-            line-height: 35px !important;
-            padding: 0 12px !important;
-            border-radius: 8px !important;
-            font-size: 13px !important;
-            font-weight: 600 !important;
-            box-shadow: none !important;
-            border: 1px solid #ccc !important;
-            box-sizing: border-box !important;
+        .custom-bmc-btn:hover {
+            background-color: #ffea55;
+            transform: scale(1.02);
         }
 
         /* Søkefelt-stil */
@@ -352,9 +355,9 @@
     <div id="controls-row">
         <button id="infoBtn" aria-label="Informasjon om siden" style="padding:8px 12px; border-radius:8px; background:#fff; color:var(--dark-grey); border:1px solid #ccc; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:5px;"><span>ℹ️</span> Info</button>
         
-        <div class="bmc-button-wrapper">
-            <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="spJcAlD" data-color="#FFDD00" data-emoji="" data-font="Cookie" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff"></script>
-        </div>
+        <a href="https://www.buymeacoffee.com/spJcAlD" target="_blank" class="custom-bmc-btn">
+            <span>☕</span> Buy me a coffee
+        </a>
 
         <select id="mapSelect" style="padding:8px; border-radius:8px; font-weight:600;">
             <option value="norge">Norgeskart</option>
