@@ -1,0 +1,627 @@
+[
+  {
+    "id": "blaisvannet",
+    "navn": "Blåisvannet",
+    "fil": "2019_08_11.gpx",
+    "ekstraBilder": "2019_08_11.json",
+    "strava": "https://www.strava.com/activities/2610435920",
+    "suunto": "https://maps.suunto.com/move/larsgimse/5d5040fba65c7412ae40f6c5",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "bonntuva",
+    "navn": "Bønntuva",
+    "fil": "2026_07_12.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DatayEJCIvE/",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19286411884",
+    "beskrivelse": "Flott tur opp fra nedre Fjellheisstasjon."
+  },
+  {
+    "id": "bruna-brattfjellet",
+    "navn": "Bruna - Brattfjellet",
+    "fil": "2024_07_17.gpx",
+    "ekstraBilder": "2024_07_17.json",
+    "strava": "https://www.strava.com/activities/11912080614",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "buren",
+    "navn": "Buren",
+    "fil": "2025_10_06.gpx",
+    "overrideAar": "2020",
+    "video": [
+      {
+        "url": "https://youtu.be/-m3sEIIIUHg",
+        "tittel": "Se video",
+        "dato": "2020_08_23"
+      }
+    ],
+    "beskrivelse": "Fin tur med god utsikt over Ersfjorden."
+  },
+  {
+    "id": "burshammaren-buren",
+    "navn": "Burshammaren - Buren",
+    "fil": "2026_08_30.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DcrjEajoTfw/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19965890412",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a9456f71ba68e60c0fda052",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "djeveltanna",
+    "navn": "Djeveltanna",
+    "fil": "2024_08_03.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/C-dPqdWM4Ku/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Klassisk og luftig tur på Kvaløya."
+  },
+  {
+    "id": "djupdalgruver",
+    "navn": "Djupdalgruver",
+    "fil": "2025_08_03.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DNBr-heMfba/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "durmalstinden",
+    "navn": "Durmålstinden",
+    "fil": "2026_07_16.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/Da4xYwQISgu/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19341569723",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a593ab2c1d9b72814c099f2",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "floya",
+    "navn": "Fløya - Sherpatrappa",
+    "fil": "floya.gpx",
+    "overrideAar": "2022",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/CfZtWgOslWb",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "hamperokken",
+    "navn": "Hamperokken",
+    "fil": "2025_07_14.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DMcEC9dIb6M/",
+        "tittel": "Se video (2025)",
+        "dato": "2025_07_14"
+      },
+      {
+        "url": "https://vimeo.com/169152934",
+        "tittel": "Se video (2016)",
+        "dato": "2016_05_31"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/594355323",
+    "ekstraSpor": [
+      {
+        "tittel": "Tur 2 (2016)",
+        "fil": "2016_05_31.gpx"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "hillesoy",
+    "navn": "Hillesøy",
+    "fil": "2023_05_17.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/CsWlAnBMV5f",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "kjolen-lyfjordaksla-storefjellet",
+    "navn": "Kjølen - Lyfjordaksla - Storefjellet",
+    "fil": "2024_08_11.gpx",
+    "ekstraBilder": "2024_08_11.json",
+    "strava": "https://www.strava.com/activities/12120943523",
+    "suunto": "https://maps.suunto.com/move/larsgimse/66b8d4ab8167e53ea67fce16",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "kjolen-rodtinden",
+    "navn": "Kjølen - Rødtinden",
+    "fil": "2016_07_25.gpx",
+    "ekstraBilder": "2016_07_25.json",
+    "strava": "https://www.strava.com/activities/653400470",
+    "suunto": "https://maps.suunto.com/move/larsgimse/598ffb7f205b9b07ddaa5ca8",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "kloftbakken",
+    "navn": "Kløftbakken",
+    "fil": "2025_02_28.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DGoaEMTsPop/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "lilleblamann",
+    "navn": "Steinskartinden - Lille blåmann",
+    "fil": "2020_10_03.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/CF4-OgAszLj",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/4145027242",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "lillehaifinnen",
+    "navn": "Steinskartinden travers - Lille haifinnen",
+    "fil": "2026_07_27.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DbWwNpko0rQ/",
+        "tittel": "Se video",
+        "dato": "2026_07_27"
+      },
+      {
+        "url": "https://www.instagram.com/p/DbTrZpfIR0s/",
+        "tittel": "Gjeste video",
+        "dato": "@da.explorer"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19486664714",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a6775ba7c5e1b17030b6440",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "mellomtinden-tromtinden",
+    "navn": "Mellomtinden - Tromtinden",
+    "fil": "2025_07_05.gpx",
+    "ekstraBilder": "2025_07_05.json",
+    "strava": "https://www.strava.com/activities/15015965156",
+    "suunto": "https://maps.suunto.com/move/larsgimse/68693fa9245bc54af9028aaf",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "middagsskarshaugen-mikkelshaugen",
+    "navn": "Middagsskarshaugen nord - Mikkelshaugen",
+    "fil": "2021_06_05.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/CPxh5ImMS_m",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/5418052303",
+    "suunto": "https://maps.suunto.com/move/larsgimse/60bb90ba5002fb141306aa4f",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "middagstinden",
+    "navn": "Middagstinden",
+    "fil": "2026_07_13.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/Dav_9_9IyDN/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19296465484",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a550ca063cf1e6a69a56aaa",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "mjeldskartinden",
+    "navn": "Mjeldskartinden",
+    "fil": "2020_07_24.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/CDEWTcXFfNq",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "mjeldskartindtraversen",
+    "navn": "Mjeldskartindtraversen",
+    "fil": "2026_08_06.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/reel/DbwQDa0IVQU/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19628594164",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a74a91cf45fe22c09e7d38a",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "nattmalsfjellet",
+    "navn": "Nattmålsfjellet - Buren",
+    "fil": "2026_07_31.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DbeS4N_Iq9F/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19544004313",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a6cbfbc34a2123adff2f270",
+    "ekstraSpor": [
+      {
+        "tittel": "Spor kun til Nattmålsfjellet",
+        "fil": "2026_07_31a.gpx"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "nordfjellet",
+    "navn": "Nordfjellet - Tromsø geografiske midtpunkt",
+    "fil": "2026_08_01.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/Dbh4xYDoydg/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19557674622",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a6e0ede31095b41a2088297",
+    "ekstraSpor": [
+      {
+        "tittel": "Alternativ rute, som ikke er eksponert",
+        "fil": "2026_08_01_alt.gpx",
+        "defaultActive": true,
+        "popupTekst": "Hovedspor er delvis eksponert til hit, velg alternativ rute opp"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "orvasstinden",
+    "navn": "Orvasstinden",
+    "fil": "2025_09_28.gpx",
+    "ekstraBilder": "2025_09_28.json",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DPKU6TiCH9y/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/15966140993",
+    "suunto": "https://maps.suunto.com/move/larsgimse/68d94a0425685b076a22ab2f",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "rodekorshytta",
+    "navn": "Rødekorshytta - Djupdalsgruve - Sollidalsaksla - Bønntuva - kanten av Gryta",
+    "fil": "2026_08_15.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DcGKxAyoJV7/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19754546300",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a8087149050d621c092cdde",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "rodtinden",
+    "navn": "Rødtinden",
+    "fil": "2025_08_11.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DNQt9aPsjSt/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "skamtinden",
+    "navn": "Skamtinden",
+    "fil": "2026_07_26.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DbVDT1HIOIE/",
+        "tittel": "Se video (2026)",
+        "dato": "2026_07_26"
+      },
+      {
+        "url": "https://youtu.be/iC2wVCNLIT0",
+        "tittel": "Se video (2020)",
+        "dato": "2020_08_21"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19473956898",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a661b8e754bbb6a82352c3b",
+    "ekstraSpor": [
+      {
+        "tittel": "Tur 2 (2020)",
+        "fil": "2020_08_21.gpx"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "skittentinden",
+    "navn": "Skittentinden",
+    "fil": "2026_07_08.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DaltSLfoqMD/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19231777586",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a4e896bb971687d1acccd1d",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "sollidalsaksla",
+    "navn": "Sollidalsaksla - Djupdalsgruve - Bønntuva",
+    "fil": "2026_08_08.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/reel/Dby6bMbIwnZ/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19655610835",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a773e3c598aa66b1c4866b2",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "soriamoria",
+    "navn": "Soria Moria traversen",
+    "fil": "2025_07_31.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DMx5G2usjON/",
+        "tittel": "Se video (2025)"
+      },
+      {
+        "url": "https://www.instagram.com/p/CCraTgGF5mZ",
+        "tittel": "Se video (2020)"
+      }
+    ],
+    "ekstraSpor": [
+      {
+        "tittel": "Tur 2 (2020)",
+        "fil": "2020_07_14.gpx"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "steinskartinden",
+    "navn": "Steinskartinden",
+    "fil": "2023_09_24.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/CxlNRAZsclX",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "storeblamann",
+    "navn": "Store Blåmann",
+    "fil": "2026_07_25.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DbQCsu0I428/",
+        "tittel": "Se video (2026)",
+        "dato": "2026_07_25"
+      },
+      {
+        "url": "https://www.instagram.com/p/DBV6c6BMzbg/",
+        "tittel": "Se video (2024)"
+      }
+    ],
+    "ekstraSpor": [
+      {
+        "tittel": "Tur 2 (2024)",
+        "fil": "2024_10_19.gpx"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "storehollendaren",
+    "navn": "Store Hollendaren",
+    "fil": "2021_10_03.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/CUlH0IFs2vb",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "storholten-middagsfjellet",
+    "navn": "Storholten - Middagsfjellet",
+    "fil": "2016_07_12.gpx",
+    "ekstraBilder": "2016_07_12.json",
+    "strava": "https://www.strava.com/activities/638901805",
+    "suunto": "https://maps.suunto.com/move/larsgimse/598ffb8ff1757228de9a5790",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "storsteinen",
+    "navn": "Storsteinen",
+    "fil": "2022_05_22.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/CeMNtUsMNaL",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "styrmannstinden",
+    "navn": "Styrmannstinden",
+    "fil": "2019_07_11.gpx",
+    "ekstraBilder": "2019_07_11.json",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/Bzx9y6WIcFj/",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/2523226931",
+    "suunto": "https://maps.suunto.com/move/larsgimse/5d27433b17683ac68a41c012",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "synnovjordtinden",
+    "navn": "Synnøvjordtinden - Nattmålstuva - Mjeldskartinden",
+    "fil": "2024_08_07.gpx",
+    "ekstraBilder": "2024_08_07.json",
+    "strava": "https://www.strava.com/activities/12089034557",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "tmc-halv-ultra",
+    "navn": "TMC halv ultra",
+    "fil": "2026_08_23.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DcZjCVFiG_S/",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19863640068",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a8addaa634ce56d370647d8",
+    "beskrivelse": "TMC HalvUltra (25 km) er et krevende terreng- og toppturløp med start og mål ved TUIL Arena i Tromsdalen. Løpet er en del av Tromsø Mountain Challenge (arrangert av Midnight Sun Marathon)."
+  },
+  {
+    "id": "trehorningen",
+    "navn": "Trehørningen",
+    "fil": "2017_08_06.gpx",
+    "ekstraBilder": "2017_08_06.json",
+    "strava": "https://www.strava.com/activities/1120536595",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "tromsdalstinden",
+    "navn": "Tromsdalstinden",
+    "fil": "2022_10_01.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/CjLJuxTso58",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "ullstinden",
+    "navn": "Ullstinden - Svarthammartinden",
+    "fil": "2026_07_20.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DbDlEeUIzKI/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19390646650",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a5e4a27cd2f1e2674613256",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "vagsfjellet-storkjerka",
+    "navn": "Vågsfjellet - Storkjerka",
+    "fil": "2019_05_22.gpx",
+    "ekstraBilder": "2019_05_22.json",
+    "strava": "https://www.strava.com/activities/2389106597",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "vengsoytraversen",
+    "navn": "Vengsøytraversen",
+    "fil": "2017_09_02.gpx",
+    "ekstraBilder": "2017_09_02.json",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/CUBLxmXM02y",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/1164234306",
+    "suunto": "https://maps.suunto.com/move/larsgimse/59aa9cea205b9b07dd9b3b6f",
+    "ekstraSpor": [
+      {
+        "tittel": "Tur 2 (2021)",
+        "fil": "2021_09_19.gpx"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  }
+]
