@@ -43,27 +43,6 @@
         
         #controls-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; order: 5; position: relative; z-index: 10; }
         
-        /* Ren CSS-knapp for Buy Me a Coffee */
-        .custom-bmc-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background-color: #FFDD00;
-            color: #000000;
-            font-weight: 700;
-            font-size: 13px;
-            padding: 8px 12px;
-            border-radius: 8px;
-            text-decoration: none;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-            transition: transform 0.1s ease, background-color 0.2s;
-        }
-        .custom-bmc-btn:hover {
-            background-color: #ffea55;
-            transform: scale(1.02);
-        }
-
         /* Søkefelt-stil */
         .search-input-wrapper {
             position: relative;
@@ -182,6 +161,7 @@
             }
             .buttons-wrapper.scrolled-end::after { opacity: 0; }
 
+            /* Løser mobil-problemet: Viser menyen som et fast overlegg øverst på skjermen uavhengig av scroll/overflow */
             .dropdown-menu {
                 position: fixed !important;
                 top: 130px !important;
@@ -258,6 +238,7 @@
         .suunto-icon { color: var(--suunto-red); font-size: 10px; }
         .gallery-link-btn { border-color: var(--hover-blue); color: var(--hover-blue); }
 
+        /* Stil for turbeskrivelse og veibeskrivelse */
         .desc-box {
             background: rgba(255, 255, 255, 0.95); padding: 8px 10px; border-radius: 8px;
             border: 1px solid #ccc; width: 100%; box-sizing: border-box; backdrop-filter: blur(4px);
@@ -288,6 +269,7 @@
         .active .switch-track { background: var(--strava-green); }
         .active .switch-thumb { transform: translateX(14px); }
 
+        /* Stil for Info Pop-up */
         .info-popup-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center;
@@ -311,6 +293,7 @@
         .info-popup-text h3 { font-size: 15px; margin-top: 12px; }
         .info-popup-text p { font-size: 14px; line-height: 1.5; color: #475569; white-space: pre-wrap; }
 
+        /* Stil for Bildegalleri Pop-up Lightbox */
         .gallery-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.9); z-index: 100000; display: none;
@@ -354,11 +337,6 @@
 
     <div id="controls-row">
         <button id="infoBtn" aria-label="Informasjon om siden" style="padding:8px 12px; border-radius:8px; background:#fff; color:var(--dark-grey); border:1px solid #ccc; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:5px;"><span>ℹ️</span> Info</button>
-        
-        <a href="https://www.buymeacoffee.com/spJcAlD" target="_blank" class="custom-bmc-btn">
-            <span>☕</span> Buy me a coffee
-        </a>
-
         <select id="mapSelect" style="padding:8px; border-radius:8px; font-weight:600;">
             <option value="norge">Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
@@ -390,6 +368,7 @@
         </div>
     </div>
 
+    <!-- Modal for Bildegalleri -->
     <div class="gallery-modal" id="galleryModal">
         <span class="gallery-modal-close" id="closeGalleryBtn">&times;</span>
         <button class="gallery-nav-btn gallery-nav-prev" id="prevImgBtn">&#10094;</button>
@@ -432,6 +411,7 @@
         let loadedTracksCount = 0;
         let topper = [];
 
+        /* Galleri Variabler & Funksjonalitet */
         let nuværendeBilder = [];
         let nuværendeBildeMappe = '';
         let aktivBildeIndex = 0;
@@ -797,6 +777,7 @@
                     buttonsContainer.appendChild(wrapper);
                 });
 
+                // Last inn GPX-spor
                 topper.forEach(topp => {
                     const mainTrackColor = topp.navn === "Nordfjellet - Tromsø geografiske midtpunkt" ? 'var(--strava-green)' : 'var(--summer-green)';
 
@@ -883,6 +864,7 @@
 
                             videoContainer.appendChild(topRow);
 
+                            // Spor 1 (Hovedspor)
                             videoContainer.appendChild(skapKontrollRad(
                                 topp.navn, 
                                 topp.fil, true, 
@@ -890,6 +872,7 @@
                                 () => visProfil(l, topp.navn, topp.fil)
                             ));
 
+                            // Spor 2 / Ekstraspor plasseres umiddelbart under Spor 1
                             if (topp.ekstraSpor) {
                                 topp.ekstraSpor.forEach(ekstra => {
                                     const ekstraTrack = new L.GPX('gpx/' + ekstra.fil, {
@@ -946,6 +929,7 @@
                                 videoContainer.appendChild(veiBox);
                             }
 
+                            // Ekstra bilder fra JSON-peker
                             if (topp.ekstraBilder) {
                                 const datoNavn = topp.ekstraBilder.replace('.json', '');
                                 const jsonSti = `media/${datoNavn}/${topp.ekstraBilder}`;
@@ -1112,7 +1096,7 @@
                     .then(data => {
                         let formattedData = data
                             .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-                            .replace(/^## (.*$)/gim, '<h2>$2</h2>')
+                            .replace(/^## (.*$)/gim, '<h2>$1</h2>')
                             .replace(/^### (.*$)/gim, '<h3>$1</h3>')
                             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                             .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color:var(--download-blue);">$1</a>')
