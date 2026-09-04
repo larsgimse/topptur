@@ -31,7 +31,6 @@
         .subtitle { font-size: 15px; font-weight: 600; margin: 0; color: #475569; order: 2; }
         .info-text { font-size: 13px; font-weight: 400; margin: 4px 0 15px 0; color: #64748b; order: 3; }
 
-        /* Container for knapper og skygge-effekt */
         .buttons-wrapper { 
             position: relative; 
             width: 100%; 
@@ -43,7 +42,6 @@
         
         #controls-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; order: 5; position: relative; z-index: 10; }
         
-        /* Ren CSS-knapp for Buy Me a Coffee */
         .custom-bmc-btn {
             display: inline-flex;
             align-items: center;
@@ -70,7 +68,6 @@
             border-color: #0284c7 !important;
         }
 
-        /* Søkefelt-stil */
         .search-input-wrapper {
             position: relative;
             display: flex;
@@ -106,15 +103,15 @@
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; width: 100%; order: 7; z-index: 1; }
         #map { height: 65vh; min-height: 450px; width: 100%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); background: #e5e7eb; }
 
-        /* Flyttet menyen til venstre hjørne */
+        /* Meny-panelet er plassert øverst til høyre på kartet */
         #video-buttons-container { 
-            position: absolute; top: 10px; left: 10px; z-index: 1000; 
-            display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+            position: absolute; top: 10px; right: 10px; z-index: 1000; 
+            display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
             width: 240px;
         }
 
         .menu-top-row {
-            display: flex; gap: 6px; width: 100%; justify-content: flex-start; margin-bottom: 4px;
+            display: flex; gap: 6px; width: 100%; justify-content: flex-end; margin-bottom: 4px;
         }
 
         .toggle-ui-btn, .share-ui-btn { 
@@ -127,12 +124,10 @@
 
         .ui-hidden .video-link-btn, .ui-hidden .control-row-container, .ui-hidden .search-link-btn, .ui-hidden .download-area, .ui-hidden .desc-box, .ui-hidden .gallery-link-btn { display: none !important; }
 
-        /* Nederste rad med gimse.info */
         .footer-row {
             order: 8; margin-top: 25px; display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap;
         }
 
-        /* Bokstavknapp & Undermeny-stiler */
         .letter-dropdown {
             position: relative;
             display: inline-block;
@@ -181,7 +176,6 @@
             #video-buttons-container { width: 220px; }
             #map { height: 100vw; min-height: unset; width: 100%; }
             
-            /* Dynamisk sveipe-skygge på mobil */
             .buttons-wrapper::after {
                 content: ''; position: absolute; top: 0; right: 0; width: 40px; height: 100%;
                 background: linear-gradient(to left, rgba(241,245,249,0.95), rgba(241,245,249,0));
@@ -219,22 +213,10 @@
             word-break: break-word;
             line-height: 1.35;
         }
-        .dropdown-item:hover {
-            background-color: #f1f5f9;
-        }
-        .dropdown-item.active {
-            background-color: #e0f2fe;
-            font-weight: 700;
-        }
-
-        .dropdown-item span:first-child {
-            flex: 1 1 auto;
-        }
-
-        .highlight-word {
-            color: var(--summer-green);
-            font-weight: 800;
-        }
+        .dropdown-item:hover { background-color: #f1f5f9; }
+        .dropdown-item.active { background-color: #e0f2fe; font-weight: 700; }
+        .dropdown-item span:first-child { flex: 1 1 auto; }
+        .highlight-word { color: var(--summer-green); font-weight: 800; }
 
         .badge-label {
             position: absolute; top: -6px; right: -6px; color: white; font-size: 8px;
@@ -244,11 +226,7 @@
         }
 
         .dropdown-item .badge-label {
-            position: relative;
-            top: 2px;
-            right: 0;
-            margin-left: 4px;
-            flex-shrink: 0;
+            position: relative; top: 2px; right: 0; margin-left: 4px; flex-shrink: 0;
         }
         
         .badge-2026 { background: var(--strava-orange) !important; }
@@ -346,9 +324,7 @@
         .gallery-nav-btn:hover { background: rgba(255, 255, 255, 0.5); }
         .gallery-nav-prev { left: 15px; }
         .gallery-nav-next { right: 15px; }
-        .gallery-counter {
-            color: white; margin-top: 15px; font-size: 14px; font-weight: 600;
-        }
+        .gallery-counter { color: white; margin-top: 15px; font-size: 14px; font-weight: 600; }
 
         /* Styling for Legende / Bratthetsforklaring */
         .legend {
@@ -399,9 +375,17 @@
             <span>⛰️</span> Bratthet
         </button>
 
-        <button id="legendBtn" style="padding:8px 12px; border-radius:8px; background:#fff; color:var(--dark-grey); border:1px solid #ccc; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:5px;">
-            <span>🏔️</span> Brattskala
-        </button>
+        <!-- Toggle-bryter for Brattskala -->
+        <div class="control-row-container" style="width: auto; background: #fff; border-radius: 8px; border: 1px solid #ccc; padding: 6px 12px;">
+            <span style="font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+                <span>🏔️</span> Brattskala
+            </span>
+            <div id="legendToggle" class="toggle-group" onclick="toggleLegend()">
+                <div class="switch-track">
+                    <div class="switch-thumb"></div>
+                </div>
+            </div>
+        </div>
         
         <div class="search-input-wrapper">
             <span>🔍</span>
@@ -530,8 +514,8 @@
             attribution: '© NVE'
         });
 
-        // Tegnforklaring (Legend) for Bratthet
-        const legend = L.control({ position: 'bottomright' });
+        // Tegnforklaring (Legend) for Bratthet - Nede til venstre (bottomleft)
+        const legend = L.control({ position: 'bottomleft' });
         legend.onAdd = function () {
             const div = L.DomUtil.create('div', 'legend');
             div.innerHTML = `
@@ -561,21 +545,20 @@
         }
         bratthetBtn.onclick = () => toggleBratthet();
 
-        // Handtere toggling av Legende / Bratthetsforklaring
-        const legendBtn = document.getElementById('legendBtn');
+        // Handtere toggling av Legende / Bratthetsforklaring via Switch
+        const legendToggle = document.getElementById('legendToggle');
         let isLegendActive = false;
 
         function toggleLegend(state) {
             isLegendActive = (typeof state === 'boolean') ? state : !isLegendActive;
             if (isLegendActive) {
                 legend.addTo(map);
-                legendBtn.classList.add('btn-toggle-active');
+                if (legendToggle) legendToggle.classList.add('active');
             } else {
                 map.removeControl(legend);
-                legendBtn.classList.remove('btn-toggle-active');
+                if (legendToggle) legendToggle.classList.remove('active');
             }
         }
-        legendBtn.onclick = () => toggleLegend();
 
         document.getElementById('mapSelect').onchange = (e) => {
             if (e.target.value === "osm") { map.addLayer(osmLayer); map.removeLayer(norgeLayer); }
