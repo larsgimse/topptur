@@ -211,6 +211,7 @@
             background: #1a1a1a !important;
         }
         
+        /* Spesifikke popup-farger for fly og buss (Fly satt til gul #ffd700) */
         .flight-popup .leaflet-popup-content-wrapper {
             border-color: #ffd700 !important;
         }
@@ -363,99 +364,52 @@
         const bounds = L.latLngBounds();
         const lagredeSpor = [];
 
-        // Henter kun fra sommer_topper.json
-        async function hentSommerTopper() {
+        async function hentTopper(url, type) {
             try {
-                const res = await fetch('sommer_topper.json');
-                if (res.ok) {
-                    const data = await res.json();
+                const response = await fetch(url);
+                if (!response.ok) return [];
+
+                if (url.endsWith('.json')) {
+                    const data = await response.json();
                     return data.map(topp => ({
-                        navn: topp.navn || topp.title || topp.tittel || topp.fil.replace('.gpx', ''),
-                        fil: topp.fil.split('/').pop().trim(),
-                        type: 'sommer'
+                        navn: topp.navn,
+                        fil: topp.fil,
+                        type: type
                     }));
                 }
-            } catch (e) {
-                console.warn("Kunne ikke lese sommer_topper.json", e);
-            }
-            return [];
-        }
 
-        // Henter navnemapping fra vinter.html og finner alle andre GPX-filer fra gpx/-mappen
-        async function hentVinterTopper(sommerFilerSet) {
-            const vinterNavnMap = new Map();
+                const htmlText = await response.text();
+                const funneTopper = [];
 
-            // 1. Les kjente navn fra vinter.html om mulig
-            try {
-                const response = await fetch('vinter.html');
-                if (response.ok) {
-                    const htmlText = await response.text();
-                    const topperBlockMatch = htmlText.match(/(?:const|let|var)\s+\w*(?:topper|turer)\w*\s*=\s*(\[[\s\S]*?\]);/i);
+                const topperBlockMatch = htmlText.match(/(?:const|let|var)\s+\w*(?:topper|turer)\w*\s*=\s*(\[[\s\S]*?\]);/i);
 
-                    if (topperBlockMatch && topperBlockMatch[1]) {
-                        const blockText = topperBlockMatch[1];
-                        const objectRegex = /\{[\s\S]*?\}/g;
-                        let objMatch;
+                if (topperBlockMatch && topperBlockMatch[1]) {
+                    const blockText = topperBlockMatch[1];
+                    const objectRegex = /\{[\s\S]*?\}/g;
+                    let objMatch;
 
-                        while ((objMatch = objectRegex.exec(blockText)) !== null) {
-                            const objStr = objMatch[0];
-                            const navnMatch = objStr.match(/(?:navn|tittel|title|name)\s*:\s*["']([^"']+)["']/i);
-                            const gpxMatch = objStr.match(/["']([^"']+\.gpx)["']/i);
+                    while ((objMatch = objectRegex.exec(blockText)) !== null) {
+                        const objStr = objMatch[0];
+                        const navnMatch = objStr.match(/(?:navn|tittel|title|name)\s*:\s*["']([^"']+)["']/i);
+                        const gpxMatch = objStr.match(/["']([^"']+\.gpx)["']/i);
 
-                            if (gpxMatch && gpxMatch[1]) {
-                                const filnavn = gpxMatch[1].split('/').pop().trim();
-                                const fjellNavn = navnMatch ? navnMatch[1].trim() : filnavn.replace('.gpx', '');
-                                vinterNavnMap.set(filnavn, fjellNavn);
+                        if (gpxMatch && gpxMatch[1]) {
+                            const filnavn = gpxMatch[1].split('/').pop().trim();
+                            const fjellNavn = navnMatch ? navnMatch[1].trim() : filnavn.replace('.gpx', '');
+
+                            if (!funneTopper.some(t => t.fil === filnavn)) {
+                                funneTopper.push({ navn: fjellNavn, fil: filnavn, type });
                             }
                         }
                     }
                 }
-            } catch (e) {
-                console.warn("Kunne ikke lese navnemapping fra vinter.html", e);
+
+                return funneTopper;
+
+            } catch (error) {
+                console.warn("Kunne ikke laste data fra " + url, error);
+                return [];
             }
-
-            const vinterTopper = [];
-
-            // 2. Skann gpx/-mappen og legg til alle filer som IKKE er sommerturer
-            try {
-                const folderRes = await fetch('gpx/');
-                if (folderRes.ok) {
-                    const htmlText = await folderRes.text();
-                    const gpxRegex = /href=["']?([^"'>]+\.gpx)["']?/gi;
-                    let match;
-                    const funnetiMappe = new Set();
-
-                    while ((match = gpxRegex.exec(htmlText)) !== null) {
-                        const filnavn = match[1].split('/').pop().trim();
-
-                        if (!sommerFilerSet.has(filnavn) && !funnetiMappe.has(filnavn)) {
-                            funnetiMappe.add(filnavn);
-
-                            // Bruk navnet fra vinter.html hvis det finnes, ellers generer et pent navn fra filnavnet
-                            const autonavn = vinterNavnMap.get(filnavn) || filnavn
-                                .replace('.gpx', '')
-                                .replace(/[-_]/g, ' ')
-                                .replace(/\b\w/g, l => l.toUpperCase());
-
-                            vinterTopper.push({
-                                navn: autonavn,
-                                fil: filnavn,
-                                type: 'vinter'
-                            });
-                        }
-                    }
-                }
-            } catch (e) {
-                console.warn("Kunne ikke hente filoversikt fra gpx/-mappen:", e);
-                // Fallback hvis mappelisting feiler: Bruk kun det vi fant i vinter.html
-                vinterNavnMap.forEach((navn, fil) => {
-                    if (!sommerFilerSet.has(fil)) {
-                        vinterTopper.push({ navn, fil, type: 'vinter' });
-                    }
-                });
-            }
-
-            return vinterTopper;
         }
 
         function zoomTilAktiveSpor() {
@@ -490,6 +444,7 @@
             }
         }
 
+        // Hjelpefunksjon for å laste én enkelt GPX-fil som en Promise
         function lastEnkeltopp(topp) {
             return new Promise((resolve) => {
                 let fullført = false;
@@ -575,9 +530,10 @@
         }
 
         async function initialiserKart() {
-            const sommerTopper = await hentSommerTopper();
-            const sommerFilerSet = new Set(sommerTopper.map(t => t.fil));
-            const vinterTopper = await hentVinterTopper(sommerFilerSet);
+            const [vinterTopper, sommerTopper] = await Promise.all([
+                hentTopper('vinter.html', 'vinter'),
+                hentTopper('sommer_topper.json', 'sommer')
+            ]);
 
             const unikeTopperMap = new Map();
             [...vinterTopper, ...sommerTopper].forEach(t => unikeTopperMap.set(t.fil, t));
@@ -593,6 +549,7 @@
 
             document.getElementById('loading-text').textContent = `Laster inn hovedspor... 0/${totalFiles}`;
 
+            // BATCHET KØ-HÅNDTERING: Laster i puljer på 4 for å hindre at mobiler fryser
             const batchSize = isTouchDevice ? 4 : 10;
             for (let i = 0; i < alleTopper.length; i += batchSize) {
                 const batch = alleTopper.slice(i, i + batchSize);
@@ -931,10 +888,12 @@
             requestAnimationFrame(drawBuses);
         }
 
+        // Felles klikk-håndtering for både buss og fly
         map.on('click', function(e) {
             const clickPoint = map.latLngToContainerPoint(e.latlng);
             const tl = map.latLngToLayerPoint(map.getBounds().getNorthWest());
 
+            // 1. Sjekk om det klikkes på en buss
             if (busesActive) {
                 let clickedBus = null;
                 let minDist = 20;
@@ -969,6 +928,7 @@
                 }
             }
 
+            // 2. Sjekk om det klikkes på et fly
             if (flightsActive) {
                 let clickedFlight = null;
                 let minDist = 20;
