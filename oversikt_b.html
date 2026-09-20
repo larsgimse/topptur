@@ -363,13 +363,54 @@
         const bounds = L.latLngBounds();
         const lagredeSpor = [];
 
-        // Henter kun fra sommer_topper.json
+        async function hentTopper(url, type) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) return [];
+
+                const htmlText = await response.text();
+                const funneTopper = [];
+
+                const topperBlockMatch = htmlText.match(/(?:const|let|var)\s+\w*(?:topper|turer)\w*\s*=\s*(\[[\s\S]*?\]);/i);
+
+                if (topperBlockMatch && topperBlockMatch[1]) {
+                    const blockText = topperBlockMatch[1];
+                    const objectRegex = /\{[\s\S]*?\}/g;
+                    let objMatch;
+
+                    while ((objMatch = objectRegex.exec(blockText)) !== null) {
+                        const objStr = objMatch[0];
+                        const navnMatch = objStr.match(/(?:navn|tittel|title|name)\s*:\s*["']([^"']+)["']/i);
+                        const gpxMatch = objStr.match(/["']([^"']+\.gpx)["']/i);
+
+                        if (gpxMatch && gpxMatch[1]) {
+                            const filnavn = gpxMatch[1].split('/').pop().trim();
+                            const fjellNavn = navnMatch ? navnMatch[1].trim() : filnavn.replace('.gpx', '');
+
+                            if (!funneTopper.some(t => t.fil === filnavn)) {
+                                funneTopper.push({ navn: fjellNavn, fil: filnavn, type });
+                            }
+                        }
+                    }
+                }
+
+                return funneTopper;
+
+            } catch (error) {
+                console.warn("Kunne ikke laste data fra " + url, error);
+                return [];
+            }
+        }
+
         async function hentSommerTopper() {
+            let JSONTopper = [];
+            
+            // 1. Hent turer fra sommer_topper.json
             try {
                 const res = await fetch('sommer_topper.json');
                 if (res.ok) {
                     const data = await res.json();
-                    return data.map(topp => ({
+                    JSONTopper = data.map(topp => ({
                         navn: topp.navn || topp.title || topp.tittel || topp.fil.replace('.gpx', ''),
                         fil: topp.fil.split('/').pop().trim(),
                         type: 'sommer'
@@ -378,84 +419,41 @@
             } catch (e) {
                 console.warn("Kunne ikke lese sommer_topper.json", e);
             }
-            return [];
-        }
 
-        // Henter navnemapping fra vinter.html og finner alle andre GPX-filer fra gpx/-mappen
-        async function hentVinterTopper(sommerFilerSet) {
-            const vinterNavnMap = new Map();
-
-            // 1. Les kjente navn fra vinter.html om mulig
-            try {
-                const response = await fetch('vinter.html');
-                if (response.ok) {
-                    const htmlText = await response.text();
-                    const topperBlockMatch = htmlText.match(/(?:const|let|var)\s+\w*(?:topper|turer)\w*\s*=\s*(\[[\s\S]*?\]);/i);
-
-                    if (topperBlockMatch && topperBlockMatch[1]) {
-                        const blockText = topperBlockMatch[1];
-                        const objectRegex = /\{[\s\S]*?\}/g;
-                        let objMatch;
-
-                        while ((objMatch = objectRegex.exec(blockText)) !== null) {
-                            const objStr = objMatch[0];
-                            const navnMatch = objStr.match(/(?:navn|tittel|title|name)\s*:\s*["']([^"']+)["']/i);
-                            const gpxMatch = objStr.match(/["']([^"']+\.gpx)["']/i);
-
-                            if (gpxMatch && gpxMatch[1]) {
-                                const filnavn = gpxMatch[1].split('/').pop().trim();
-                                const fjellNavn = navnMatch ? navnMatch[1].trim() : filnavn.replace('.gpx', '');
-                                vinterNavnMap.set(filnavn, fjellNavn);
-                            }
-                        }
-                    }
-                }
-            } catch (e) {
-                console.warn("Kunne ikke lese navnemapping fra vinter.html", e);
-            }
-
-            const vinterTopper = [];
-
-            // 2. Skann gpx/-mappen og legg til alle filer som IKKE er sommerturer
+            // 2. Skann gpx/-mappen etter GPX-filer som ikke finnes i JSON-filen
+            const registrertFiler = new Set(JSONTopper.map(t => t.fil));
+            
             try {
                 const folderRes = await fetch('gpx/');
                 if (folderRes.ok) {
                     const htmlText = await folderRes.text();
                     const gpxRegex = /href=["']?([^"'>]+\.gpx)["']?/gi;
                     let match;
-                    const funnetiMappe = new Set();
-
+                    
                     while ((match = gpxRegex.exec(htmlText)) !== null) {
                         const filnavn = match[1].split('/').pop().trim();
-
-                        if (!sommerFilerSet.has(filnavn) && !funnetiMappe.has(filnavn)) {
-                            funnetiMappe.add(filnavn);
-
-                            // Bruk navnet fra vinter.html hvis det finnes, ellers generer et pent navn fra filnavnet
-                            const autonavn = vinterNavnMap.get(filnavn) || filnavn
+                        
+                        if (!registrertFiler.has(filnavn)) {
+                            registrertFiler.add(filnavn);
+                            
+                            const autonavn = filnavn
                                 .replace('.gpx', '')
                                 .replace(/[-_]/g, ' ')
                                 .replace(/\b\w/g, l => l.toUpperCase());
 
-                            vinterTopper.push({
+                            JSONTopper.push({
                                 navn: autonavn,
                                 fil: filnavn,
-                                type: 'vinter'
+                                type: 'sommer'
                             });
                         }
                     }
                 }
             } catch (e) {
                 console.warn("Kunne ikke hente filoversikt fra gpx/-mappen:", e);
-                // Fallback hvis mappelisting feiler: Bruk kun det vi fant i vinter.html
-                vinterNavnMap.forEach((navn, fil) => {
-                    if (!sommerFilerSet.has(fil)) {
-                        vinterTopper.push({ navn, fil, type: 'vinter' });
-                    }
-                });
             }
 
-            return vinterTopper;
+            return JSONTopper;
         }
 
         function zoomTilAktiveSpor() {
@@ -575,9 +573,10 @@
         }
 
         async function initialiserKart() {
-            const sommerTopper = await hentSommerTopper();
-            const sommerFilerSet = new Set(sommerTopper.map(t => t.fil));
-            const vinterTopper = await hentVinterTopper(sommerFilerSet);
+            const [vinterTopper, sommerTopper] = await Promise.all([
+                hentTopper('vinter.html', 'vinter'),
+                hentSommerTopper()
+            ]);
 
             const unikeTopperMap = new Map();
             [...vinterTopper, ...sommerTopper].forEach(t => unikeTopperMap.set(t.fil, t));
