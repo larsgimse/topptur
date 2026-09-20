@@ -1,5 +1,14 @@
 [
   {
+    "id": "blaisvannet",
+    "navn": "Blåisvannet",
+    "fil": "2019_08_11.gpx",
+    "ekstraBilder": "2019_08_11.json",
+    "strava": "https://www.strava.com/activities/2610435920",
+    "suunto": "https://maps.suunto.com/move/larsgimse/5d5040fba65c7412ae40f6c5",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "bonntuva",
     "navn": "Bønntuva",
     "fil": "2026_07_12.gpx",
@@ -15,6 +24,14 @@
     "beskrivelse": "Flott tur opp fra nedre Fjellheisstasjon."
   },
   {
+    "id": "bruna-brattfjellet",
+    "navn": "Bruna - Brattfjellet",
+    "fil": "2024_07_17.gpx",
+    "ekstraBilder": "2024_07_17.json",
+    "strava": "https://www.strava.com/activities/11912080614",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "buren",
     "navn": "Buren",
     "fil": "2025_10_06.gpx",
@@ -27,6 +44,22 @@
       }
     ],
     "beskrivelse": "Fin tur med god utsikt over Ersfjorden."
+  },
+  {
+    "id": "burshammaren-buren",
+    "navn": "Burshammaren - Buren",
+    "fil": "2026_08_30.gpx",
+    "ekstraBilder": "2026_08_30.json",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DcrjEajoTfw/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19965890412",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a9456f71ba68e60c0fda052",
+    "beskrivelse": "Kommer mer info snart..."
   },
   {
     "id": "djeveltanna",
@@ -123,8 +156,18 @@
     "id": "kjolen-lyfjordaksla-storefjellet",
     "navn": "Kjølen - Lyfjordaksla - Storefjellet",
     "fil": "2024_08_11.gpx",
+    "ekstraBilder": "2024_08_11.json",
     "strava": "https://www.strava.com/activities/12120943523",
     "suunto": "https://maps.suunto.com/move/larsgimse/66b8d4ab8167e53ea67fce16",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "kjolen-rodtinden",
+    "navn": "Kjølen - Rødtinden",
+    "fil": "2016_07_25.gpx",
+    "ekstraBilder": "2016_07_25.json",
+    "strava": "https://www.strava.com/activities/653400470",
+    "suunto": "https://maps.suunto.com/move/larsgimse/598ffb7f205b9b07ddaa5ca8",
     "beskrivelse": "Kommer mer info snart..."
   },
   {
@@ -178,6 +221,7 @@
     "id": "mellomtinden-tromtinden",
     "navn": "Mellomtinden - Tromtinden",
     "fil": "2025_07_05.gpx",
+    "ekstraBilder": "2025_07_05.json",
     "strava": "https://www.strava.com/activities/15015965156",
     "suunto": "https://maps.suunto.com/move/larsgimse/68693fa9245bc54af9028aaf",
     "beskrivelse": "Kommer mer info snart..."
@@ -286,13 +330,16 @@
   {
     "id": "orvasstinden",
     "navn": "Orvasstinden",
-    "fil": "2025_09_25.gpx",
+    "fil": "2025_09_28.gpx",
+    "ekstraBilder": "2025_09_28.json",
     "video": [
       {
         "url": "https://www.instagram.com/p/DPKU6TiCH9y/",
         "tittel": "Se video"
       }
     ],
+    "strava": "https://www.strava.com/activities/15966140993",
+    "suunto": "https://maps.suunto.com/move/larsgimse/68d94a0425685b076a22ab2f",
     "beskrivelse": "Kommer mer info snart..."
   },
   {
@@ -451,6 +498,15 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
+    "id": "storholten-middagsfjellet",
+    "navn": "Storholten - Middagsfjellet",
+    "fil": "2016_07_12.gpx",
+    "ekstraBilder": "2016_07_12.json",
+    "strava": "https://www.strava.com/activities/638901805",
+    "suunto": "https://maps.suunto.com/move/larsgimse/598ffb8ff1757228de9a5790",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "storsteinen",
     "navn": "Storsteinen",
     "fil": "2022_05_22.gpx",
@@ -467,6 +523,7 @@
     "id": "styrmannstinden",
     "navn": "Styrmannstinden",
     "fil": "2019_07_11.gpx",
+    "ekstraBilder": "2019_07_11.json",
     "video": [
       {
         "url": "https://www.instagram.com/p/Bzx9y6WIcFj/",
@@ -482,7 +539,32 @@
     "id": "synnovjordtinden",
     "navn": "Synnøvjordtinden - Nattmålstuva - Mjeldskartinden",
     "fil": "2024_08_07.gpx",
+    "ekstraBilder": "2024_08_07.json",
     "strava": "https://www.strava.com/activities/12089034557",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "tmc-halv-ultra",
+    "navn": "TMC halv ultra",
+    "fil": "2026_08_23.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DcZjCVFiG_S/",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/19863640068",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6a8addaa634ce56d370647d8",
+    "beskrivelse": "TMC HalvUltra (25 km) er et krevende terreng- og toppturløp med start og mål ved TUIL Arena i Tromsdalen. Løpet er en del av Tromsø Mountain Challenge (arrangert av Midnight Sun Marathon)."
+  },
+  {
+    "id": "trehorningen",
+    "navn": "Trehørningen",
+    "fil": "2017_08_06.gpx",
+    "ekstraBilder": "2017_08_06.json",
+    "strava": "https://www.strava.com/activities/1120536595",
     "beskrivelse": "Kommer mer info snart..."
   },
   {
@@ -514,9 +596,18 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
+    "id": "vagsfjellet-storkjerka",
+    "navn": "Vågsfjellet - Storkjerka",
+    "fil": "2019_05_22.gpx",
+    "ekstraBilder": "2019_05_22.json",
+    "strava": "https://www.strava.com/activities/2389106597",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "vengsoytraversen",
     "navn": "Vengsøytraversen",
-    "fil": "2021_09_19.gpx",
+    "fil": "2017_09_02.gpx",
+    "ekstraBilder": "2017_09_02.json",
     "video": [
       {
         "url": "https://www.instagram.com/p/CUBLxmXM02y",
@@ -524,21 +615,14 @@
         "type": "photo"
       }
     ],
-    "beskrivelse": "Kommer mer info snart..."
-  },
-  {
-    "id": "langfjellaksla-straumsaksla",
-    "navn": "Langfjellaksla - Straumsaksla",
-    "fil": "2026_09_11.gpx",
-    "overrideAar": "2026",
-    "video": [
+    "strava": "https://www.strava.com/activities/1164234306",
+    "suunto": "https://maps.suunto.com/move/larsgimse/59aa9cea205b9b07dd9b3b6f",
+    "ekstraSpor": [
       {
-        "url": "https://www.instagram.com/p/DdLX-UcIeg_/",
-        "tittel": "Se video"
+        "tittel": "Tur 2 (2021)",
+        "fil": "2021_09_19.gpx"
       }
     ],
-    "strava": "https://www.strava.com/activities/20131695491",
-    "suunto": "https://maps.suunto.com/move/larsgimse/6aa420a0a1821e348a06990b",
     "beskrivelse": "Kommer mer info snart..."
   }
 ]
