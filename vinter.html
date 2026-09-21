@@ -16,6 +16,7 @@
             --switch-grey: #cbd5e1;
             --download-blue: #0ea5e9;
             --strava-green: #16a34a;
+            --suunto-red: #ff3b30;
         }
 
         body { 
@@ -29,10 +30,11 @@
         .subtitle { font-size: 15px; font-weight: 600; margin: 0; color: #475569; order: 2; }
         .info-text { font-size: 13px; font-weight: 400; margin: 4px 0 15px 0; color: #64748b; order: 3; }
 
-        #buttons { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; padding: 5px; order: 4; }
+        .buttons-wrapper { position: relative; width: 100%; order: 4; margin-bottom: 15px; z-index: 9999; }
+        #buttons { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 5px; }
         #controls-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; order: 5; position: relative; z-index: 10; }
         
-        #map-container { position: relative; max-width: 1100px; margin: 0 auto; width: 100%; order: 7; }
+        #map-container { position: relative; max-width: 1100px; margin: 0 auto; width: 100%; order: 7; z-index: 1; }
         #bottom-controls-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; flex-wrap: wrap; order: 8; position: relative; z-index: 10; }
 
         #map { 
@@ -98,32 +100,76 @@
         .ui-hidden .video-link-btn, 
         .ui-hidden .control-row-container, 
         .ui-hidden .search-link-btn,
-        .ui-hidden .download-area {
+        .ui-hidden .download-area,
+        .ui-hidden .desc-box {
             display: none !important;
         }
 
         @media (max-width: 768px) {
             #buttons { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding: 10px 15px; scrollbar-width: none; }
             #buttons::-webkit-scrollbar { display: none; }
+
+            .buttons-wrapper::after {
+                content: ''; position: absolute; top: 0; right: 0; width: 40px; height: 100%;
+                background: linear-gradient(to left, rgba(241,245,249,0.95), rgba(241,245,249,0));
+                pointer-events: none; z-index: 10; transition: opacity 0.3s; opacity: 1;
+            }
+            .buttons-wrapper.scrolled-end::after { opacity: 0; }
+
+            /* Menyen legges fast i vinduet slik at den ikke klippes av horisontal scrolling */
+            .dropdown-menu {
+                position: fixed !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                max-height: 65vh !important;
+                min-width: 260px !important;
+                max-width: 90vw !important;
+                z-index: 99999 !important;
+                box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important;
+            }
             #video-buttons-container { width: 220px; }
             #map { height: 100vw; min-height: unset; width: 100%; }
         }
 
-        .top-btn { 
-            position: relative; background-color: var(--strava-orange); color: white; border: none; 
-            border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 600; 
+        .letter-dropdown { position: relative; display: inline-block; }
+
+        .letter-btn {
+            position: relative; background-color: var(--strava-orange); color: white; border: none;
+            border-radius: 8px; padding: 10px 14px; cursor: pointer; font-size: 14px; font-weight: 700;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; transition: all 0.2s ease-in-out;
+            min-width: 38px;
         }
 
         @media (hover: hover) {
-            .top-btn:hover:not(.active) {
+            .letter-btn:hover:not(.active) {
                 background-color: #ff6a2d;
                 transform: scale(1.05);
                 box-shadow: 0 4px 8px rgba(0,0,0,0.15);
             }
         }
 
-        .top-btn.active { background-color: var(--strava-blue); transform: scale(1.05); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .letter-btn.active { background-color: var(--strava-blue); transform: scale(1.05); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+
+        .dropdown-menu {
+            display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            margin-top: 6px; background: #ffffff; border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); padding: 6px 0; z-index: 10000;
+            width: max-content; min-width: 240px; max-width: 320px; max-height: 60vh; overflow-y: auto;
+            text-align: left; border: 1px solid #cbd5e1; box-sizing: border-box;
+        }
+        .dropdown-menu.show { display: block; }
+
+        .dropdown-item {
+            padding: 8px 14px; font-size: 13px; font-weight: 600; color: var(--dark-grey);
+            cursor: pointer; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+            transition: background 0.2s, color 0.2s; position: relative;
+            white-space: normal; word-break: break-word; line-height: 1.35;
+        }
+        .dropdown-item:hover { background-color: #f1f5f9; }
+        .dropdown-item.active { background-color: #e0f2fe; font-weight: 700; }
+        .dropdown-item span:first-child { flex: 1 1 auto; }
+        .highlight-word { color: var(--strava-orange); font-weight: 800; }
+        .dropdown-item .badge-label { position: relative; top: 2px; right: 0; margin-left: 4px; flex-shrink: 0; }
 
         .badge-label {
             position: absolute; top: -6px; right: -6px; color: white; font-size: 8px;
@@ -141,6 +187,16 @@
             width: 100%; box-sizing: border-box; backdrop-filter: blur(4px); cursor: pointer;
         }
         .search-link-btn { border-color: var(--strava-blue); color: var(--strava-blue); }
+        .strava-link-btn { border-color: var(--strava-orange); color: var(--strava-orange); }
+        .suunto-link-btn { border: 2.5px solid #000; color: var(--dark-grey); }
+        .suunto-icon { color: var(--suunto-red); font-size: 10px; }
+
+        .desc-box {
+            background: rgba(255, 255, 255, 0.95); padding: 8px 10px; border-radius: 8px;
+            border: 1px solid #ccc; width: 100%; box-sizing: border-box; backdrop-filter: blur(4px);
+            text-align: left; font-size: 11px; color: var(--dark-grey); line-height: 1.4;
+        }
+        .desc-box-title { font-weight: 800; text-transform: uppercase; font-size: 10px; color: #64748b; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
         
         .download-area {
             width: 100%; background: rgba(255, 255, 255, 0.95); border-radius: 8px; 
@@ -206,7 +262,9 @@
     <p class="subtitle">Klikk på sporet eller knapp for video og detaljer</p>
     <p class="info-text">Årstallet viser når turen ble filmet/publisert</p>
 
-    <div id="buttons"></div>
+    <div class="buttons-wrapper" id="buttonsWrapper">
+        <div id="buttons"></div>
+    </div>
 
     <div id="controls-row">
         <select id="mapSelect" style="padding:8px; border-radius:8px; font-weight:600;">
@@ -239,11 +297,42 @@
         const allTracksGroup = L.featureGroup().addTo(map);
         const videoContainer = document.getElementById('video-buttons-container');
         let aktiveEkstraSporLayers = [];
+        let aktiveMarkører = [];
         let aktivToppNavn = null;
         let isReseting = false;
 
+        // Topper lastes fra vinter_topper.json
+        let topper = [];
+        let totalTracksCount = 0;
         let loadedTracksCount = 0;
-        const totalTracksCount = 21; // Totalt antall topper
+        const knapperMap = {}; // id -> { items: [menyelementer], aktiver }
+        const gpxLagMap = {};  // id -> GPX-lag for hovedsporet
+        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.matchMedia("(pointer: coarse)").matches;
+
+        const buttonsContainer = document.getElementById('buttons');
+        const buttonsWrapper = document.getElementById('buttonsWrapper');
+        buttonsContainer.addEventListener('scroll', () => {
+            const maxScroll = buttonsContainer.scrollWidth - buttonsContainer.clientWidth;
+            buttonsWrapper.classList.toggle('scrolled-end', buttonsContainer.scrollLeft >= maxScroll - 5);
+            lukkAlleDropdowns();
+        });
+
+        const smallIcon = L.icon({
+            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+            iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+            iconSize: [18, 30],
+            iconAnchor: [9, 30],
+            popupAnchor: [1, -24],
+            shadowSize: [30, 30]
+        });
+
+        function registrerLading() {
+            loadedTracksCount++;
+            if (loadedTracksCount === totalTracksCount) {
+                sjekkURLParameter();
+            }
+        }
 
         const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { attribution: '© Kartverket' }).addTo(map);
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
@@ -303,34 +392,10 @@
             else { map.addLayer(norgeLayer); map.removeLayer(osmLayer); }
         };
 
-        const topper = [
-            { navn: "884", fil: "2026_03_27.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/reel/DWg1TaHiJRJ/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTnrjgliITD/", tittel: "Video 2" }, { url: "https://www.instagram.com/p/DXFlkrDCLz1/", tittel: "Video 3" }], ekstraSpor: [{ fil: "2026_01_17.gpx", tittel: "Spor 2", farge: "#5c6bc0" }, { fil: "2026_04_13.gpx", tittel: "Spor 3", farge: "#008b8b" }] },
-            { navn: "Bentsjordtinden", fil: "2026_04_03.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/", tittel: "Se video" }] },
-            { navn: "Buren", fil: "2026_01_10.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/p/DTVY5yfCDfU/", tittel: "Video 1" }, { url: "https://www.instagram.com/p/DXCQalhiPgX/", tittel: "Video 2" }, { url: "https://www.instagram.com/p/C5b3I2UsTb0/", tittel: "Video 3", dato: "2024_04_06" }], ekstraSpor: [{ fil: "2026_04_12.gpx", tittel: "Spor 2", farge: "#5c6bc0" }, { fil: "2024_04_05.gpx", tittel: "Spor 3", farge: "#4caf50" }] },
-            { navn: "Burshammeren", fil: "2026_03_26.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/reel/DWXPzaUiAO5/", tittel: "Video 1" }, { url: "https://www.instagram.com/reel/DTLiCcAiDMz/", tittel: "Video 2" }, { url: "https://www.instagram.com/p/C5b3I2UsTb0/", tittel: "Video 3", dato: "2024_04_06" }], ekstraSpor: [{ fil: "2025_12_31.gpx", tittel: "Spor 2", farge: "#5c6bc0" }, { fil: "2024_04_05.gpx", tittel: "Spor 3", farge: "#4caf50" }] },
-            { navn: "Fagerfjellet", fil: "2025_04_22.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/p/DI1NoNqsl-F/", tittel: "Video 1" }, { url: "https://www.instagram.com/p/DECfPK3sre3/", tittel: "Video 2" }], ekstraSpor: [{ fil: "2024_12_23.gpx", tittel: "Spor 2", farge: "#5c6bc0" }] },
-            { navn: "Gabrielfjellet", fil: "2025_05_25.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/p/DKKd9vQsRke/", tittel: "Se video" }] },
-            { navn: "Gorzelvtinden", fil: "2025_12_06.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/p/DR99FHAiF62/", tittel: "Se video" }] },
-            { navn: "Gråtinden", fil: "2026_04_06.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/reel/DW1xhPniK_l/", tittel: "Se video" }] },
-            { navn: "Klemmartindan", fil: "2024_04_28.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/p/C6UAgP4M4as/", tittel: "Se video" }] },
-            { navn: "Langfjellaksla", fil: "2026_04_08.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/reel/DW4gus-iLa9/", tittel: "Video 1" }, { url: "https://www.instagram.com/reels/DYInP-Tosh6/", tittel: "Video 2", dato: "2026_05_09" }], ekstraSpor: [{ fil: "2026_05_09.gpx", tittel: "Spor 2", farge: "#5c6bc0" }] },
-            { navn: "Middagstinden", fil: "2024_04_21.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/reel/DXKmwWNtmA6/", tittel: "Se video" }] },
-            { navn: "Rema 1000", fil: "2026_03_28.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/", tittel: "Se video" }] },
-            { navn: "Skittentinden", fil: "2026_03_15.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/reel/DWHz3RbCPlU/", tittel: "Video 1" }, { url: "https://www.instagram.com/p/DXwr41Fodzo/", tittel: "Video 2", dato: "2026_04_04" }], ekstraSpor: [{ fil: "2026_04_04.gpx", tittel: "Spor 2", farge: "#5c6bc0" }] },
-            { navn: "Sollidalsaksla", fil: "2026_03_16.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/p/DV9l8tPCAuh/", tittel: "Se video" }] },
-            { navn: "Steinskartinden", fil: "2026_03_08.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/p/DVodnhniPMj/", tittel: "Video 1" }, { url: "https://www.instagram.com/p/DWPmIqVCCo7/", tittel: "Video 2" }], ekstraSpor: [{ fil: "2026_03_22.gpx", tittel: "Spor 2", farge: "#5c6bc0" }] },
-            { navn: "Stormheimfjellet", fil: "2024_04_06.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/p/C5s6FTisaY-/", tittel: "Se video" }] },
-            { navn: "Storstolpan", fil: "2025_05_08.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/p/DJjsfOesdWS/", tittel: "Se video" }] },
-            { navn: "Stortinden", fil: "2024_03_26.gpx", type: "vinter", video: [{ url: "https://www.youtube.com/watch?v=wix86hamTQ8", tittel: "Se video" }] },
-            { navn: "Straumsaksla", fil: "2025_05_24.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/p/DKDbUavsE9v/", tittel: "Se video" }] },
-            { navn: "Svartnestinden", fil: "2026_04_05.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/p/DXcJLaViMUt/", tittel: "Se video" }] },
-            { navn: "Tromsdalstinden", fil: "2026_05_14.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/p/DYfYRV0o6la/", tittel: "Video 1" }, { url: "https://www.instagram.com/p/DYpqoqRoyyR/", tittel: "Video 2" }, { url: "https://www.instagram.com/p/DZMwqUnopJN/", tittel: "Video 3" }], ekstraSpor: [{ fil: "2026_05_21.gpx", tittel: "Spor 2", farge: "#5c6bc0" }, { fil: "2026_06_03.gpx", tittel: "Spor 3", farge: "#e1306c" }] },
-            { navn: "Tverrfjellet", fil: "2023_12_29.gpx", type: "vinter", video: [{ url: "https://www.instagram.com/p/C1cfjMVMZnJ/", tittel: "Se video" }] }
-        ];
-
-        function lagBadge(fil) {
+        function lagBadge(fil, override) {
+            if (!fil && !override) return null;
             const s = document.createElement('span');
-            const aar = fil.split('_')[0];
+            const aar = override || fil.split('_')[0];
             if (aar === "2026") { s.className = 'badge-label badge-2026'; s.innerText = aar; }
             else { s.className = 'badge-label badge-year'; s.innerText = aar; }
             return s;
@@ -433,7 +498,7 @@
             const labelEl = document.createElement('div');
             labelEl.className = 'control-label';
             labelEl.innerText = label;
-            if (badgeFil) labelEl.appendChild(lagBadge(badgeFil));
+            if (badgeFil) { const bdg = lagBadge(badgeFil); if (bdg) labelEl.appendChild(bdg); }
             container.appendChild(labelEl);
 
             const sporGroup = document.createElement('div');
@@ -451,186 +516,409 @@
             return container;
         }
 
+        // ---- Hover i bokstavmenyen: vis toppen midlertidig, og gå tilbake når musen forlater den ----
+        let hoverId = null;
+        let hoverStartView = null;
+        let hoverBackTimer = null;
+
+        function startHover(topp) {
+            if (isTouchDevice || aktivToppNavn || isReseting) return;
+            const l = gpxLagMap[topp.id];
+            if (!l) return;
+            clearTimeout(hoverBackTimer);
+            if (hoverId && hoverId !== topp.id && gpxLagMap[hoverId]) {
+                gpxLagMap[hoverId].setStyle({color: 'var(--strava-orange)', weight: 1.5, opacity: 0.6});
+            }
+            if (!hoverStartView) hoverStartView = { center: map.getCenter(), zoom: map.getZoom() };
+            hoverId = topp.id;
+            l.setStyle({color: 'var(--strava-blue)', weight: 3, opacity: 1}).bringToFront();
+            map.flyToBounds(l.getBounds(), { padding: [60, 60], duration: 0.4 });
+        }
+
+        function planleggSluttHover() {
+            clearTimeout(hoverBackTimer);
+            hoverBackTimer = setTimeout(avsluttHover, 150);
+        }
+
+        function avsluttHover() {
+            clearTimeout(hoverBackTimer);
+            if (!hoverId && !hoverStartView) return;
+            if (!aktivToppNavn && !isReseting) {
+                if (hoverId && gpxLagMap[hoverId]) {
+                    gpxLagMap[hoverId].setStyle({color: 'var(--strava-orange)', weight: 1.5, opacity: 0.6});
+                }
+                if (hoverStartView) map.flyTo(hoverStartView.center, hoverStartView.zoom, { duration: 0.4 });
+            }
+            hoverId = null;
+            hoverStartView = null;
+        }
+
+        function avbrytHover() {
+            clearTimeout(hoverBackTimer);
+            hoverId = null;
+            hoverStartView = null;
+        }
+
+        // ---- Bokstavknapper med nedtrekksmeny ----
+        function hentStorBokstavMapping(navn) {
+            const deler = navn.split(/\s*[-–—/]\s*/);
+            const mapping = [];
+
+            deler.forEach(del => {
+                const ordListe = del.trim().split(/\s+/);
+                for (let ord of ordListe) {
+                    const ren = ord.replace(/^[^a-zæøåA-ZÆØÅ0-9]+/, '');
+                    if (ren.length > 0 && /[A-ZÆØÅ0-9]/.test(ren[0])) {
+                        const bokstav = /[0-9]/.test(ren[0]) ? '#' : ren[0].toUpperCase();
+                        mapping.push({ bokstav: bokstav, ord: ord });
+                        break;
+                    }
+                }
+            });
+
+            return mapping;
+        }
+
+        function formaterNavnMedFarge(navn, malord) {
+            if (!malord) return navn;
+            return navn.split(/(\s+|[-–—/])/).map(del =>
+                del === malord ? `<span class="highlight-word">${del}</span>` : del
+            ).join('');
+        }
+
+        function lukkAlleDropdowns() {
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+            document.querySelectorAll('.letter-btn').forEach(b => b.classList.remove('active'));
+            avsluttHover();
+        }
+
+        function plasserMeny(menu, btn) {
+            menu.style.marginLeft = '0px';
+            menu.style.top = '';
+            if (window.matchMedia('(max-width: 768px)').matches) {
+                menu.style.top = (btn.getBoundingClientRect().bottom + 6) + 'px';
+            } else {
+                const r = menu.getBoundingClientRect();
+                let skift = 0;
+                if (r.left < 8) skift = 8 - r.left;
+                else if (r.right > window.innerWidth - 8) skift = window.innerWidth - 8 - r.right;
+                menu.style.marginLeft = skift + 'px';
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.letter-dropdown')) lukkAlleDropdowns();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') lukkAlleDropdowns();
+        });
+
+        function byggBokstavMeny() {
+            const bokstavMap = {};
+
+            topper.forEach(topp => {
+                knapperMap[topp.id] = { items: [], aktiver: null };
+                hentStorBokstavMapping(topp.navn).forEach(m => {
+                    if (!bokstavMap[m.bokstav]) bokstavMap[m.bokstav] = [];
+                    // Samme topp vises kun én gang per bokstav
+                    if (!bokstavMap[m.bokstav].some(entry => entry.topp === topp)) {
+                        bokstavMap[m.bokstav].push({ topp: topp, ord: m.ord });
+                    }
+                });
+            });
+
+            Object.keys(bokstavMap).sort((a, b) => a.localeCompare(b, 'no')).forEach(bokstav => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'letter-dropdown';
+
+                const btn = document.createElement('button');
+                btn.className = 'letter-btn';
+                btn.innerText = bokstav;
+
+                const menu = document.createElement('div');
+                menu.className = 'dropdown-menu';
+
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    const varAktiv = menu.classList.contains('show');
+                    lukkAlleDropdowns();
+                    if (!varAktiv) {
+                        menu.classList.add('show');
+                        btn.classList.add('active');
+                        plasserMeny(menu, btn);
+                    }
+                };
+
+                bokstavMap[bokstav].forEach(entry => {
+                    const topp = entry.topp;
+                    const item = document.createElement('div');
+                    item.className = 'dropdown-item';
+
+                    const tekstSpan = document.createElement('span');
+                    tekstSpan.innerHTML = formaterNavnMedFarge(topp.navn, entry.ord);
+                    item.appendChild(tekstSpan);
+
+                    const badge = lagBadge(topp.fil, topp.overrideAar);
+                    if (badge) item.appendChild(badge);
+
+                    knapperMap[topp.id].items.push(item);
+
+                    item.onclick = (e) => {
+                        e.stopPropagation();
+                        avbrytHover();
+                        lukkAlleDropdowns();
+                        if (knapperMap[topp.id].aktiver) knapperMap[topp.id].aktiver();
+                    };
+
+                    if (!isTouchDevice) {
+                        item.onmouseenter = () => startHover(topp);
+                        item.onmouseleave = () => planleggSluttHover();
+                    }
+
+                    menu.appendChild(item);
+                });
+
+                wrapper.appendChild(btn);
+                wrapper.appendChild(menu);
+                buttonsContainer.appendChild(wrapper);
+            });
+        }
+
         function sjekkURLParameter() {
             const urlParams = new URLSearchParams(window.location.search);
             const fjellFraUrl = urlParams.get('fjell');
-            if (fjellFraUrl) {
-                const matchendeKnapp = Array.from(document.querySelectorAll('.top-btn')).find(
-                    b => b.childNodes[0].nodeValue.trim().toLowerCase() === fjellFraUrl.toLowerCase()
-                );
-                if (matchendeKnapp) {
-                    matchendeKnapp.click();
-                }
-            } else {
+            const sokVal = fjellFraUrl ? fjellFraUrl.toLowerCase().trim() : null;
+            const treff = sokVal ? topper.find(t => t.id === sokVal || t.navn.toLowerCase() === sokVal) : null;
+
+            if (treff && knapperMap[treff.id] && knapperMap[treff.id].aktiver) {
+                knapperMap[treff.id].aktiver();
+            } else if (allTracksGroup.getLayers().length > 0) {
                 map.fitBounds(allTracksGroup.getBounds(), {padding: [20, 20]});
             }
         }
 
-        topper.sort((a,b) => a.navn.localeCompare(b.navn)).forEach(topp => {
-            const btn = document.createElement('button');
-            btn.className = 'top-btn'; btn.innerText = topp.navn;
-            btn.appendChild(lagBadge(topp.fil));
-            document.getElementById('buttons').appendChild(btn);
+        fetch('vinter_topper.json')
+            .then(res => {
+                if (!res.ok) throw new Error('Fant ikke vinter_topper.json');
+                return res.json();
+            })
+            .then(data => {
+                topper = data;
+                totalTracksCount = topper.length;
 
-            const track = new L.GPX('gpx/' + topp.fil, {
-                async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
-                polyline_options: { color: 'var(--strava-orange)', weight: 1.5, opacity: 0.6 }
-            }).on('loaded', (e) => {
-                const l = e.target;
-                allTracksGroup.addLayer(l);
+                topper.sort((a,b) => a.navn.localeCompare(b.navn));
+                byggBokstavMeny();
+
+                topper.forEach(topp => {
+
+                    const track = new L.GPX('gpx/' + topp.fil, {
+                        async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
+                        polyline_options: { color: 'var(--strava-orange)', weight: 1.5, opacity: 0.6 }
+                    }).on('error', () => {
+                        console.warn(`Kunne ikke laste GPX for ${topp.navn} (${topp.fil})`);
+                        registrerLading();
+                    }).on('loaded', (e) => {
+                        const l = e.target;
+                        gpxLagMap[topp.id] = l;
+                        allTracksGroup.addLayer(l);
                 
-                loadedTracksCount++;
-                if (loadedTracksCount === totalTracksCount) {
-                    sjekkURLParameter();
-                }
+                        registrerLading();
                 
-                const aktiver = () => {
-                    isReseting = false; aktivToppNavn = topp.navn;
+                        const aktiver = () => {
+                            isReseting = false; aktivToppNavn = topp.navn;
+                        avbrytHover();
+                        lukkAlleDropdowns();
 
-                    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?fjell=' + encodeURIComponent(topp.navn);
-                    window.history.pushState({path: newUrl}, '', newUrl);
+                            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?fjell=' + encodeURIComponent(topp.id);
+                            window.history.pushState({path: newUrl}, '', newUrl);
 
-                    document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    aktiveEkstraSporLayers.forEach(layer => map.removeLayer(layer));
-                    aktiveEkstraSporLayers = [];
-                    allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.1, weight: 1, color: 'var(--strava-orange)'}));
-                    l.setStyle({opacity: 1, weight: 2.5, color: 'var(--strava-orange)'}).bringToFront(); 
+                            document.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove('active'));
+                            knapperMap[topp.id].items.forEach(el => el.classList.add('active'));
+                            aktiveEkstraSporLayers.forEach(layer => map.removeLayer(layer));
+                            aktiveEkstraSporLayers = [];
+                            aktiveMarkører.forEach(m => map.removeLayer(m));
+                            aktiveMarkører = [];
+                            allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.1, weight: 1, color: 'var(--strava-orange)'}));
+                            l.setStyle({opacity: 1, weight: 2.5, color: 'var(--strava-orange)'}).bringToFront(); 
 
-                    videoContainer.innerHTML = '';
-                    videoContainer.classList.remove('ui-hidden');
+                            videoContainer.innerHTML = '';
+                            videoContainer.classList.remove('ui-hidden');
 
-                    const menuTopRow = document.createElement('div');
-                    menuTopRow.className = 'menu-top-row';
+                            const menuTopRow = document.createElement('div');
+                            menuTopRow.className = 'menu-top-row';
 
-                    const shareBtn = document.createElement('button');
-                    shareBtn.className = 'share-ui-btn';
-                    shareBtn.innerHTML = '<span>🔗</span> Del';
-                    shareBtn.onclick = () => {
-                        const currentUrl = window.location.href;
-                        navigator.clipboard.writeText(currentUrl).then(() => {
-                            shareBtn.innerHTML = '<span>✓</span> Kopiert!';
-                            setTimeout(() => { shareBtn.innerHTML = '<span>🔗</span> Del'; }, 2000);
-                        }).catch(err => {
-                            console.error('Kunne ikke kopiere lenke:', err);
-                        });
-                    };
+                            const shareBtn = document.createElement('button');
+                            shareBtn.className = 'share-ui-btn';
+                            shareBtn.innerHTML = '<span>🔗</span> Del';
+                            shareBtn.onclick = () => {
+                                const currentUrl = window.location.href;
+                                navigator.clipboard.writeText(currentUrl).then(() => {
+                                    shareBtn.innerHTML = '<span>✓</span> Kopiert!';
+                                    setTimeout(() => { shareBtn.innerHTML = '<span>🔗</span> Del'; }, 2000);
+                                }).catch(err => {
+                                    console.error('Kunne ikke kopiere lenke:', err);
+                                });
+                            };
 
-                    const hideBtn = document.createElement('button');
-                    hideBtn.className = 'toggle-ui-btn';
-                    hideBtn.innerText = 'Skjul meny';
-                    hideBtn.onclick = () => { hideBtn.innerText = videoContainer.classList.toggle('ui-hidden') ? 'Vis meny' : 'Skjul meny'; };
+                            const hideBtn = document.createElement('button');
+                            hideBtn.className = 'toggle-ui-btn';
+                            hideBtn.innerText = 'Skjul meny';
+                            hideBtn.onclick = () => { hideBtn.innerText = videoContainer.classList.toggle('ui-hidden') ? 'Vis meny' : 'Skjul meny'; };
 
-                    menuTopRow.appendChild(shareBtn);
-                    menuTopRow.appendChild(hideBtn);
-                    videoContainer.appendChild(menuTopRow);
+                            menuTopRow.appendChild(shareBtn);
+                            menuTopRow.appendChild(hideBtn);
+                            videoContainer.appendChild(menuTopRow);
 
-                    topp.video?.forEach((v, i) => {
-                        const a = document.createElement('a'); a.href = v.url; a.target = "_blank"; a.className = 'video-link-btn'; a.innerText = v.tittel;
-                        const filRef = v.dato ? v.dato : ((topp.ekstraSpor && topp.ekstraSpor[i-1]) ? topp.ekstraSpor[i-1].fil : topp.fil);
-                        a.appendChild(lagBadge(filRef));
-                        videoContainer.appendChild(a);
-                    });
+                            topp.video?.forEach((v, i) => {
+                                const a = document.createElement('a'); a.href = v.url; a.target = "_blank"; a.className = 'video-link-btn';
+                                const ikon = v.type === 'photo' ? '📷' : '🎥';
+                                a.innerHTML = `<span>${ikon}</span> ${v.tittel}`;
+                                const filRef = v.dato ? v.dato : ((topp.ekstraSpor && topp.ekstraSpor[i-1]) ? topp.ekstraSpor[i-1].fil : topp.fil);
+                                const vBadge = lagBadge(filRef, (filRef === topp.fil) ? topp.overrideAar : null);
+                                if (vBadge) a.appendChild(vBadge);
+                                videoContainer.appendChild(a);
+                            });
 
-                    // Legg til kontrollrad for Brattskala inne på den enkelte topp
-                    const legendRow = document.createElement('div');
-                    legendRow.className = 'control-row-container';
-                    legendRow.innerHTML = `
-                        <div class="control-label" style="display:flex; align-items:center; gap:5px;">
-                            <span>🏔️</span> Brattskala
-                        </div>
-                        <div class="toggle-group ${isLegendActive ? 'active' : ''}">
-                            <span class="toggle-text">Vis</span>
-                            <div class="switch-track"><div class="switch-thumb"></div></div>
-                        </div>
-                    `;
-                    const legendToggleGroup = legendRow.querySelector('.toggle-group');
-                    legendToggleGroup.onclick = () => {
-                        const state = legendToggleGroup.classList.toggle('active');
-                        toggleLegend(state);
-                    };
-                    videoContainer.appendChild(legendRow);
+                            if (topp.strava) {
+                                const sBtn = document.createElement('a');
+                                sBtn.className = 'video-link-btn strava-link-btn'; sBtn.href = topp.strava; sBtn.target = '_blank';
+                                sBtn.innerHTML = `<span>🏃</span> Strava`;
+                                videoContainer.appendChild(sBtn);
+                            }
 
-                    videoContainer.appendChild(skapKontrollRad('Hovedspor', null, true, 
-                        (on) => on ? map.addLayer(l) : map.removeLayer(l),
-                        (on) => on ? visProfil(l, topp.navn, topp.fil) : map.closePopup()
-                    ));
+                            if (topp.suunto) {
+                                const suuntoBtn = document.createElement('a');
+                                suuntoBtn.className = 'video-link-btn suunto-link-btn'; suuntoBtn.href = topp.suunto; suuntoBtn.target = '_blank';
+                                suuntoBtn.innerHTML = `<span class="suunto-icon">▲</span> 3D visualisering`;
+                                videoContainer.appendChild(suuntoBtn);
+                            }
 
-                    topp.ekstraSpor?.forEach(es => {
-                        let esL = null;
-                        videoContainer.appendChild(skapKontrollRad(es.tittel, es.fil, false,
-                            (on) => {
-                                if (on) {
-                                    esL = new L.GPX('gpx/' + es.fil, { async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null}, polyline_options: {color: es.farge, weight:1.5, dashArray:'4,6'}}).addTo(map);
-                                    aktiveEkstraSporLayers.push(esL);
-                                } else if (esL) { map.removeLayer(esL); aktiveEkstraSporLayers = aktiveEkstraSporLayers.filter(x => x !== esL); }
-                            },
-                            (on) => { if (on && esL) visProfil(esL, es.tittel, es.fil); else map.closePopup(); }
-                        ));
-                    });
+                            // Legg til kontrollrad for Brattskala inne på den enkelte topp
+                            const legendRow = document.createElement('div');
+                            legendRow.className = 'control-row-container';
+                            legendRow.innerHTML = `
+                                <div class="control-label" style="display:flex; align-items:center; gap:5px;">
+                                    <span>🏔️</span> Brattskala
+                                </div>
+                                <div class="toggle-group ${isLegendActive ? 'active' : ''}">
+                                    <span class="toggle-text">Vis</span>
+                                    <div class="switch-track"><div class="switch-thumb"></div></div>
+                                </div>
+                            `;
+                            const legendToggleGroup = legendRow.querySelector('.toggle-group');
+                            legendToggleGroup.onclick = () => {
+                                const state = legendToggleGroup.classList.toggle('active');
+                                toggleLegend(state);
+                            };
+                            videoContainer.appendChild(legendRow);
 
-                    videoContainer.appendChild(Object.assign(document.createElement('a'), {
-                        href: `https://www.google.no/search?q=${encodeURIComponent(topp.navn + ' topptursbeskrivelse')}`,
-                        target: "_blank", className: 'search-link-btn', innerHTML: `<span>🔍</span> Turbeskrivelse`
-                    }));
+                            videoContainer.appendChild(skapKontrollRad('Hovedspor', null, true, 
+                                (on) => on ? map.addLayer(l) : map.removeLayer(l),
+                                (on) => on ? visProfil(l, topp.navn, topp.fil) : map.closePopup()
+                            ));
 
-                    const dlArea = document.createElement('div');
-                    dlArea.className = 'download-area';
+                            topp.ekstraSpor?.forEach(es => {
+                                let esL = null;
+
+                                const visEkstraSpor = () => {
+                                    if (!esL) {
+                                        esL = new L.GPX('gpx/' + es.fil, {
+                                            async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null},
+                                            polyline_options: {color: es.farge || 'var(--strava-orange)', weight: es.defaultActive ? 3 : 1.5, opacity: es.defaultActive ? 0.9 : 1, dashArray:'4,6'}
+                                        }).on('loaded', (eEvt) => {
+                                            if (!es.popupTekst) return;
+                                            const punkter = eEvt.target.getLayers()[0].getLatLngs();
+                                            if (punkter && punkter.length > 0) {
+                                                const pin = L.marker(punkter[punkter.length - 1], { icon: smallIcon }).addTo(map);
+                                                pin.bindPopup(`<b>${es.tittel}</b><br>${es.popupTekst}`);
+                                                pin.openPopup();
+                                                aktiveMarkører.push(pin);
+                                            }
+                                        });
+                                    }
+                                    esL.addTo(map).bringToFront();
+                                    if (!aktiveEkstraSporLayers.includes(esL)) aktiveEkstraSporLayers.push(esL);
+                                };
+
+                                videoContainer.appendChild(skapKontrollRad(es.tittel, es.fil, es.defaultActive || false,
+                                    (on) => {
+                                        if (on) { visEkstraSpor(); }
+                                        else if (esL) { map.removeLayer(esL); aktiveEkstraSporLayers = aktiveEkstraSporLayers.filter(x => x !== esL); }
+                                    },
+                                    (on) => { if (on && esL) visProfil(esL, es.tittel, es.fil); else map.closePopup(); }
+                                ));
+
+                                if (es.defaultActive) visEkstraSpor();
+                            });
+
+                            if (topp.beskrivelse) {
+                                const descBox = document.createElement('div');
+                                descBox.className = 'desc-box';
+                                descBox.innerHTML = `<div class="desc-box-title"><span>📝</span> Turbeskrivelse</div>${topp.beskrivelse}`;
+                                videoContainer.appendChild(descBox);
+                            }
+
+                            videoContainer.appendChild(Object.assign(document.createElement('a'), {
+                                href: `https://www.google.no/search?q=${encodeURIComponent(topp.navn + ' topptursbeskrivelse')}`,
+                                target: "_blank", className: 'search-link-btn', innerHTML: `<span>🔍</span> Turbeskrivelse`
+                            }));
+
+                            const dlArea = document.createElement('div');
+                            dlArea.className = 'download-area';
                     
-                    const dlHeader = document.createElement('div');
-                    dlHeader.className = 'download-header';
-                    dlHeader.innerHTML = `<span>💾</span> Last ned:`;
-                    dlArea.appendChild(dlHeader);
+                            const dlHeader = document.createElement('div');
+                            dlHeader.className = 'download-header';
+                            dlHeader.innerHTML = `<span>💾</span> Last ned:`;
+                            dlArea.appendChild(dlHeader);
 
-                    const linksCont = document.createElement('div');
-                    linksCont.className = 'download-links-container';
+                            const linksCont = document.createElement('div');
+                            linksCont.className = 'download-links-container';
 
-                    const aMain = document.createElement('span');
-                    aMain.className = 'dl-link';
-                    aMain.innerText = 'Hovedspor';
-                    aMain.onclick = () => lastNedGPX('gpx/' + topp.fil, `${topp.navn}_Hovedspor`);
-                    linksCont.appendChild(aMain);
+                            const aMain = document.createElement('span');
+                            aMain.className = 'dl-link';
+                            aMain.innerText = 'Hovedspor';
+                            aMain.onclick = () => lastNedGPX('gpx/' + topp.fil, `${topp.navn}_Hovedspor`);
+                            linksCont.appendChild(aMain);
 
-                    topp.ekstraSpor?.forEach(es => {
-                        const aExtra = document.createElement('span');
-                        aExtra.className = 'dl-link';
-                        aExtra.innerText = es.tittel;
-                        aExtra.onclick = () => lastNedGPX('gpx/' + es.fil, `${topp.navn}_${es.tittel}`);
-                        linksCont.appendChild(aExtra);
-                    });
+                            topp.ekstraSpor?.forEach(es => {
+                                const aExtra = document.createElement('span');
+                                aExtra.className = 'dl-link';
+                                aExtra.innerText = es.tittel;
+                                aExtra.onclick = () => lastNedGPX('gpx/' + es.fil, `${topp.navn}_${es.tittel}`);
+                                linksCont.appendChild(aExtra);
+                            });
 
-                    dlArea.appendChild(linksCont);
-                    videoContainer.appendChild(dlArea);
+                            dlArea.appendChild(linksCont);
+                            videoContainer.appendChild(dlArea);
 
-                    const latlngs = l.getLayers()[0].getLatLngs();
-                    const startPunkt = latlngs[0];
+                            const latlngs = l.getLayers()[0].getLatLngs();
+                            const startPunkt = latlngs[0];
 
-                    if (startPunkt) {
-                        const startLat = startPunkt.lat;
-                        const startLng = startPunkt.lng;
+                            if (startPunkt) {
+                                const startLat = startPunkt.lat;
+                                const startLng = startPunkt.lng;
 
-                        const mapsBtn = document.createElement('a');
-                        mapsBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${startLat},${startLng}`;
-                        mapsBtn.target = "_blank";
-                        mapsBtn.className = 'search-link-btn';
-                        mapsBtn.style.borderColor = 'var(--new-green)';
-                        mapsBtn.style.color = 'var(--new-green)';
-                        mapsBtn.style.marginTop = '8px';
-                        mapsBtn.innerHTML = `<span>🚘</span> Veibeskrivelse`;
+                                const mapsBtn = document.createElement('a');
+                                mapsBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${startLat},${startLng}`;
+                                mapsBtn.target = "_blank";
+                                mapsBtn.className = 'search-link-btn';
+                                mapsBtn.style.borderColor = 'var(--new-green)';
+                                mapsBtn.style.color = 'var(--new-green)';
+                                mapsBtn.style.marginTop = '8px';
+                                mapsBtn.innerHTML = `<span>🚘</span> Veibeskrivelse`;
                         
-                        videoContainer.appendChild(mapsBtn);
-                    }
+                                videoContainer.appendChild(mapsBtn);
+                            }
 
-                    map.flyToBounds(l.getBounds(), {padding: [50, 50]});
-                };
+                            map.flyToBounds(l.getBounds(), {padding: [50, 50]});
+                        };
 
-                btn.onmouseenter = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--strava-blue)', weight: 3, opacity: 1}).bringToFront(); };
-                btn.onmouseleave = () => { if (!aktivToppNavn && !isReseting) l.setStyle({color: 'var(--strava-orange)', weight: 1.5, opacity: 0.6}); };
-                
-                btn.onclick = aktiver;
-                l.on('click', (ev) => { L.DomEvent.stopPropagation(ev); aktiver(); });
-            });
-        });
+                        knapperMap[topp.id].aktiver = aktiver;
+                        l.on('click', (ev) => { L.DomEvent.stopPropagation(ev); aktiver(); });
+                    });
+                });
+            })
+            .catch(err => console.error("Kunne ikke laste vinter_topper.json:", err));
 
         document.getElementById('resetBtn').onclick = () => {
             isReseting = true; aktivToppNavn = null; videoContainer.innerHTML = '';
@@ -638,9 +926,14 @@
             const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
             window.history.pushState({path: cleanUrl}, '', cleanUrl);
 
-            document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove('active'));
+            avbrytHover();
+            lukkAlleDropdowns();
             map.closePopup();
             aktiveEkstraSporLayers.forEach(l => map.removeLayer(l));
+            aktiveEkstraSporLayers = [];
+            aktiveMarkører.forEach(m => map.removeLayer(m));
+            aktiveMarkører = [];
             allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.6, weight:1.5, color: 'var(--strava-orange)'}); });
             map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]});
             setTimeout(() => isReseting = false, 300);
