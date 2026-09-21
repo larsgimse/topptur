@@ -487,17 +487,15 @@
   },
   {
     "id": "tromsdalstinden",
-    "navn": "Tromsdalstindrunden",
-    "fil": "2026_09_20.gpx",
-    "overrideAar": "2026",
+    "navn": "Tromsdalstinden",
+    "fil": "2022_10_01.gpx",
     "video": [
       {
-        "url": "https://www.instagram.com/p/DdhixM1odi8/",
-        "tittel": "Se video"
+        "url": "https://www.instagram.com/p/CjLJuxTso58",
+        "tittel": "Se bilder",
+        "type": "photo"
       }
     ],
-    "strava": "https://www.strava.com/activities/20255919685",
-    "suunto": "https://maps.suunto.com/move/larsgimse/6aafea7d751a1771bad83b06",
     "beskrivelse": "Kommer mer info snart..."
   },
   {
