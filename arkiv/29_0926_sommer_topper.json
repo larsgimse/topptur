@@ -9,23 +9,9 @@
         "url": "https://www.instagram.com/p/DatayEJCIvE/",
         "tittel": "Se bilder",
         "type": "photo"
-      },
-      {
-        "url": "https://www.instagram.com/p/Dd7QuFxiC-a",
-        "tittel": "Se bilder (Spor 2)",
-        "type": "photo"
       }
     ],
     "strava": "https://www.strava.com/activities/19286411884",
-    "suunto": "https://maps.suunto.com/move/larsgimse/6abd2f0489f5110a62d5aa12",
-    "ekstraSpor": [
-      {
-        "tittel": "Spor 2",
-        "fil": "2026_09_30.gpx",
-        "strava": "https://www.strava.com/activities/20394507514",
-        "suunto": "https://maps.suunto.com/move/larsgimse/6abd2f0489f5110a62d5aa12"
-      }
-    ],
     "beskrivelse": "Flott tur opp fra nedre Fjellheisstasjon."
   },
   {
@@ -413,22 +399,6 @@
         "fil": "2020_07_14.gpx"
       }
     ],
-    "beskrivelse": "Kommer mer info snart..."
-  },
-  {
-    "id": "steinbohytta-floya-sherpatrappa",
-    "navn": "Steinbøhytta - Fløya - Sherpatrappa",
-    "fil": "2026_09_28.gpx",
-    "overrideAar": "2026",
-    "video": [
-      {
-        "url": "https://www.instagram.com/p/Dd2FWZIiIjE",
-        "tittel": "Se bilder",
-        "type": "photo"
-      }
-    ],
-    "strava": "https://www.strava.com/activities/20365969224",
-    "suunto": "https://maps.suunto.com/move/larsgimse/6aba917940a5601e3200d174",
     "beskrivelse": "Kommer mer info snart..."
   },
   {
