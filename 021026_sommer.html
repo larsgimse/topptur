@@ -748,7 +748,7 @@
 
                 for (let ord of ordListe) {
                     const ren = ord.replace(/^[^a-zæøåA-ZÆØÅ0-9]+/, '');
-                    if (ren.length > 0 && ((ren[0] === ren[0].toUpperCase() && /[A-ZÆØÅ]/.test(ren[0])) || /[0-9]/.test(ren[0]))) {
+                    if (ren.length > 0 && ren[0] === ren[0].toUpperCase() && /[A-ZÆØÅ]/.test(ren[0])) {
                         valgtOrd = ord;
                         break;
                     }
@@ -756,7 +756,7 @@
 
                 if (valgtOrd) {
                     const ren = valgtOrd.replace(/^[^a-zæøåA-ZÆØÅ0-9]+/, '');
-                    const bokstav = /[A-ZÆØÅ]/.test(ren[0]) ? ren[0].toUpperCase() : '#';
+                    const bokstav = ren[0].toUpperCase();
                     mapping.push({ bokstav: bokstav, ord: valgtOrd });
                 }
             });
@@ -818,11 +818,7 @@
                     });
                 });
 
-                const sorterteBokstaver = Object.keys(bokstavMap).sort((a,b) => {
-                    if (a === '#') return -1;
-                    if (b === '#') return 1;
-                    return a.localeCompare(b, 'no');
-                });
+                const sorterteBokstaver = Object.keys(bokstavMap).sort((a,b) => a.localeCompare(b, 'no'));
 
                 sorterteBokstaver.forEach(bokstav => {
                     const wrapper = document.createElement('div');
