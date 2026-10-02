@@ -384,6 +384,7 @@
         }
 
         // Lager en unik liste over alle GPX-spor (hovedspor + ekstraspor).
+        // Samme GPX-fil brukt av flere topper lastes kun én gang, men husker alle toppene den hører til.
         function byggSporliste(topper) {
             const sporMap = new Map();
 
@@ -396,6 +397,7 @@
                 }
             };
 
+            // Hovedspor først, så ekstraspor
             topper.forEach(t => leggTil(t.fil, t.type, { id: t.id, navn: t.navn, type: t.type, ekstraTittel: null }));
             topper.forEach(t => {
                 t.ekstraSpor.forEach(es => leggTil(es.fil, t.type, { id: t.id, navn: t.navn, type: t.type, ekstraTittel: es.tittel || null }));
@@ -453,9 +455,10 @@
             }
         }
 
-        const GPX_TIMEOUT_MS = 20000;
-        const feilede = [];
+        const GPX_TIMEOUT_MS = 20000;   // maks ventetid per GPX-fil
+        const feilede = [];             // filer som ikke lot seg laste
 
+        // Kobler tooltip/popup/klikk på et innlastet spor
         function leggTilInteraksjon(layer, topp) {
             const typeTekst = topp.type === "vinter" ? "Vintertopp" : "Sommertopp";
             const ikon = topp.type === "vinter" ? "❄️" : "☀️";
@@ -505,7 +508,9 @@
             }
         }
 
-        function lastEnkeltopp(topp) {
+        // Laster én GPX-fil. Resolver ALLTID (også ved 404, ugyldig XML, feil i handler eller timeout),
+        // slik at én dårlig fil aldri kan stoppe resten av køen.
+        function lastEnkeltopp(topp) {  // 'topp' er her et spor: { fil, type, eiere: [...] }
             return new Promise((resolve) => {
                 let fullført = false;
                 const controller = new AbortController();
@@ -529,10 +534,13 @@
 
                 (async () => {
                     try {
+                        // Vi henter filen selv (fetch), fordi leaflet-gpx 1.7.0 ikke melder
+                        // fra ved 404 / ugyldig XML – da hang lastingen for alltid.
                         const res = await fetch('gpx/' + topp.fil, { signal: controller.signal });
                         if (!res.ok) { ferdig(`HTTP ${res.status}`); return; }
 
                         const tekst = (await res.text()).replace(/^\uFEFF/, '').trim();
+                        // L.GPX tolker strenger som ikke starter med "<" som en URL, så vi sjekker først
                         if (!tekst.startsWith('<')) { ferdig('ikke gyldig XML/GPX'); return; }
 
                         const track = new L.GPX(tekst, gpxOptions);
@@ -570,6 +578,7 @@
                 hentTopper('sommer_topper.json', 'sommer')
             ]);
 
+            // Alle unike GPX-spor: hovedspor og ekstraspor fra begge JSON-filene
             const alleTopper = byggSporliste([...vinterTopper, ...sommerTopper]);
 
             totalFiles = alleTopper.length;
@@ -582,6 +591,8 @@
 
             document.getElementById('loading-text').textContent = `Laster inn spor... 0/${totalFiles}`;
 
+            // KØ-HÅNDTERING: Fast antall samtidige nedlastinger (færre på mobil).
+            // Nye filer starter så snart en er ferdig, og en fil som feiler stopper ikke resten.
             const samtidige = isTouchDevice ? 4 : 10;
             let neste = 0;
             const arbeider = async () => {
@@ -646,7 +657,7 @@
         }
 
         /* ==========================================================================
-           FLYRADAR FUNKSJONALITET (KORRIGERT)
+           FLYRADAR FUNKSJONALITET
            ========================================================================== */
         const btnFly = document.getElementById('btn-fly');
         const flightPanel = document.getElementById('flight-panel');
@@ -663,13 +674,7 @@
         async function fetchFlights() {
             if (!flightsActive) return;
             const b = map.getBounds();
-            
-            // Korrekt oppbygging av FR24 API-adresse
-            const fr24Url = `https://data-cloud.flightradar24.com/zones/fcgi/feed.js?bounds=${b.getNorth().toFixed(2)},${b.getSouth().toFixed(2)},${b.getWest().toFixed(2)},${b.getEast().toFixed(2)}&faa=1&air=1&_=${Date.now()}`;
-            
-            // Bruker corsproxy.io med encodeURIComponent
-            const url = `https://corsproxy.io/?${encodeURIComponent(fr24Url)}`;
-            
+            const url = `https://corsproxy.io/?https://data-cloud.flightradar24.com/zones/fcgi/feed.js?bounds=${b.getNorth().toFixed(1)},${b.getSouth().toFixed(1)},${b.getWest().toFixed(1)},${b.getEast().toFixed(1)}%26faa=1%26air=1&_=${Date.now()}`;
             try {
                 const res = await fetch(url);
                 if (!res.ok) return;
@@ -691,9 +696,7 @@
                     count++;
                 }
                 counterEl.innerText = "Fly synlige: " + count;
-            } catch(e) {
-                console.error("Feil ved henting av flydata:", e);
-            }
+            } catch(e) {}
         }
 
         function drawFlights() {
