@@ -1,20 +1,5 @@
 [
   {
-    "id": "884",
-    "navn": "884",
-    "fil": "2026_10_02.gpx",
-    "overrideAar": "2026",
-    "video": [
-      {
-        "url": "https://www.instagram.com/p/DeAIsskNAuF/",
-        "tittel": "Se video"
-      }
-    ],
-    "strava": "https://www.strava.com/activities/20419864951",
-    "suunto": "https://maps.suunto.com/move/larsgimse/6abfaed08b53781dd48463e4",
-    "beskrivelse": "Kommer mer info snart..."
-  },
-  {
     "id": "bonntuva",
     "navn": "Bønntuva",
     "fil": "2026_07_12.gpx",
@@ -166,21 +151,6 @@
         "tittel": "Se video"
       }
     ],
-    "beskrivelse": "Kommer mer info snart..."
-  },
-  {
-    "id": "langfjellaksla-straumsaksla",
-    "navn": "Langfjellaksla - Straumsaksla",
-    "fil": "2026_09_11.gpx",
-    "overrideAar": "2026",
-    "video": [
-      {
-        "url": "https://www.instagram.com/p/DdLX-UcIeg_/",
-        "tittel": "Se video"
-      }
-    ],
-    "strava": "https://www.strava.com/activities/20131695491",
-    "suunto": "https://maps.suunto.com/move/larsgimse/6aa420a0a1821e348a06990b",
     "beskrivelse": "Kommer mer info snart..."
   },
   {
@@ -586,6 +556,21 @@
         "type": "photo"
       }
     ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "langfjellaksla-straumsaksla",
+    "navn": "Langfjellaksla - Straumsaksla",
+    "fil": "2026_09_11.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DdLX-UcIeg_/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/20131695491",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6aa420a0a1821e348a06990b",
     "beskrivelse": "Kommer mer info snart..."
   }
 ]
