@@ -283,8 +283,8 @@
         <h1>Toppturer</h1>
         <div class="nav-buttons">
             <button id="btn-reset" class="btn btn-reset">🔄 Nullstill</button>
-            <button id="btn-vinter" class="btn btn-winter">❄️️ Vinter</button>
-            <button id="btn-sommer" class="btn btn-summer">☀️️ Sommer</button>
+            <button id="btn-vinter" class="btn btn-winter">❄️ Vinter</button>
+            <button id="btn-sommer" class="btn btn-summer">☀️ Sommer</button>
             <button id="btn-fly" class="btn btn-flights">✈️ Fly</button>
             <button id="btn-buss" class="btn btn-bus">🚌 Buss</button>
         </div>
@@ -364,7 +364,7 @@
         const bounds = L.latLngBounds();
         const lagredeSpor = [];
 
-        // Henter topper fra JSON-fil (vinter_topper.json / sommer_topper.json)
+        // Henter toppene fra en JSON-fil (vinter_topper.json / sommer_topper.json)
         async function hentTopper(url, type) {
             try {
                 const response = await fetch(url);
@@ -383,7 +383,7 @@
             }
         }
 
-        // Lager en unik liste over alle GPX-spor
+        // Lager en unik liste over alle GPX-spor (hovedspor + ekstraspor).
         function byggSporliste(topper) {
             const sporMap = new Map();
 
@@ -458,7 +458,7 @@
 
         function leggTilInteraksjon(layer, topp) {
             const typeTekst = topp.type === "vinter" ? "Vintertopp" : "Sommertopp";
-            const ikon = topp.type === "vinter" ? "❄️️" : "☀️";
+            const ikon = topp.type === "vinter" ? "❄️" : "☀️";
             const url = eierUrl(topp.eiere[0]);
 
             const tooltipHtml = topp.eiere.map(e => `<b>${eierTittel(e)}</b>`).join('<br>');
@@ -646,7 +646,7 @@
         }
 
         /* ==========================================================================
-           FLYRADAR FUNKSJONALITET (OPPDATERT MED ALLORIGINS PROXY)
+           FLYRADAR FUNKSJONALITET (KORRIGERT)
            ========================================================================== */
         const btnFly = document.getElementById('btn-fly');
         const flightPanel = document.getElementById('flight-panel');
@@ -667,8 +667,8 @@
             // Korrekt oppbygging av FR24 API-adresse
             const fr24Url = `https://data-cloud.flightradar24.com/zones/fcgi/feed.js?bounds=${b.getNorth().toFixed(2)},${b.getSouth().toFixed(2)},${b.getWest().toFixed(2)},${b.getEast().toFixed(2)}&faa=1&air=1&_=${Date.now()}`;
             
-            // Bruker allorigins sin proxy i stedet for corsproxy.io som ble blokkert
-            const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(fr24Url)}`;
+            // Bruker corsproxy.io med encodeURIComponent
+            const url = `https://corsproxy.io/?${encodeURIComponent(fr24Url)}`;
             
             try {
                 const res = await fetch(url);
