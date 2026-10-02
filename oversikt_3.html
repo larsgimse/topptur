@@ -283,7 +283,7 @@
         <h1>Toppturer</h1>
         <div class="nav-buttons">
             <button id="btn-reset" class="btn btn-reset">🔄 Nullstill</button>
-            <button id="btn-vinter" class="btn btn-winter">❄ Vinter</button>
+            <button id="btn-vinter" class="btn btn-winter">❄️️ Vinter</button>
             <button id="btn-sommer" class="btn btn-summer">☀️️ Sommer</button>
             <button id="btn-fly" class="btn btn-flights">✈️ Fly</button>
             <button id="btn-buss" class="btn btn-bus">🚌 Buss</button>
@@ -364,7 +364,7 @@
         const bounds = L.latLngBounds();
         const lagredeSpor = [];
 
-        // Henter toppene fra en JSON-fil (vinter_topper.json / sommer_topper.json)
+        // Henter topper fra JSON-fil (vinter_topper.json / sommer_topper.json)
         async function hentTopper(url, type) {
             try {
                 const response = await fetch(url);
@@ -383,7 +383,7 @@
             }
         }
 
-        // Lager en unik liste over alle GPX-spor (hovedspor + ekstraspor).
+        // Lager en unik liste over alle GPX-spor
         function byggSporliste(topper) {
             const sporMap = new Map();
 
@@ -458,7 +458,7 @@
 
         function leggTilInteraksjon(layer, topp) {
             const typeTekst = topp.type === "vinter" ? "Vintertopp" : "Sommertopp";
-            const ikon = topp.type === "vinter" ? "❄" : "☀️";
+            const ikon = topp.type === "vinter" ? "❄️️" : "☀️";
             const url = eierUrl(topp.eiere[0]);
 
             const tooltipHtml = topp.eiere.map(e => `<b>${eierTittel(e)}</b>`).join('<br>');
@@ -646,7 +646,7 @@
         }
 
         /* ==========================================================================
-           FLYRADAR FUNKSJONALITET (OPENSKY NETWORK API - DIREKTE CORS M/FALLBACK)
+           FLYRADAR FUNKSJONALITET (OPPDATERT MED ALLORIGINS PROXY)
            ========================================================================== */
         const btnFly = document.getElementById('btn-fly');
         const flightPanel = document.getElementById('flight-panel');
@@ -664,64 +664,32 @@
             if (!flightsActive) return;
             const b = map.getBounds();
             
-            // OpenSky Network API
-            const openSkyUrl = `https://opensky-network.org/api/states/all?lamin=${b.getSouth().toFixed(4)}&lamin2=0&lamax=${b.getNorth().toFixed(4)}&lomin=${b.getWest().toFixed(4)}&lomax=${b.getEast().toFixed(4)}`;
+            // Korrekt oppbygging av FR24 API-adresse
+            const fr24Url = `https://data-cloud.flightradar24.com/zones/fcgi/feed.js?bounds=${b.getNorth().toFixed(2)},${b.getSouth().toFixed(2)},${b.getWest().toFixed(2)},${b.getEast().toFixed(2)}&faa=1&air=1&_=${Date.now()}`;
+            
+            // Bruker allorigins sin proxy i stedet for corsproxy.io som ble blokkert
+            const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(fr24Url)}`;
             
             try {
-                let res = await fetch(openSkyUrl);
-                
-                // Fallback via proxy dersom direkte henting mot formodning feiler
-                if (!res.ok) {
-                    res = await fetch(`https://corsproxy.io/?${encodeURIComponent(openSkyUrl)}`);
-                }
-                
+                const res = await fetch(url);
                 if (!res.ok) return;
                 const data = await res.json();
-                
-                if (!data || !data.states) {
-                    counterEl.innerText = "Fly synlige: 0";
-                    return;
-                }
-
                 let count = 0;
-                const activeIds = new Set();
-
-                data.states.forEach(state => {
-                    const id = state[0]; // ICAO24 Transponder-adresse
-                    const callsign = (state[1] || "").trim() || "Ukjent";
-                    const lon = state[5];
-                    const lat = state[6];
-                    const baroAlt = state[7]; // Meter over havet
-                    const geoAlt = state[13];
-                    const altitudeMeters = geoAlt || baroAlt || 0;
-                    const altitudeFeet = Math.round(altitudeMeters * 3.28084);
-
-                    if (lat === null || lon === null) return;
-
-                    activeIds.add(id);
-
+                for (let id in data) {
+                    if (id === "full_count" || id === "version" || id === "stats") continue;
                     if (!flights[id]) flights[id] = { history: [] };
-                    
-                    flights[id].lat = lat;
-                    flights[id].lon = lon;
-                    flights[id].flight = callsign;
-                    flights[id].callsign = callsign;
-                    flights[id].reg = id.toUpperCase(); 
-                    flights[id].alt = altitudeFeet; 
-                    flights[id].origin = "N/A";
-                    flights[id].dest = "N/A";
-                    
-                    flights[id].history.push([lat, lon]);
+                    flights[id].lat = data[id][1];
+                    flights[id].lon = data[id][2];
+                    flights[id].flight = data[id][13];
+                    flights[id].callsign = data[id][16];
+                    flights[id].reg = data[id][9]; 
+                    flights[id].alt = data[id][4]; 
+                    flights[id].origin = data[id][11];
+                    flights[id].dest = data[id][12];
+                    flights[id].history.push([data[id][1], data[id][2]]);
                     if (flights[id].history.length > 60) flights[id].history.shift();
                     count++;
-                });
-
-                for (let id in flights) {
-                    if (!activeIds.has(id)) {
-                        delete flights[id];
-                    }
                 }
-
                 counterEl.innerText = "Fly synlige: " + count;
             } catch(e) {
                 console.error("Feil ved henting av flydata:", e);
@@ -800,7 +768,7 @@
 
                 updateCanvasPosition(flightCanvas, flightCtx, flightsActive);
                 fetchFlights();
-                flightInterval = setInterval(fetchFlights, 10000);
+                flightInterval = setInterval(fetchFlights, 15000);
                 drawFlights();
 
                 map.on('move zoom', handleFlightMove);
