@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feilsøking - Fly over Tromsø</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+            background: #111;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #info {
+            padding: 10px 15px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #map {
+            flex: 1;
+            width: 100%;
+        }
+        .status-ok { color: #4ade80; font-weight: bold; }
+        .status-error { color: #f87171; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="info">
+        <div>Status: <span id="status">Starter henting...</span></div>
+        <div>Antall fly funnet: <b id="count" style="color: #ffd700;">0</b></div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Sentrert på Tromsø Lufthavn / Tromsøya
+        const TROMSO_LAT = 69.68;
+        const TROMSO_LON = 18.91;
+
+        const map = L.map('map').setView([TROMSO_LAT, TROMSO_LON], 9);
+
+        // Mørkt bakgrunnskart (CARTO Dark)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Lag for flymarkører
+        const flightMarkers = L.layerGroup().addTo(map);
+
+        async function hentFly() {
+            const statusEl = document.getElementById('status');
+            const countEl = document.getElementById('count');
+
+            // Henter fly innenfor en radius på 150 km fra Tromsø
+            const url = `https://api.adsb.lol/v2/lat/${TROMSO_LAT}/lon/${TROMSO_LON}/dist/150`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP-feil! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log("Mottatt data fra ADS-B API:", data);
+
+                const flyListe = data.ac || [];
+                
+                // Tømmer eksisterende markører
+                flightMarkers.clearLayers();
+
+                let antall = 0;
+
+                flyListe.forEach(fly => {
+                    if (!fly.lat || !fly.lon) return;
+
+                    const callsign = (fly.flight || fly.r || fly.hex || "Ukjent").trim();
+                    const hoydeFot = fly.alt_baro || fly.alt_geom || 0;
+                    const hoydeMeter = Math.round(hoydeFot * 0.3048);
+                    const fartKts = fly.gs ? Math.round(fly.gs) : "N/A";
+
+                    // Opprett sirkelmarkør
+                    const marker = L.circleMarker([fly.lat, fly.lon], {
+                        radius: 7,
+                        fillColor: "#ffd700",
+                        color: "#ffffff",
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.9
+                    });
+
+                    // Legg til popup med info
+                    marker.bindPopup(`
+                        <div style="color: #000;">
+                            <b>Fly: ${callsign}</b><br>
+                            Høyde: ${hoydeFot} ft (${hoydeMeter} m)<br>
+                            Fart: ${fartKts} knop<br>
+                            ICAO: ${fly.hex.toUpperCase()}
+                        </div>
+                    `);
+
+                    // Legg til tekstetikett rett ved siden av prikken
+                    marker.bindTooltip(callsign, {
+                        permanent: true,
+                        direction: 'right',
+                        offset: [10, 0],
+                        className: 'fly-label'
+                    });
+
+                    flightMarkers.addLayer(marker);
+                    antall++;
+                });
+
+                countEl.textContent = antall;
+                statusEl.textContent = "Sist oppdatert: " + new Date().toLocaleTimeString();
+                statusEl.className = "status-ok";
+
+            } catch (error) {
+                console.error("Feil ved oppslag:", error);
+                statusEl.textContent = "Feil ved henting av data! Se konsollen.";
+                statusEl.className = "status-error";
+            }
+        }
+
+        // Hent umiddelbart og deretter hvert 5. sekund
+        hentFly();
+        setInterval(hentFly, 5000);
+    </script>
+</body>
+</html>
