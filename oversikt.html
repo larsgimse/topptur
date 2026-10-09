@@ -13,7 +13,9 @@
             --highlight-orange: #fc4c02;
             --winter-blue: #0ea5e9;
             --summer-green: #34a853;
-            --flight-yellow: #ffd700;
+            --trails-purple: #c084fc;
+            --dnt-cyan: #06b6d4;
+            --poi-yellow: #eab308;
             --bus-red: #ef4444;
         }
         
@@ -58,7 +60,7 @@
             pointer-events: none;
         }
         
-        .nav-buttons { display: flex; gap: 6px; align-items: center; }
+        .nav-buttons { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
         
         .btn {
             padding: 6px 12px;
@@ -82,7 +84,9 @@
 
         .btn-winter.active { background: var(--winter-blue); border-color: #fff; font-weight: 700; }
         .btn-summer.active { background: var(--summer-green); border-color: #fff; font-weight: 700; }
-        .btn-flights.active { background: #d97706; border-color: #fff; font-weight: 700; color: #fff; }
+        .btn-stier.active { background: var(--trails-purple); border-color: #fff; font-weight: 700; color: #fff; }
+        .btn-dnt.active { background: var(--dnt-cyan); border-color: #fff; font-weight: 700; color: #fff; }
+        .btn-poi.active { background: var(--poi-yellow); border-color: #fff; font-weight: 700; color: #111; }
         .btn-bus.active { background: #dc2626; border-color: #fff; font-weight: 700; color: #fff; }
 
         #map-container {
@@ -98,6 +102,7 @@
             background: var(--bg-color);
         }
 
+        /* STATUSLINJE OG PROGRESJONSBAR */
         #loading-status {
             position: absolute;
             bottom: 30px;
@@ -110,12 +115,46 @@
             font-size: 0.85rem;
             z-index: 1000;
             pointer-events: none;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.4s ease;
             white-space: nowrap;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 6px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            min-width: 220px;
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--highlight-orange);
+            transition: width 0.3s ease;
+        }
+
+        .progress-bar.indeterminate {
+            width: 50%;
+            animation: progress-slide 1.2s infinite ease-in-out;
+        }
+
+        @keyframes progress-slide {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(200%); }
         }
 
         .spinner {
@@ -168,12 +207,9 @@
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .3s; border-radius: 20px; }
         .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
         
-        #flight-panel input:checked + .slider { background-color: #f59e0b; }
         #bus-panel input:checked + .slider { background-color: #ef4444; }
         
         input:checked + .slider:before { transform: translateX(16px); }
-
-        .alt-slider { width: 60px; cursor: pointer; accent-color: #f59e0b; }
         
         .counter-box { 
             position: fixed; 
@@ -193,7 +229,6 @@
             font-size: 0.8rem; 
             display: none;
         }
-        #counter.active { display: block; color: #ffd700; }
         #bus-counter.active { display: block; color: #ef4444; }
 
         .overlay-canvas {
@@ -211,13 +246,10 @@
             background: #1a1a1a !important;
         }
         
-        /* Spesifikke popup-farger for fly og buss (Fly satt til gul #ffd700) */
-        .flight-popup .leaflet-popup-content-wrapper {
-            border-color: #ffd700 !important;
-        }
-        .bus-popup .leaflet-popup-content-wrapper {
-            border-color: #ef4444 !important;
-        }
+        .bus-popup .leaflet-popup-content-wrapper { border-color: #ef4444 !important; }
+        .trail-popup .leaflet-popup-content-wrapper { border-color: var(--trails-purple) !important; }
+        .dnt-popup .leaflet-popup-content-wrapper { border-color: var(--dnt-cyan) !important; }
+        .poi-popup .leaflet-popup-content-wrapper { border-color: var(--poi-yellow) !important; }
 
         .popup-link-btn {
             display: inline-block;
@@ -284,24 +316,15 @@
         <div class="nav-buttons">
             <button id="btn-reset" class="btn btn-reset">🔄 Nullstill</button>
             <button id="btn-vinter" class="btn btn-winter">❄ Vinter</button>
-            <button id="btn-sommer" class="btn btn-summer">☀️️ Sommer</button>
-            <button id="btn-fly" class="btn btn-flights">✈️ Fly</button>
+            <button id="btn-sommer" class="btn btn-summer">☀ Sommer</button>
+            <button id="btn-stier" class="btn btn-stier">🗺️ Stier</button>
+            <button id="btn-dnt" class="btn btn-dnt">🥾 Turløyper</button>
+            <button id="btn-poi" class="btn btn-poi">📍 Severdigheter</button>
             <button id="btn-buss" class="btn btn-bus">🚌 Buss</button>
         </div>
     </header>
 
     <div class="panels-container">
-        <!-- FLY PANEL -->
-        <div id="flight-panel" class="ui-panel">
-            <div class="row">Haler: <label class="switch"><input type="checkbox" id="trailSwitch" checked><span class="slider"></span></label></div>
-            <div class="row">Flynr: <label class="switch"><input type="checkbox" id="flightNumSwitch"><span class="slider"></span></label></div>
-            <div class="row">Kallesignal: <label class="switch"><input type="checkbox" id="callsignSwitch"><span class="slider"></span></label></div>
-            <div class="row">Registrering: <label class="switch"><input type="checkbox" id="regSwitch"><span class="slider"></span></label></div>
-            <div class="row">Høyde (Av/Fot/m): <input type="range" id="altSlider" class="alt-slider" min="0" max="2" value="0"></div>
-            <div class="row">Fra: <label class="switch"><input type="checkbox" id="originSwitch"><span class="slider"></span></label></div>
-            <div class="row">Til: <label class="switch"><input type="checkbox" id="destSwitch"><span class="slider"></span></label></div>
-        </div>
-
         <!-- BUSS PANEL -->
         <div id="bus-panel" class="ui-panel">
             <div class="row">Linjenr: <label class="switch"><input type="checkbox" id="busLineSwitch" checked><span class="slider"></span></label></div>
@@ -311,15 +334,19 @@
     </div>
 
     <div class="counter-box">
-        <div id="counter" class="counter">Fly synlige: 0</div>
         <div id="bus-counter" class="counter">Busser: Laster...</div>
     </div>
 
     <div id="map-container">
         <div id="map"></div>
         <div id="loading-status">
-            <span class="spinner"></span>
-            <span id="loading-text">Leser inn spor...</span>
+            <div class="status-header">
+                <span class="spinner" id="loading-spinner"></span>
+                <span id="loading-text">Leser inn spor...</span>
+            </div>
+            <div class="progress-bar-container" id="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
         </div>
     </div>
 
@@ -340,13 +367,363 @@
             map.zoomControl.setPosition('topleft');
         }
 
-        // CARTO Basemap med API-nøkkel påkoblet
+        // CARTO Basemap mørkt kart
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=cb1_2o3a_1_671194bbedbad28841272141', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a> &copy; Entur',
             subdomains: 'abcd',
             maxZoom: 20
         }).addTo(map);
 
+        /* ==========================================================================
+           PROGRESJONS- OG STATUSKONTROLL
+           ========================================================================== */
+        const loadingStatusEl = document.getElementById('loading-status');
+        const loadingTextEl = document.getElementById('loading-text');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        let hideStatusTimeout = null;
+
+        function visStatus(melding, prosent = null, ubestemt = false, farge = 'var(--highlight-orange)') {
+            if (hideStatusTimeout) clearTimeout(hideStatusTimeout);
+            loadingStatusEl.style.opacity = '1';
+            loadingStatusEl.style.display = 'flex';
+            loadingTextEl.textContent = melding;
+
+            if (prosent !== null || ubestemt) {
+                progressContainer.style.display = 'block';
+                progressBar.style.backgroundColor = farge;
+                if (ubestemt) {
+                    progressBar.classList.add('indeterminate');
+                    progressBar.style.width = '50%';
+                } else {
+                    progressBar.classList.remove('indeterminate');
+                    progressBar.style.width = Math.min(100, Math.max(0, prosent)) + '%';
+                }
+            } else {
+                progressContainer.style.display = 'none';
+            }
+        }
+
+        function skjultStatus(forsinkelseMs = 800) {
+            hideStatusTimeout = setTimeout(() => {
+                loadingStatusEl.style.opacity = '0';
+            }, forsinkelseMs);
+        }
+
+        function formaterNavn(tags, standardType) {
+            if (tags.name && !tags.name.match(/^[a-z]{2,4}\d+$/i)) return tags.name;
+            if (tags.description) return tags.description;
+            if (tags.ref) return `Rute ${tags.ref}`;
+            return standardType;
+        }
+
+        /* ==========================================================================
+           1. STIER & TRÅKK
+           ========================================================================== */
+        const btnStier = document.getElementById('btn-stier');
+        let stierActive = false;
+        let stierLayerGroup = L.layerGroup();
+        let isFetchingStier = false;
+
+        async function hentStierStreker() {
+            if (!stierActive || isFetchingStier) return;
+            if (map.getZoom() < 10) {
+                visStatus("Zoom inn nærmere for å laste stier...", 100, false, 'var(--trails-purple)');
+                skjultStatus(2000);
+                return;
+            }
+
+            visStatus("Henter stier og tråkk fra OSM...", null, true, 'var(--trails-purple)');
+
+            const b = map.getBounds();
+            const south = b.getSouth().toFixed(3);
+            const west = b.getWest().toFixed(3);
+            const north = b.getNorth().toFixed(3);
+            const east = b.getEast().toFixed(3);
+
+            const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json][timeout:12];way["highway"~"path|footway|track"](${south},${west},${north},${east});out geom tags;`;
+
+            isFetchingStier = true;
+
+            try {
+                let res = await fetch(overpassUrl);
+                if (!res.ok) res = await fetch(`https://corsproxy.io/?${encodeURIComponent(overpassUrl)}`);
+                if (!res.ok) throw new Error("Feil ved hente stier");
+
+                const json = await res.json();
+                stierLayerGroup.clearLayers();
+
+                if (json && json.elements) {
+                    const total = json.elements.length;
+                    visStatus(`Tegner opp ${total} stier...`, 50, false, 'var(--trails-purple)');
+
+                    json.elements.forEach(el => {
+                        if (el.geometry && el.geometry.length > 1) {
+                            const latlngs = el.geometry.map(pt => [pt.lat, pt.lon]);
+                            const tags = el.tags || {};
+
+                            const stitype = tags.highway === 'path' ? 'Sti / Tråkk' : (tags.highway === 'track' ? 'Traktorvei' : 'Gangvei');
+                            const tittel = formaterNavn(tags, stitype);
+                            const underlag = tags.surface ? `<br>Underlag: <b>${tags.surface}</b>` : '';
+                            const vanskegrad = tags.sac_scale ? `<br>Gradering: <b>${tags.sac_scale.replace('_', ' ')}</b>` : '';
+                            const merking = tags.marked === 'yes' ? '<br>Merking: <b>Ja (Rød/Blå)</b>' : '';
+
+                            const line = L.polyline(latlngs, {
+                                color: '#c084fc',
+                                weight: 3,
+                                opacity: 0.8,
+                                dashArray: tags.highway === 'path' ? '5, 5' : null
+                            });
+
+                            line.bindPopup(`
+                                <div class="trail-popup">
+                                    <b style="font-size:14px; color:#c084fc;">${tittel}</b><br>
+                                    <span style="font-size:12px; color:#aaa;">${stitype}</span>
+                                    ${underlag}
+                                    ${vanskegrad}
+                                    ${merking}
+                                </div>
+                            `, { className: 'trail-popup' });
+
+                            line.on('mouseover', function() { line.setStyle({ color: '#f0abfc', weight: 5, opacity: 1 }); });
+                            line.on('mouseout', function() { line.setStyle({ color: '#c084fc', weight: 3, opacity: 0.8 }); });
+
+                            stierLayerGroup.addLayer(line);
+                        }
+                    });
+                }
+
+                if (stierActive && !map.hasLayer(stierLayerGroup)) stierLayerGroup.addTo(map);
+                visStatus("Stier lastet inn!", 100, false, 'var(--trails-purple)');
+                skjultStatus();
+            } catch (err) {
+                console.warn("Kunne ikke hente sti-streker:", err);
+                visStatus("Feil ved henting av stier", 100, false, 'red');
+                skjultStatus(2000);
+            } finally {
+                isFetchingStier = false;
+            }
+        }
+
+        function toggleStier() {
+            stierActive = !stierActive;
+            if (stierActive) {
+                btnStier.classList.add('active');
+                stierLayerGroup.addTo(map);
+                hentStierStreker();
+                map.on('moveend zoomend', hentStierStreker);
+            } else {
+                btnStier.classList.remove('active');
+                map.off('moveend zoomend', hentStierStreker);
+                map.removeLayer(stierLayerGroup);
+                stierLayerGroup.clearLayers();
+            }
+        }
+
+        btnStier.addEventListener('click', toggleStier);
+
+        /* ==========================================================================
+           2. TURLØYPER & DNT-RUTER (OPTIMERT FOR HØY HASTIGHET)
+           ========================================================================== */
+        const btnDnt = document.getElementById('btn-dnt');
+        let dntActive = false;
+        let dntLayerGroup = L.layerGroup();
+        let isFetchingDnt = false;
+
+        async function hentDntRuter() {
+            if (!dntActive || isFetchingDnt) return;
+            if (map.getZoom() < 8) {
+                visStatus("Zoom inn for å vise turløyper...", 100, false, 'var(--dnt-cyan)');
+                skjultStatus(2000);
+                return;
+            }
+
+            visStatus("Henter turløyper & DNT-ruter...", null, true, 'var(--dnt-cyan)');
+
+            const b = map.getBounds();
+            const south = b.getSouth().toFixed(3);
+            const west = b.getWest().toFixed(3);
+            const north = b.getNorth().toFixed(3);
+            const east = b.getEast().toFixed(3);
+
+            // Rask spørring etter merkede turløyper og DNT-stier
+            const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json][timeout:10];(way["informational"="route"](${south},${west},${north},${east});way["osmc:symbol"](${south},${west},${north},${east});way["route"="hiking"](${south},${west},${north},${east});way["marked"="yes"](${south},${west},${north},${east}););out geom tags;`;
+
+            isFetchingDnt = true;
+
+            try {
+                let res = await fetch(overpassUrl);
+                if (!res.ok) res = await fetch(`https://corsproxy.io/?${encodeURIComponent(overpassUrl)}`);
+                if (!res.ok) throw new Error("Feil ved hente DNT-ruter");
+
+                const json = await res.json();
+                dntLayerGroup.clearLayers();
+
+                if (json && json.elements && json.elements.length > 0) {
+                    visStatus(`Tegner opp ${json.elements.length} turløyper...`, 70, false, 'var(--dnt-cyan)');
+
+                    json.elements.forEach(way => {
+                        if (way.geometry && way.geometry.length > 1) {
+                            const latlngs = way.geometry.map(pt => [pt.lat, pt.lon]);
+                            const tags = way.tags || {};
+
+                            const rutenavn = formaterNavn(tags, 'Merket DNT-rute / Turløype');
+                            const operator = tags.operator || tags.network || 'DNT / Troms Turlag';
+                            const merking = tags["osmc:symbol"] ? `<br>Symbol: <b>${tags["osmc:symbol"]}</b>` : '<br>Merking: <b>Rød T / Merkestikker</b>';
+
+                            const line = L.polyline(latlngs, {
+                                color: '#06b6d4',
+                                weight: 3.8,
+                                opacity: 0.9
+                            });
+
+                            line.bindPopup(`
+                                <div class="dnt-popup">
+                                    <b style="font-size:14px; color:#06b6d4;">${rutenavn}</b><br>
+                                    <span style="font-size:12px; color:#aaa;">Ansvarlig: ${operator}</span>
+                                    ${merking}
+                                </div>
+                            `, { className: 'dnt-popup' });
+
+                            line.on('mouseover', function() { line.setStyle({ color: '#67e8f9', weight: 5.5, opacity: 1 }); });
+                            line.on('mouseout', function() { line.setStyle({ color: '#06b6d4', weight: 3.8, opacity: 0.9 }); });
+
+                            dntLayerGroup.addLayer(line);
+                        }
+                    });
+                }
+
+                if (dntActive && !map.hasLayer(dntLayerGroup)) dntLayerGroup.addTo(map);
+                visStatus("Turløyper lastet inn!", 100, false, 'var(--dnt-cyan)');
+                skjultStatus();
+            } catch (err) {
+                console.warn("Kunne ikke hente DNT-ruter:", err);
+                visStatus("Feil ved henting av turløyper", 100, false, 'red');
+                skjultStatus(2000);
+            } finally {
+                isFetchingDnt = false;
+            }
+        }
+
+        function toggleDnt() {
+            dntActive = !dntActive;
+            if (dntActive) {
+                btnDnt.classList.add('active');
+                dntLayerGroup.addTo(map);
+                hentDntRuter();
+                map.on('moveend zoomend', hentDntRuter);
+            } else {
+                btnDnt.classList.remove('active');
+                map.off('moveend zoomend', hentDntRuter);
+                map.removeLayer(dntLayerGroup);
+                dntLayerGroup.clearLayers();
+            }
+        }
+
+        btnDnt.addEventListener('click', toggleDnt);
+
+        /* ==========================================================================
+           3. SEVERDIGHETER & POIs
+           ========================================================================== */
+        const btnPoi = document.getElementById('btn-poi');
+        let poiActive = false;
+        let poiLayerGroup = L.layerGroup();
+        let isFetchingPoi = false;
+
+        async function hentPoiData() {
+            if (!poiActive || isFetchingPoi) return;
+            if (map.getZoom() < 10) return;
+
+            visStatus("Henter fjellpass og severdigheter...", null, true, 'var(--poi-yellow)');
+
+            const b = map.getBounds();
+            const south = b.getSouth().toFixed(3);
+            const west = b.getWest().toFixed(3);
+            const north = b.getNorth().toFixed(3);
+            const east = b.getEast().toFixed(3);
+
+            const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json][timeout:10];(node["mountain_pass"="yes"](${south},${west},${north},${east});node["tourism"~"viewpoint|alpine_hut|wilderness_hut|shelter"](${south},${west},${north},${east});node["amenity"="shelter"](${south},${west},${north},${east}););out tags geom;`;
+
+            isFetchingPoi = true;
+
+            try {
+                let res = await fetch(overpassUrl);
+                if (!res.ok) res = await fetch(`https://corsproxy.io/?${encodeURIComponent(overpassUrl)}`);
+                if (!res.ok) throw new Error("Feil ved hente POIs");
+
+                const json = await res.json();
+                poiLayerGroup.clearLayers();
+
+                if (json && json.elements) {
+                    json.elements.forEach(node => {
+                        const tags = node.tags || {};
+                        const lat = node.lat;
+                        const lon = node.lon;
+
+                        let poiType = "Severdighet";
+                        let ikon = "📍";
+
+                        if (tags.mountain_pass === "yes") { poiType = "Fjellpass / Skard"; ikon = "🏔️"; }
+                        else if (tags.tourism === "viewpoint") { poiType = "Utsiktspunkt"; ikon = "👁️"; }
+                        else if (tags.tourism === "alpine_hut" || tags.tourism === "wilderness_hut") { poiType = "Turisthytte / Koie"; ikon = "🏠"; }
+                        else if (tags.shelter_type || tags.amenity === "shelter") { poiType = "Gapahuk / Ly"; ikon = "⛺"; }
+
+                        const navn = tags.name || poiType;
+                        const hoyde = tags.ele ? `<br>Høyde: <b>${tags.ele} m.o.h.</b>` : '';
+
+                        const marker = L.circleMarker([lat, lon], {
+                            radius: 6,
+                            fillColor: '#eab308',
+                            color: '#ffffff',
+                            weight: 1.5,
+                            opacity: 1,
+                            fillOpacity: 0.9
+                        });
+
+                        marker.bindPopup(`
+                            <div class="poi-popup">
+                                <b style="font-size:14px; color:#eab308;">${ikon} ${navn}</b><br>
+                                <span style="font-size:12px; color:#aaa;">${poiType}</span>
+                                ${hoyde}
+                            </div>
+                        `, { className: 'poi-popup' });
+
+                        poiLayerGroup.addLayer(marker);
+                    });
+                }
+
+                if (poiActive && !map.hasLayer(poiLayerGroup)) poiLayerGroup.addTo(map);
+                visStatus("Severdigheter lastet inn!", 100, false, 'var(--poi-yellow)');
+                skjultStatus();
+            } catch (err) {
+                console.warn("Kunne ikke hente POIs:", err);
+                visStatus("Feil ved henting av severdigheter", 100, false, 'red');
+                skjultStatus(2000);
+            } finally {
+                isFetchingPoi = false;
+            }
+        }
+
+        function togglePoi() {
+            poiActive = !poiActive;
+            if (poiActive) {
+                btnPoi.classList.add('active');
+                poiLayerGroup.addTo(map);
+                hentPoiData();
+                map.on('moveend zoomend', hentPoiData);
+            } else {
+                btnPoi.classList.remove('active');
+                map.off('moveend zoomend', hentPoiData);
+                map.removeLayer(poiLayerGroup);
+                poiLayerGroup.clearLayers();
+            }
+        }
+
+        btnPoi.addEventListener('click', togglePoi);
+
+        /* ==========================================================================
+           GPX INNLASTING FOR TOPPER (MED PROGRESJONSBAR)
+           ========================================================================== */
         const gpxOptions = {
             async: true,
             polyline_options: {
@@ -364,7 +741,6 @@
         const bounds = L.latLngBounds();
         const lagredeSpor = [];
 
-        // Henter toppene fra en JSON-fil (vinter_topper.json / sommer_topper.json)
         async function hentTopper(url, type) {
             try {
                 const response = await fetch(url);
@@ -383,7 +759,6 @@
             }
         }
 
-        // Lager en unik liste over alle GPX-spor (hovedspor + ekstraspor).
         function byggSporliste(topper) {
             const sporMap = new Map();
 
@@ -429,27 +804,14 @@
             if (isFinishedLoading) return;
             loadedCount++;
             
-            const statusText = document.getElementById('loading-text');
-            if (statusText) {
-                statusText.textContent = `Laster inn spor... ${loadedCount}/${totalFiles}`;
-            }
+            const prosent = (loadedCount / totalFiles) * 100;
+            visStatus(`Laster inn spor... ${loadedCount}/${totalFiles}`, prosent, false, 'var(--highlight-orange)');
 
             if (loadedCount >= totalFiles) {
                 isFinishedLoading = true;
                 zoomTilAktiveSpor();
-                const statusEl = document.getElementById('loading-status');
-                if (statusEl) {
-                    const visningstid = feilede.length ? 6000 : 0;
-                    if (feilede.length) {
-                        document.getElementById('loading-text').textContent =
-                            `${feilede.length} spor kunne ikke lastes (se konsollen for filnavn)`;
-                        console.warn('Spor som feilet:', feilede);
-                    }
-                    setTimeout(() => {
-                        statusEl.style.opacity = '0';
-                        setTimeout(() => { if (statusEl) statusEl.remove(); }, 500);
-                    }, visningstid);
-                }
+                visStatus(`Alle ${totalFiles} spor er lastet inn!`, 100, false, 'var(--summer-green)');
+                skjultStatus(1500);
             }
         }
 
@@ -565,6 +927,7 @@
         }
 
         async function initialiserKart() {
+            visStatus("Leser inn spor...", 0, false);
             const [vinterTopper, sommerTopper] = await Promise.all([
                 hentTopper('vinter_topper.json', 'vinter'),
                 hentTopper('sommer_topper.json', 'sommer')
@@ -575,12 +938,10 @@
             totalFiles = alleTopper.length;
 
             if (totalFiles === 0) {
-                const statusEl = document.getElementById('loading-status');
-                if (statusEl) statusEl.innerHTML = "Ingen spor funnet.";
+                visStatus("Ingen spor funnet.", 100, false);
+                skjultStatus(2000);
                 return;
             }
-
-            document.getElementById('loading-text').textContent = `Laster inn spor... 0/${totalFiles}`;
 
             const samtidige = isTouchDevice ? 4 : 10;
             let neste = 0;
@@ -646,188 +1007,7 @@
         }
 
         /* ==========================================================================
-           FLYRADAR FUNKSJONALITET (OPENSKY NETWORK API - DIREKTE CORS M/FALLBACK)
-           ========================================================================== */
-        const btnFly = document.getElementById('btn-fly');
-        const flightPanel = document.getElementById('flight-panel');
-        const counterEl = document.getElementById('counter');
-        
-        let flightsActive = false;
-        let flights = {};
-        let flightInterval = null;
-
-        const flightCanvas = L.DomUtil.create('canvas', 'leaflet-zoom-animated overlay-canvas');
-        map.getPanes().overlayPane.appendChild(flightCanvas);
-        const flightCtx = flightCanvas.getContext('2d');
-
-        async function fetchFlights() {
-            if (!flightsActive) return;
-            const b = map.getBounds();
-            
-            // OpenSky Network API
-            const openSkyUrl = `https://opensky-network.org/api/states/all?lamin=${b.getSouth().toFixed(4)}&lamin2=0&lamax=${b.getNorth().toFixed(4)}&lomin=${b.getWest().toFixed(4)}&lomax=${b.getEast().toFixed(4)}`;
-            
-            try {
-                let res = await fetch(openSkyUrl);
-                
-                // Fallback via proxy dersom direkte henting mot formodning feiler
-                if (!res.ok) {
-                    res = await fetch(`https://corsproxy.io/?${encodeURIComponent(openSkyUrl)}`);
-                }
-                
-                if (!res.ok) return;
-                const data = await res.json();
-                
-                if (!data || !data.states) {
-                    counterEl.innerText = "Fly synlige: 0";
-                    return;
-                }
-
-                let count = 0;
-                const activeIds = new Set();
-
-                data.states.forEach(state => {
-                    const id = state[0]; // ICAO24 Transponder-adresse
-                    const callsign = (state[1] || "").trim() || "Ukjent";
-                    const lon = state[5];
-                    const lat = state[6];
-                    const baroAlt = state[7]; // Meter over havet
-                    const geoAlt = state[13];
-                    const altitudeMeters = geoAlt || baroAlt || 0;
-                    const altitudeFeet = Math.round(altitudeMeters * 3.28084);
-
-                    if (lat === null || lon === null) return;
-
-                    activeIds.add(id);
-
-                    if (!flights[id]) flights[id] = { history: [] };
-                    
-                    flights[id].lat = lat;
-                    flights[id].lon = lon;
-                    flights[id].flight = callsign;
-                    flights[id].callsign = callsign;
-                    flights[id].reg = id.toUpperCase(); 
-                    flights[id].alt = altitudeFeet; 
-                    flights[id].origin = "N/A";
-                    flights[id].dest = "N/A";
-                    
-                    flights[id].history.push([lat, lon]);
-                    if (flights[id].history.length > 60) flights[id].history.shift();
-                    count++;
-                });
-
-                for (let id in flights) {
-                    if (!activeIds.has(id)) {
-                        delete flights[id];
-                    }
-                }
-
-                counterEl.innerText = "Fly synlige: " + count;
-            } catch(e) {
-                console.error("Feil ved henting av flydata:", e);
-            }
-        }
-
-        function drawFlights() {
-            if (!flightsActive) return;
-            flightCtx.clearRect(0, 0, flightCanvas.width, flightCanvas.height);
-            const tl = map.latLngToLayerPoint(map.getBounds().getNorthWest());
-            
-            const showTrails = document.getElementById('trailSwitch').checked;
-            const showFlight = document.getElementById('flightNumSwitch').checked;
-            const showCallsign = document.getElementById('callsignSwitch').checked;
-            const showReg = document.getElementById('regSwitch').checked;
-            const altMode = document.getElementById('altSlider').value;
-            const showOrigin = document.getElementById('originSwitch').checked;
-            const showDest = document.getElementById('destSwitch').checked;
-
-            for (let id in flights) {
-                const f = flights[id];
-                const p = map.latLngToLayerPoint([f.lat, f.lon]);
-                
-                flightCtx.fillStyle = "#ffd700";
-                flightCtx.beginPath(); 
-                flightCtx.arc(p.x - tl.x, p.y - tl.y, 4, 0, Math.PI * 2); 
-                flightCtx.fill();
-                
-                flightCtx.strokeStyle = "rgba(255, 215, 0, 0.4)";
-                flightCtx.lineWidth = 2;
-                flightCtx.stroke();
-
-                let labels = [];
-                if (showFlight) labels.push(f.flight);
-                if (showCallsign) labels.push(f.callsign);
-                if (showReg) labels.push(f.reg || "N/A");
-                
-                if (altMode == 1) labels.push(f.alt + "ft");
-                else if (altMode == 2) labels.push(Math.round(f.alt * 0.3048) + "m");
-                
-                if (showOrigin && showDest) labels.push(`${f.origin || '??'} → ${f.dest || '??'}`);
-                else if (showOrigin) labels.push(`${f.origin || '??'} →`);
-                else if (showDest) labels.push(`→ ${f.dest || '??'}`);
-
-                if (labels.length > 0) {
-                    flightCtx.font = "11px -apple-system, sans-serif";
-                    flightCtx.fillStyle = "#ffea75";
-                    flightCtx.fillText(labels.join(" | "), p.x - tl.x + 9, p.y - tl.y + 4);
-                }
-
-                if (showTrails && f.history.length > 2) {
-                    flightCtx.beginPath();
-                    flightCtx.strokeStyle = "rgba(255, 215, 0, 0.5)";
-                    flightCtx.lineWidth = 1.5;
-                    const pStart = map.latLngToLayerPoint(f.history[0]);
-                    flightCtx.moveTo(pStart.x - tl.x, pStart.y - tl.y);
-                    for (let i = 1; i < f.history.length - 1; i++) {
-                        const p = map.latLngToLayerPoint(f.history[i]);
-                        const next = map.latLngToLayerPoint(f.history[i+1]);
-                        flightCtx.quadraticCurveTo(p.x - tl.x, p.y - tl.y, (p.x + next.x)/2 - tl.x, (p.y + next.y)/2 - tl.y);
-                    }
-                    flightCtx.stroke();
-                }
-            }
-            requestAnimationFrame(drawFlights);
-        }
-
-        function toggleFlyVisning() {
-            flightsActive = !flightsActive;
-
-            if (flightsActive) {
-                btnFly.classList.add('active');
-                flightPanel.classList.add('active');
-                counterEl.classList.add('active');
-                flightCanvas.style.display = 'block';
-
-                updateCanvasPosition(flightCanvas, flightCtx, flightsActive);
-                fetchFlights();
-                flightInterval = setInterval(fetchFlights, 10000);
-                drawFlights();
-
-                map.on('move zoom', handleFlightMove);
-                map.on('moveend', fetchFlights);
-            } else {
-                btnFly.classList.remove('active');
-                flightPanel.classList.remove('active');
-                counterEl.classList.remove('active');
-                flightCanvas.style.display = 'none';
-
-                if (flightInterval) clearInterval(flightInterval);
-                flightCtx.clearRect(0, 0, flightCanvas.width, flightCanvas.height);
-                flights = {};
-
-                map.off('move zoom', handleFlightMove);
-                map.off('moveend', fetchFlights);
-            }
-        }
-
-        function handleFlightMove() {
-            updateCanvasPosition(flightCanvas, flightCtx, flightsActive);
-        }
-
-        btnFly.addEventListener('click', toggleFlyVisning);
-
-        /* ==========================================================================
-           BUSSRADAR FUNKSJONALITET (ENTUR VEHICLE API / GRAPHQL)
+           BUSSRADAR FUNKSJONALITET
            ========================================================================== */
         const btnBuss = document.getElementById('btn-buss');
         const busPanel = document.getElementById('bus-panel');
@@ -964,12 +1144,10 @@
             requestAnimationFrame(drawBuses);
         }
 
-        // Felles klikk-håndtering for både buss og fly
         map.on('click', function(e) {
             const clickPoint = map.latLngToContainerPoint(e.latlng);
             const tl = map.latLngToLayerPoint(map.getBounds().getNorthWest());
 
-            // 1. Sjekk om det klikkes på en buss
             if (busesActive) {
                 let clickedBus = null;
                 let minDist = 20;
@@ -998,39 +1176,6 @@
                             <b style="font-size:14px; color:#fff;">Linje ${clickedBus.line}</b><br>
                             <span style="font-size:12px; color:#aaa;">${clickedBus.name || 'Troms Fylkestrafikk'}</span>
                             ${delayText}
-                        `)
-                        .openOn(map);
-                    return;
-                }
-            }
-
-            // 2. Sjekk om det klikkes på et fly
-            if (flightsActive) {
-                let clickedFlight = null;
-                let minDist = 20;
-
-                for (let id in flights) {
-                    const f = flights[id];
-                    const p = map.latLngToLayerPoint([f.lat, f.lon]);
-                    const screenX = p.x - tl.x;
-                    const screenY = p.y - tl.y;
-
-                    const dist = Math.hypot(clickPoint.x - screenX, clickPoint.y - screenY);
-                    if (dist < minDist) {
-                        minDist = dist;
-                        clickedFlight = f;
-                    }
-                }
-
-                if (clickedFlight) {
-                    const altMeters = Math.round(clickedFlight.alt * 0.3048);
-                    L.popup({ offset: [0, -5], className: 'flight-popup' })
-                        .setLatLng([clickedFlight.lat, clickedFlight.lon])
-                        .setContent(`
-                            <b style="font-size:14px; color:#fff;">Fly: ${clickedFlight.flight || 'Ukjent'}</b><br>
-                            <span style="font-size:12px; color:#aaa;">Kallesignal: ${clickedFlight.callsign || 'N/A'} | Reg: ${clickedFlight.reg || 'N/A'}</span><br>
-                            Høyde: ${clickedFlight.alt} ft (${altMeters} m)<br>
-                            Rute: ${clickedFlight.origin || '??'} ➔ ${clickedFlight.dest || '??'}
                         `)
                         .openOn(map);
                     return;
