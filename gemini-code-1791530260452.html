@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Flykart</title>
+  
+  <!-- Leaflet CSS for kartvisning -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+    #header {
+      background-color: #1e293b;
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #map {
+      height: calc(100vh - 50px);
+      width: 100vw;
+    }
+    .status-text {
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="header">
+    <h3 style="margin: 0;">✈️ Live Flyradar (Norge)</h3>
+    <span id="status" class="status-text">Laster flydata...</span>
+  </div>
+
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // 1. Initialiser kartet sentrert over Norge
+    const map = L.map('map').setView([60.5, 9.5], 6);
+
+    // 2. Legg til OpenStreetMap bakgrunnskart
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap-bidragsytere'
+    }).addTo(map);
+
+    // Lagring for kartmarkører slik at de kan oppdateres uten å blinke
+    const planeMarkers = {};
+
+    // Custom SVG-ikon for fly
+    const planeSvg = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#0284c7" width="28" height="28">
+        <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+      </svg>
+    `;
+
+    // 3. Funksjon for å hente live flydata fra OpenSky Network
+    async function updateFlights() {
+      const statusEl = document.getElementById('status');
+      
+      try {
+        // Geografisk boks som dekker Sør- og Midt-Norge
+        const response = await fetch('https://opensky-network.org/api/states/all?lamin=57.5&lomin=4.0&lamax=65.0&lomax=14.0');
+        
+        if (!response.ok) throw new Error('Kunne ikke hente data');
+        
+        const data = await response.json();
+        const flights = data.states || [];
+
+        statusEl.innerText = `Viser ${flights.length} fly i området (Sist oppdatert: ${new Date().toLocaleTimeString('no-NO')})`;
+
+        flights.forEach(flight => {
+          const icao24 = flight[0];
+          const callsign = (flight[1] || 'Ukjent').trim();
+          const longitude = flight[5];
+          const latitude = flight[6];
+          const altitude = flight[7] ? Math.round(flight[7]) : 'Ukjent';
+          const heading = flight[10] || 0; // Kurs i grader
+
+          if (latitude && longitude) {
+            // Lag rotert ikon med CSS-transform
+            const customIcon = L.divIcon({
+              html: `<div style="transform: rotate(${heading}deg); transform-origin: center center;">${planeSvg}</div>`,
+              className: '',
+              iconSize: [28, 28],
+              iconAnchor: [14, 14]
+            });
+
+            // Hvis flyet allerede finnes på kartet, flytt det. Hvis ikke, opprett ny markør.
+            if (planeMarkers[icao24]) {
+              planeMarkers[icao24].setLatLng([latitude, longitude]);
+              planeMarkers[icao24].setIcon(customIcon);
+            } else {
+              const marker = L.marker([latitude, longitude], { icon: customIcon })
+                .bindPopup(`
+                  <b>Kallesignal:</b> ${callsign}<br>
+                  <b>Høyde:</b> ${altitude} meter<br>
+                  <b>Kurs:</b> ${Math.round(heading)}°
+                `)
+                .addTo(map);
+
+              planeMarkers[icao24] = marker;
+            }
+          }
+        });
+
+      } catch (err) {
+        console.error(err);
+        statusEl.innerText = 'Feil ved henting av flydata.';
+      }
+    }
+
+    // 4. Hent data ved oppstart og sett opp automatisk oppdatering hvert 10. sekund
+    updateFlights();
+    setInterval(updateFlights, 10000);
+  </script>
+
+</body>
+</html>
