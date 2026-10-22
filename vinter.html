@@ -46,17 +46,39 @@
         }
 
         #video-buttons-container { 
-            position: absolute; top: 10px; right: 10px; z-index: 1000; 
-            display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
-            width: 240px;
+            position: absolute; top: 2px; right: 2px; z-index: 1000; 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 6px; align-items: stretch;
+            width: 300px; box-sizing: border-box;
+            /* Aldri høyere enn kartet - scroller heller innenfor panelet */
+            max-height: calc(100% - 20px); overflow-y: auto; overflow-x: hidden;
+            overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+            padding: 8px 8px 4px 0; /* plass til årstall-merkene som stikker utenfor radene */
+            scrollbar-width: thin;
         }
+        #video-buttons-container:empty { display: none; }
+        /* Alt som ikke er en lenkeknapp tar hele bredden; lenkeknapper, Brattskala og lukket GPX-boks deler rad to og to */
+        #video-buttons-container > * { grid-column: 1 / -1; min-width: 0; }
+        #video-buttons-container > .video-link-btn,
+        #video-buttons-container > .search-link-btn,
+        #video-buttons-container > .brattskala-rad,
+        #video-buttons-container > .download-area:not(.open) { grid-column: auto; }
+        #video-buttons-container > .btn-full,
+        #video-buttons-container > .download-area.btn-full,
+        #video-buttons-container > .download-area.open { grid-column: 1 / -1; }
+        #video-buttons-container > .menu-top-row { order: 0; }
+        #video-buttons-container > .control-row-container { order: 1; }
+        #video-buttons-container > .desc-box { order: 3; }
+        #video-buttons-container > .video-link-btn,
+        #video-buttons-container > .search-link-btn { order: 4; }
+        #video-buttons-container > .brattskala-rad { order: 5; }
+        #video-buttons-container > .download-area { order: 6; }
 
         .menu-top-row {
             display: flex;
             gap: 6px;
             width: 100%;
             justify-content: flex-end;
-            margin-bottom: 4px;
+            margin-bottom: 0;
         }
 
         .toggle-ui-btn {
@@ -127,7 +149,7 @@
                 z-index: 99999 !important;
                 box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important;
             }
-            #video-buttons-container { width: 220px; }
+            #video-buttons-container { width: min(270px, calc(100% - 20px)); gap: 5px; }
             #map { height: 100vw; min-height: unset; width: 100%; }
         }
 
@@ -181,45 +203,58 @@
         .badge-2026 { background: #d1fae5; color: #065f46; border-color: #065f46; }
 
         .video-link-btn, .search-link-btn {
-            background: rgba(255, 255, 255, 0.95); padding: 8px 12px; border-radius: 8px; 
-            font-weight: 700; text-decoration: none; font-size: 12px; border: 2.5px solid var(--insta-pink);
-            display: flex; align-items: center; gap: 5px; color: var(--insta-pink); 
-            width: 100%; box-sizing: border-box; backdrop-filter: blur(4px); cursor: pointer;
+            background: rgba(255, 255, 255, 0.95); padding: 5px 8px; border-radius: 8px; 
+            font-weight: 700; text-decoration: none; font-size: 11px; line-height: 1.2; border: 2px solid var(--insta-pink);
+            display: flex; align-items: center; gap: 4px; color: var(--insta-pink); 
+            width: 100%; box-sizing: border-box; backdrop-filter: blur(4px); cursor: pointer; min-height: 32px;
+            font-family: inherit; text-align: left;
         }
         .search-link-btn { border-color: var(--strava-blue); color: var(--strava-blue); }
         .strava-link-btn { border-color: var(--strava-orange); color: var(--strava-orange); }
-        .suunto-link-btn { border: 2.5px solid #000; color: var(--dark-grey); }
+        .suunto-link-btn { border: 2px solid #000; color: var(--dark-grey); }
         .suunto-icon { color: var(--suunto-red); font-size: 10px; }
 
         .desc-box {
-            background: rgba(255, 255, 255, 0.95); padding: 8px 10px; border-radius: 8px;
+            background: rgba(255, 255, 255, 0.95); padding: 6px 8px; border-radius: 8px;
             border: 1px solid #ccc; width: 100%; box-sizing: border-box; backdrop-filter: blur(4px);
-            text-align: left; font-size: 11px; color: var(--dark-grey); line-height: 1.4;
+            text-align: left; font-size: 11px; color: var(--dark-grey); line-height: 1.35;
         }
-        .desc-box-title { font-weight: 800; text-transform: uppercase; font-size: 10px; color: #64748b; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+        .desc-box-title { font-weight: 800; text-transform: uppercase; font-size: 10px; color: #64748b; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; }
+        .desc-box-title .chev, .download-header .chev { margin-left: auto; font-size: 9px; transition: transform 0.2s; }
+        .desc-box.collapsed .desc-box-title { margin-bottom: 0; }
+        .desc-box.collapsed .desc-box-body { display: none; }
+        .desc-box.collapsed .chev, .download-area:not(.open) .chev { transform: rotate(-90deg); }
+
+        .brattskala-rad { padding: 3px 6px; min-height: 32px; gap: 4px; }
+        .brattskala-rad .control-label { font-size: 11px; line-height: 1.15; }
+        .brattskala-rad .toggle-group { flex-direction: row; gap: 4px; }
+        .brattskala-rad .toggle-text { display: none; }
         
         .download-area {
             width: 100%; background: rgba(255, 255, 255, 0.95); border-radius: 8px; 
-            border: 2px solid var(--download-blue); padding: 8px 10px; 
+            border: 2px solid var(--download-blue); padding: 5px 8px; 
             box-sizing: border-box; backdrop-filter: blur(4px); text-align: left;
         }
         .download-header { 
-            font-size: 11px; font-weight: 800; color: var(--download-blue); 
-            margin-bottom: 6px; display: flex; align-items: center; gap: 5px;
-            text-transform: uppercase; letter-spacing: 0.5px;
+            font-size: 10px; font-weight: 800; color: var(--download-blue); 
+            margin-bottom: 3px; display: flex; align-items: center; gap: 4px;
+            text-transform: uppercase; letter-spacing: 0.3px; cursor: pointer; user-select: none; line-height: 1.2;
         }
-        .download-links-container { display: flex; flex-wrap: wrap; gap: 8px; }
+        .download-area:not(.open) { min-height: 32px; display: flex; align-items: center; }
+        .download-area:not(.open) .download-header { margin-bottom: 0; width: 100%; }
+        .download-area:not(.open) .download-links-container { display: none; }
+        .download-links-container { display: flex; flex-wrap: wrap; gap: 3px 10px; }
         .dl-link { 
-            font-size: 12px; font-weight: 700; color: var(--download-blue); 
+            font-size: 11px; font-weight: 700; color: var(--download-blue); 
             text-decoration: underline; cursor: pointer;
         }
         .dl-link:hover { color: var(--dark-grey); }
 
         .control-row-container {
             display: flex; align-items: center; justify-content: space-between;
-            background: rgba(255, 255, 255, 0.95); padding: 8px 10px;
+            background: rgba(255, 255, 255, 0.95); padding: 4px 8px;
             border-radius: 8px; border: 1px solid #ccc; width: 100%; 
-            box-sizing: border-box; backdrop-filter: blur(4px); gap: 8px;
+            box-sizing: border-box; backdrop-filter: blur(4px); gap: 6px;
         }
         .control-label { font-size: 11px; font-weight: 700; flex-grow: 1; text-align: left; position: relative; }
         
@@ -795,7 +830,7 @@
 
                             // Legg til kontrollrad for Brattskala inne på den enkelte topp
                             const legendRow = document.createElement('div');
-                            legendRow.className = 'control-row-container';
+                            legendRow.className = 'control-row-container brattskala-rad';
                             legendRow.innerHTML = `
                                 <div class="control-label" style="display:flex; align-items:center; gap:5px;">
                                     <span>🏔️</span> Brattskala
@@ -854,7 +889,8 @@
                             if (topp.beskrivelse) {
                                 const descBox = document.createElement('div');
                                 descBox.className = 'desc-box';
-                                descBox.innerHTML = `<div class="desc-box-title"><span>📝</span> Turbeskrivelse</div>${topp.beskrivelse}`;
+                                descBox.innerHTML = `<div class="desc-box-title"><span>📝</span> Turbeskrivelse<span class="chev">▼</span></div><div class="desc-box-body">${topp.beskrivelse}</div>`;
+                                gjørSammenleggbar(descBox);
                                 videoContainer.appendChild(descBox);
                             }
 
@@ -868,7 +904,8 @@
                     
                             const dlHeader = document.createElement('div');
                             dlHeader.className = 'download-header';
-                            dlHeader.innerHTML = `<span>💾</span> Last ned:`;
+                            dlHeader.innerHTML = `<span>💾</span> Last ned GPX<span class="chev">▼</span>`;
+                            dlHeader.onclick = () => { dlArea.classList.toggle('open'); justerLenkeKnapper(); };
                             dlArea.appendChild(dlHeader);
 
                             const linksCont = document.createElement('div');
@@ -904,11 +941,12 @@
                                 mapsBtn.className = 'search-link-btn';
                                 mapsBtn.style.borderColor = 'var(--new-green)';
                                 mapsBtn.style.color = 'var(--new-green)';
-                                mapsBtn.style.marginTop = '8px';
                                 mapsBtn.innerHTML = `<span>🚘</span> Veibeskrivelse`;
                         
                                 videoContainer.appendChild(mapsBtn);
                             }
+
+                            justerLenkeKnapper();
 
                             map.flyToBounds(l.getBounds(), {padding: [50, 50]});
                         };
@@ -919,6 +957,25 @@
                 });
             })
             .catch(err => console.error("Kunne ikke laste vinter_topper.json:", err));
+
+        // Lenkeknapper, Brattskala og lukket GPX-boks ligger to og to; er antallet oddetall får den siste full bredde
+        function justerLenkeKnapper() {
+            const hent = sel => Array.from(videoContainer.querySelectorAll(':scope > ' + sel));
+            // Samme rekkefølge som i CSS (order)
+            const celler = [
+                ...hent('.video-link-btn, .search-link-btn'),
+                ...hent('.brattskala-rad'),
+                ...hent('.download-area:not(.open)')
+            ];
+            celler.forEach(b => b.classList.remove('btn-full'));
+            if (celler.length % 2 === 1) celler[celler.length - 1].classList.add('btn-full');
+        }
+
+        // Beskrivelsesboksen kan foldes sammen; på mobil er den lukket til å begynne med for å spare plass
+        function gjørSammenleggbar(boks) {
+            if (window.matchMedia('(max-width: 768px)').matches) boks.classList.add('collapsed');
+            boks.querySelector('.desc-box-title').onclick = () => boks.classList.toggle('collapsed');
+        }
 
         document.getElementById('resetBtn').onclick = () => {
             isReseting = true; aktivToppNavn = null; videoContainer.innerHTML = '';
