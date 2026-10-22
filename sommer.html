@@ -120,8 +120,12 @@
         #video-buttons-container > * { grid-column: 1 / -1; min-width: 0; }
         #video-buttons-container > .video-link-btn,
         #video-buttons-container > .search-link-btn,
-        #video-buttons-container > .gallery-link-btn { grid-column: auto; }
-        #video-buttons-container > .btn-full { grid-column: 1 / -1; }
+        #video-buttons-container > .gallery-link-btn,
+        #video-buttons-container > .brattskala-rad,
+        #video-buttons-container > .download-area:not(.open) { grid-column: auto; }
+        #video-buttons-container > .btn-full,
+        #video-buttons-container > .download-area.btn-full,
+        #video-buttons-container > .download-area.open { grid-column: 1 / -1; }
         #video-buttons-container > .menu-top-row { order: 0; }
         #video-buttons-container > .control-row-container,
         #video-buttons-container > .ekstra-slot { order: 1; }
@@ -129,8 +133,8 @@
         #video-buttons-container > .video-link-btn,
         #video-buttons-container > .search-link-btn,
         #video-buttons-container > .gallery-link-btn { order: 4; }
-        #video-buttons-container > .download-area { order: 5; }
-        #video-buttons-container > .brattskala-rad { order: 2; }
+        #video-buttons-container > .brattskala-rad { order: 5; }
+        #video-buttons-container > .download-area { order: 6; }
         .ekstra-slot { display: contents; }
         .ekstra-slot > * { grid-column: 1 / -1; order: 1; }
 
@@ -288,14 +292,26 @@
             border: 1px solid #ccc; width: 100%; box-sizing: border-box; backdrop-filter: blur(4px);
             text-align: left; font-size: 11px; color: var(--dark-grey); line-height: 1.35;
         }
-        .desc-box-title { font-weight: 800; text-transform: uppercase; font-size: 10px; color: #64748b; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+        .desc-box-title { font-weight: 800; text-transform: uppercase; font-size: 10px; color: #64748b; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; }
+        .desc-box-title .chev, .download-header .chev { margin-left: auto; font-size: 9px; transition: transform 0.2s; }
+        .desc-box.collapsed .desc-box-title { margin-bottom: 0; }
+        .desc-box.collapsed .desc-box-body { display: none; }
+        .desc-box.collapsed .chev, .download-area:not(.open) .chev { transform: rotate(-90deg); }
+
+        .brattskala-rad { padding: 3px 6px; min-height: 32px; gap: 4px; }
+        .brattskala-rad .control-label { font-size: 11px; line-height: 1.15; }
+        .brattskala-rad .toggle-group { flex-direction: row; gap: 4px; }
+        .brattskala-rad .toggle-text { display: none; }
 
         .download-area {
             width: 100%; background: rgba(255, 255, 255, 0.95); border-radius: 8px; 
             border: 2px solid var(--download-blue); padding: 5px 8px; 
             box-sizing: border-box; backdrop-filter: blur(4px); text-align: left;
         }
-        .download-header { font-size: 10px; font-weight: 800; color: var(--download-blue); margin-bottom: 3px; display: flex; align-items: center; gap: 5px; text-transform: uppercase; }
+        .download-header { font-size: 10px; font-weight: 800; color: var(--download-blue); margin-bottom: 3px; display: flex; align-items: center; gap: 4px; text-transform: uppercase; cursor: pointer; user-select: none; line-height: 1.2; }
+        .download-area:not(.open) { min-height: 32px; display: flex; align-items: center; }
+        .download-area:not(.open) .download-header { margin-bottom: 0; width: 100%; }
+        .download-area:not(.open) .download-links-container { display: none; }
         .download-links-container { display: flex; flex-wrap: wrap; gap: 3px 10px; }
         .dl-link { font-size: 11px; font-weight: 700; color: var(--download-blue); text-decoration: underline; cursor: pointer; }
 
@@ -1082,14 +1098,16 @@
                             if (topp.beskrivelse) {
                                 const descBox = document.createElement('div');
                                 descBox.className = 'desc-box';
-                                descBox.innerHTML = `<div class="desc-box-title"><span>📝</span> Turbeskrivelse</div>${topp.beskrivelse}`;
+                                descBox.innerHTML = `<div class="desc-box-title"><span>📝</span> Turbeskrivelse<span class="chev">▼</span></div><div class="desc-box-body">${topp.beskrivelse}</div>`;
+                                gjørSammenleggbar(descBox);
                                 videoContainer.appendChild(descBox);
                             }
 
                             if (topp.veiBeskrivelse) {
                                 const veiBox = document.createElement('div');
                                 veiBox.className = 'desc-box';
-                                veiBox.innerHTML = `<div class="desc-box-title"><span>🚗</span> Veibeskrivelse</div>${topp.veiBeskrivelse}`;
+                                veiBox.innerHTML = `<div class="desc-box-title"><span>🚗</span> Veibeskrivelse<span class="chev">▼</span></div><div class="desc-box-body">${topp.veiBeskrivelse}</div>`;
+                                gjørSammenleggbar(veiBox);
                                 videoContainer.appendChild(veiBox);
                             }
 
@@ -1169,7 +1187,7 @@
 
                             const dlArea = document.createElement('div');
                             dlArea.className = 'download-area';
-                            let dlHTML = `<div class="download-header"><span>💾</span> Last ned GPX</div><div class="download-links-container">`;
+                            let dlHTML = `<div class="download-header"><span>💾</span> Last ned GPX<span class="chev">▼</span></div><div class="download-links-container">`;
                             
                             dlHTML += `<span class="dl-link" onclick="lastNedGPX('gpx/${topp.fil}', '${topp.navn}')">${topp.navn}</span>`;
 
@@ -1180,6 +1198,10 @@
                             }
                             dlHTML += `</div>`;
                             dlArea.innerHTML = dlHTML;
+                            dlArea.querySelector('.download-header').onclick = () => {
+                                dlArea.classList.toggle('open');
+                                justerLenkeKnapper();
+                            };
                             videoContainer.appendChild(dlArea);
                             justerLenkeKnapper();
                         };
@@ -1195,9 +1217,21 @@
 
         // Lenkeknapper ligger to og to; er antallet oddetall får den siste full bredde
         function justerLenkeKnapper() {
-            const knapper = Array.from(videoContainer.querySelectorAll(':scope > .video-link-btn, :scope > .search-link-btn, :scope > .gallery-link-btn'));
-            knapper.forEach(b => b.classList.remove('btn-full'));
-            if (knapper.length % 2 === 1) knapper[knapper.length - 1].classList.add('btn-full');
+            const hent = sel => Array.from(videoContainer.querySelectorAll(':scope > ' + sel));
+            // Samme rekkefølge som i CSS (order): lenker/galleri, Brattskala, så GPX-boksen (hvis lukket)
+            const celler = [
+                ...hent('.video-link-btn, .search-link-btn, .gallery-link-btn'),
+                ...hent('.brattskala-rad'),
+                ...hent('.download-area:not(.open)')
+            ];
+            celler.forEach(b => b.classList.remove('btn-full'));
+            if (celler.length % 2 === 1) celler[celler.length - 1].classList.add('btn-full');
+        }
+
+        // Beskrivelsesbokser kan foldes sammen; på mobil er de lukket til å begynne med for å spare plass
+        function gjørSammenleggbar(boks) {
+            if (window.matchMedia('(max-width: 768px)').matches) boks.classList.add('collapsed');
+            boks.querySelector('.desc-box-title').onclick = () => boks.classList.toggle('collapsed');
         }
 
         function nullstillKartVisuals() {
