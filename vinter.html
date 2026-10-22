@@ -193,6 +193,10 @@
         .highlight-word { color: var(--strava-orange); font-weight: 800; }
         .dropdown-item .badge-label { position: relative; top: 2px; right: 0; margin-left: 4px; flex-shrink: 0; }
 
+        /* Årstall-merket ligger i flyten (ikke i hjørnet) så det aldri overlapper Spor/Profil-bryterne */
+        .control-label .badge-label { position: static; display: inline-block; margin-left: 6px; vertical-align: middle; }
+        .video-link-btn .badge-label, .search-link-btn .badge-label, .gallery-link-btn .badge-label { position: static; margin-left: auto; flex-shrink: 0; }
+
         .badge-label {
             position: absolute; top: -6px; right: -6px; color: white; font-size: 8px;
             padding: 1px 4px; border-radius: 8px; border: 1.5px solid white;
