@@ -1008,6 +1008,20 @@
                                             aktiveEkstraSporLayers.push(eLayer);
                                         }
 
+                                        if (ekstra.startPinTekst) {
+                                            const startLatLngs = eLayer.getLayers()[0].getLatLngs();
+                                            if (startLatLngs && startLatLngs.length > 0) {
+                                                const startPin = L.marker(startLatLngs[0], { icon: smallIcon }).addTo(map);
+                                                startPin.bindPopup(`<b>${ekstra.tittel}</b><br>${ekstra.startPinTekst}`);
+                                                let pinKlikket = false;
+                                                startPin.on('mouseover', () => { if (!isTouchDevice) startPin.openPopup(); });
+                                                startPin.on('mouseout', () => { if (!isTouchDevice && !pinKlikket) startPin.closePopup(); });
+                                                startPin.on('click', () => { pinKlikket = true; startPin.openPopup(); });
+                                                startPin.on('popupclose', () => { pinKlikket = false; });
+                                                aktiveMarkører.push(startPin);
+                                            }
+                                        }
+
                                         if (ekstra.popupTekst) {
                                             const latlngs = eLayer.getLayers()[0].getLatLngs();
                                             if (latlngs && latlngs.length > 0) {

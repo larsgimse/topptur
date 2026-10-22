@@ -149,6 +149,29 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
+    "id": "kjolen",
+    "navn": "Kjølen",
+    "fil": "2026_10_21.gpx",
+    "overrideAar": "2026",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DexWnJ1Ixgr/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/20677026494",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6ad8e9ee083a807af210f40a",
+    "ekstraSpor": [
+      {
+        "tittel": "Spor 2 (kun gange)",
+        "fil": "2026_10_21_hike.gpx",
+        "defaultActive": true,
+        "startPinTekst": "Syklet inn hit og gikk herfra til toppen"
+      }
+    ],
+    "beskrivelse": "Syklet inn og gikk herfra til toppen. Hovedsporet viser hele turen med sykling, spor 2 er kun gangen fra der sykkelen ble parkert."
+  },
+  {
     "id": "kjolen-lyfjordaksla-storefjellet",
     "navn": "Kjølen - Lyfjordaksla - Storefjellet",
     "fil": "2024_08_11.gpx",
