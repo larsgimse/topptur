@@ -106,13 +106,36 @@
 
         /* Meny-panelet er plassert øverst til høyre på kartet */
         #video-buttons-container { 
-            position: absolute; top: 10px; right: 10px; z-index: 1000; 
-            display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
-            width: 240px;
+            position: absolute; top: 2px; right: 2px; z-index: 1000; 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 6px; align-items: stretch;
+            width: 300px; box-sizing: border-box;
+            /* Aldri høyere enn kartet - scroller heller innenfor panelet */
+            max-height: calc(100% - 20px); overflow-y: auto; overflow-x: hidden;
+            overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+            padding: 8px 8px 4px 0; /* plass til årstall-merkene som stikker utenfor radene */
+            scrollbar-width: thin;
         }
+        #video-buttons-container:empty { display: none; }
+        /* Alt som ikke er en lenkeknapp tar hele bredden; lenkeknapper deler rad to og to */
+        #video-buttons-container > * { grid-column: 1 / -1; min-width: 0; }
+        #video-buttons-container > .video-link-btn,
+        #video-buttons-container > .search-link-btn,
+        #video-buttons-container > .gallery-link-btn { grid-column: auto; }
+        #video-buttons-container > .btn-full { grid-column: 1 / -1; }
+        #video-buttons-container > .menu-top-row { order: 0; }
+        #video-buttons-container > .control-row-container,
+        #video-buttons-container > .ekstra-slot { order: 1; }
+        #video-buttons-container > .desc-box { order: 3; }
+        #video-buttons-container > .video-link-btn,
+        #video-buttons-container > .search-link-btn,
+        #video-buttons-container > .gallery-link-btn { order: 4; }
+        #video-buttons-container > .download-area { order: 5; }
+        #video-buttons-container > .brattskala-rad { order: 2; }
+        .ekstra-slot { display: contents; }
+        .ekstra-slot > * { grid-column: 1 / -1; order: 1; }
 
         .menu-top-row {
-            display: flex; gap: 6px; width: 100%; justify-content: flex-end; margin-bottom: 4px;
+            display: flex; gap: 6px; width: 100%; justify-content: flex-end; margin-bottom: 0;
         }
 
         .toggle-ui-btn, .share-ui-btn { 
@@ -189,7 +212,7 @@
         @media (max-width: 768px) {
             #buttons { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding: 10px 15px; scroll-behavior: smooth; }
             #buttons::-webkit-scrollbar { display: none; }
-            #video-buttons-container { width: 220px; }
+            #video-buttons-container { width: min(270px, calc(100% - 20px)); gap: 5px; }
             #map { height: 100vw; min-height: unset; width: 100%; }
             
             .buttons-wrapper::after {
@@ -248,38 +271,39 @@
         .badge-2026 { background: var(--strava-orange) !important; }
 
         .video-link-btn, .search-link-btn, .gallery-link-btn {
-            background: rgba(255, 255, 255, 0.95); padding: 8px 12px; border-radius: 8px; 
-            font-weight: 700; text-decoration: none; font-size: 12px; border: 2.5px solid var(--insta-pink);
-            display: flex; align-items: center; gap: 5px; color: var(--insta-pink); 
-            width: 100%; box-sizing: border-box; backdrop-filter: blur(4px); cursor: pointer;
+            background: rgba(255, 255, 255, 0.95); padding: 5px 8px; border-radius: 8px; 
+            font-weight: 700; text-decoration: none; font-size: 11px; line-height: 1.2; border: 2px solid var(--insta-pink);
+            display: flex; align-items: center; gap: 4px; color: var(--insta-pink); 
+            width: 100%; box-sizing: border-box; backdrop-filter: blur(4px); cursor: pointer; min-height: 32px;
+            font-family: inherit; text-align: left;
         }
         .search-link-btn { border-color: var(--strava-green); color: var(--strava-green); }
         .strava-link-btn { border-color: var(--strava-orange); color: var(--strava-orange); }
-        .suunto-link-btn { border: 2.5px solid #000; color: var(--dark-grey); }
+        .suunto-link-btn { border: 2px solid #000; color: var(--dark-grey); }
         .suunto-icon { color: var(--suunto-red); font-size: 10px; }
         .gallery-link-btn { border-color: var(--hover-blue); color: var(--hover-blue); }
 
         .desc-box {
-            background: rgba(255, 255, 255, 0.95); padding: 8px 10px; border-radius: 8px;
+            background: rgba(255, 255, 255, 0.95); padding: 6px 8px; border-radius: 8px;
             border: 1px solid #ccc; width: 100%; box-sizing: border-box; backdrop-filter: blur(4px);
-            text-align: left; font-size: 11px; color: var(--dark-grey); line-height: 1.4;
+            text-align: left; font-size: 11px; color: var(--dark-grey); line-height: 1.35;
         }
         .desc-box-title { font-weight: 800; text-transform: uppercase; font-size: 10px; color: #64748b; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
 
         .download-area {
             width: 100%; background: rgba(255, 255, 255, 0.95); border-radius: 8px; 
-            border: 2px solid var(--download-blue); padding: 8px 10px; 
+            border: 2px solid var(--download-blue); padding: 5px 8px; 
             box-sizing: border-box; backdrop-filter: blur(4px); text-align: left;
         }
-        .download-header { font-size: 11px; font-weight: 800; color: var(--download-blue); margin-bottom: 6px; display: flex; align-items: center; gap: 5px; text-transform: uppercase; }
-        .download-links-container { display: flex; flex-wrap: wrap; gap: 8px; }
-        .dl-link { font-size: 12px; font-weight: 700; color: var(--download-blue); text-decoration: underline; cursor: pointer; }
+        .download-header { font-size: 10px; font-weight: 800; color: var(--download-blue); margin-bottom: 3px; display: flex; align-items: center; gap: 5px; text-transform: uppercase; }
+        .download-links-container { display: flex; flex-wrap: wrap; gap: 3px 10px; }
+        .dl-link { font-size: 11px; font-weight: 700; color: var(--download-blue); text-decoration: underline; cursor: pointer; }
 
         .control-row-container {
             display: flex; align-items: center; justify-content: space-between;
-            background: rgba(255, 255, 255, 0.95); padding: 8px 10px;
+            background: rgba(255, 255, 255, 0.95); padding: 4px 8px;
             border-radius: 8px; border: 1px solid #ccc; width: 100%; 
-            box-sizing: border-box; backdrop-filter: blur(4px); gap: 8px;
+            box-sizing: border-box; backdrop-filter: blur(4px); gap: 6px;
         }
         .control-label { font-size: 11px; font-weight: 700; flex-grow: 1; text-align: left; }
         .toggle-group { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
@@ -693,7 +717,7 @@
 
         function skapBrattskalaKontroll() {
             const container = document.createElement('div');
-            container.className = 'control-row-container';
+            container.className = 'control-row-container brattskala-rad';
             
             const lb = document.createElement('div'); 
             lb.className = 'control-label'; 
@@ -997,6 +1021,10 @@
 
                             if (topp.ekstraSpor) {
                                 topp.ekstraSpor.forEach(ekstra => {
+                                    // Fast plass i menyen (rett etter hovedsporet), selv om GPX lastes asynkront
+                                    const ekstraSlot = document.createElement('div');
+                                    ekstraSlot.className = 'ekstra-slot';
+                                    videoContainer.appendChild(ekstraSlot);
                                     const ekstraTrack = new L.GPX('gpx/' + ekstra.fil, {
                                         async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
                                         polyline_options: { color: 'var(--strava-orange)', weight: 3, opacity: 0.9, dashArray: '6, 6' }
@@ -1046,7 +1074,7 @@
                                             },
                                             () => visProfil(eLayer, topp.navn + " (" + ekstra.tittel + ")", ekstra.fil)
                                         );
-                                        videoContainer.appendChild(eRad);
+                                        ekstraSlot.appendChild(eRad);
                                     });
                                 });
                             }
@@ -1082,6 +1110,7 @@
                                                 åpneGalleri(bildeData.bildeMappe, bildeData.bilder);
                                             };
                                             videoContainer.appendChild(galleryBtn);
+                                            justerLenkeKnapper();
                                         }
                                     })
                                     .catch(err => console.warn("Fant ikke eller kunne ikke laste ekstraBilder:", err));
@@ -1133,7 +1162,6 @@
                                 mapsBtn.className = 'search-link-btn';
                                 mapsBtn.style.borderColor = 'var(--new-green)';
                                 mapsBtn.style.color = 'var(--new-green)';
-                                mapsBtn.style.marginTop = '8px';
                                 mapsBtn.innerHTML = `<span>🚘</span> Veibeskrivelse`;
                                 
                                 videoContainer.appendChild(mapsBtn);
@@ -1153,6 +1181,7 @@
                             dlHTML += `</div>`;
                             dlArea.innerHTML = dlHTML;
                             videoContainer.appendChild(dlArea);
+                            justerLenkeKnapper();
                         };
 
                         if (knapperMap[topp.navn.toLowerCase()]) {
@@ -1163,6 +1192,13 @@
                 });
             })
             .catch(err => console.error("Kunne ikke laste sommer_topper.json:", err));
+
+        // Lenkeknapper ligger to og to; er antallet oddetall får den siste full bredde
+        function justerLenkeKnapper() {
+            const knapper = Array.from(videoContainer.querySelectorAll(':scope > .video-link-btn, :scope > .search-link-btn, :scope > .gallery-link-btn'));
+            knapper.forEach(b => b.classList.remove('btn-full'));
+            if (knapper.length % 2 === 1) knapper[knapper.length - 1].classList.add('btn-full');
+        }
 
         function nullstillKartVisuals() {
             aktivToppNavn = null;
