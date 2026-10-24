@@ -169,7 +169,8 @@
         "startPinTekst": "Syklet inn hit og gikk herfra til toppen"
       }
     ],
-    "beskrivelse": "Syklet inn og gikk herfra til toppen. Hovedsporet viser hele turen med sykling, spor 2 er kun gangen fra der sykkelen ble parkert."
+    "beskrivelse": "Syklet inn og gikk herfra til toppen. Hovedsporet viser hele turen med sykling, spor 2 er kun gangen fra der sykkelen ble parkert.",
+    "sykkeltur": true
   },
   {
     "id": "kjolen-lyfjordaksla-storefjellet",
@@ -610,5 +611,21 @@
       }
     ],
     "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "linken",
+    "navn": "Linken",
+    "fil": "2026_10_23.gpx",
+    "overrideAar": "2026",
+    "sykkeltur": true,
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/De2lrvNoeob/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/20701994188",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6adb81322d8cee764b9c40ba",
+    "beskrivelse": "Sykkeltur til Linken er en fin tur fra byen der du får en nydelig utsikt over Tromsø"
   }
 ]

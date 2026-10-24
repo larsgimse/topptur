@@ -127,6 +127,7 @@
         #video-buttons-container > .download-area.btn-full,
         #video-buttons-container > .download-area.open { grid-column: 1 / -1; }
         #video-buttons-container > .menu-top-row { order: 0; }
+        #video-buttons-container > .sykkel-tag { order: 0; }
         #video-buttons-container > .control-row-container,
         #video-buttons-container > .ekstra-slot { order: 1; }
         #video-buttons-container > .desc-box { order: 3; }
@@ -276,6 +277,10 @@
         .control-label .badge-label { position: static; display: inline-block; margin-left: 6px; vertical-align: middle; }
         .video-link-btn .badge-label, .search-link-btn .badge-label, .gallery-link-btn .badge-label { position: static; margin-left: auto; flex-shrink: 0; }
         
+        .sykkel-ikon { flex: 0 0 auto !important; margin-left: 4px; }
+        .dropdown-item.sykkel-skjult, .letter-dropdown.sykkel-skjult { display: none !important; }
+        .sykkel-tag { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.95); border: 2px solid var(--hover-blue); color: var(--hover-blue); border-radius: 8px; padding: 5px 8px; font-weight: 700; font-size: 11px; min-height: 32px; box-sizing: border-box; width: 100%; backdrop-filter: blur(4px); }
+        #sykkelBtn.active { background: var(--hover-blue) !important; color: #fff !important; border-color: var(--hover-blue) !important; }
         .badge-2026 { background: var(--strava-orange) !important; }
 
         .video-link-btn, .search-link-btn, .gallery-link-btn {
@@ -429,6 +434,10 @@
             <span>⛰️</span> Bratthet
         </button>
         
+        <button id="sykkelBtn" class="active" aria-pressed="true" style="padding:8px 12px; border-radius:8px; background:#fff; color:var(--dark-grey); border:1px solid #ccc; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:5px;">
+            <span>🚴</span> Sykkelturer: <span id="sykkelStatus">På</span>
+        </button>
+
         <div class="search-input-wrapper">
             <span>🔍</span>
             <input type="text" id="topSearchInput" list="topperList" aria-label="Søk etter fjelltopp" placeholder="Søk etter topp..." />
@@ -617,6 +626,48 @@
                 sjekkURLParameter();
             }
         }
+
+        let visSykkelturer = true;
+        const erSykkel = (t) => !!(t && t.sykkeltur);
+        const sykkelSvg = '🚴';
+
+        function oppdaterSykkelFilter() {
+            const btn = document.getElementById('sykkelBtn');
+            btn.classList.toggle('active', visSykkelturer);
+            btn.setAttribute('aria-pressed', visSykkelturer);
+            document.getElementById('sykkelStatus').innerText = visSykkelturer ? 'På' : 'Av';
+
+            Object.keys(knapperMap).forEach(k => {
+                const topp = topper.find(t => t.navn.toLowerCase() === k);
+                const skjul = !visSykkelturer && erSykkel(topp);
+                knapperMap[k].items.forEach(i => i.classList.toggle('sykkel-skjult', skjul));
+            });
+            document.querySelectorAll('.letter-dropdown').forEach(w => {
+                const synlige = w.querySelectorAll('.dropdown-item:not(.sykkel-skjult)').length;
+                w.classList.toggle('sykkel-skjult', synlige === 0);
+            });
+            topperList.innerHTML = '';
+            topper.forEach(t => {
+                if (!visSykkelturer && erSykkel(t)) return;
+                const o = document.createElement('option'); o.value = t.navn; topperList.appendChild(o);
+            });
+            allTracksGroup.eachLayer(layer => {
+                const t = topper.find(x => 'gpx/' + x.fil === layer._gpx);
+                if (!erSykkel(t)) return;
+                if (!visSykkelturer) { map.removeLayer(layer); }
+                else if (!aktivToppNavn && !map.hasLayer(layer)) { map.addLayer(layer); }
+            });
+        }
+
+        document.getElementById('sykkelBtn').onclick = () => {
+            if (!visSykkelturer === false) {
+                // slår av: nullstill hvis en sykkeltur er valgt
+                const aktiv = topper.find(t => t.navn === aktivToppNavn);
+                visSykkelturer = false;
+                if (erSykkel(aktiv)) document.getElementById('resetBtn').click();
+            } else { visSykkelturer = true; }
+            oppdaterSykkelFilter();
+        };
 
         const topperList = document.getElementById('topperList');
         const knapperMap = {};
@@ -898,6 +949,11 @@
                         tekstSpan.innerHTML = formaterNavnMedFarge(topp.navn, entry.ord);
                         item.appendChild(tekstSpan);
 
+                        if (erSykkel(topp)) {
+                            const ik = document.createElement('span');
+                            ik.className = 'sykkel-ikon'; ik.title = 'Sykkeltur'; ik.innerText = sykkelSvg;
+                            item.appendChild(ik);
+                        }
                         const badge = lagBadge(topp.fil, topp.overrideAar);
                         if (badge) item.appendChild(badge);
 
@@ -983,6 +1039,7 @@
                         });
 
                         const aktiver = () => {
+                            if (erSykkel(topp) && !visSykkelturer) { visSykkelturer = true; oppdaterSykkelFilter(); }
                             nullstillKartVisuals();
                             aktivToppNavn = topp.navn;
                             
@@ -1028,6 +1085,13 @@
                             topRow.appendChild(shareBtn);
 
                             videoContainer.appendChild(topRow);
+
+                            if (erSykkel(topp)) {
+                                const tag = document.createElement('div');
+                                tag.className = 'sykkel-tag';
+                                tag.innerHTML = `<span>${sykkelSvg}</span> Sykkeltur`;
+                                videoContainer.appendChild(tag);
+                            }
 
                             videoContainer.appendChild(skapKontrollRad(
                                 topp.navn, 
@@ -1249,6 +1313,7 @@
                 const trackTopp = topper.find(t => 'gpx/' + t.fil === layer._gpx);
                 const color = (trackTopp && trackTopp.navn === "Nordfjellet - Tromsø geografiske midtpunkt") ? 'var(--strava-green)' : 'var(--summer-green)';
                 layer.setStyle({ color: color, weight: defaultWeight, opacity: 0.6 });
+                if (erSykkel(trackTopp) && !visSykkelturer) return;
                 if (!map.hasLayer(layer)) map.addLayer(layer);
             });
             videoContainer.innerHTML = '';
