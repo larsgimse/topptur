@@ -18,6 +18,7 @@
             --hover-blue: #0076ff;
             --suunto-red: #ff3b30;
             --new-green: #16a34a;
+            --sykkel-blue: #2563eb;
         }
 
         body { 
@@ -630,6 +631,7 @@
         let visSykkelturer = true;
         const erSykkel = (t) => !!(t && t.sykkeltur);
         const sykkelSvg = '🚴';
+        const hovedFarge = (t) => erSykkel(t) ? 'var(--sykkel-blue)' : (t && t.navn === "Nordfjellet - Tromsø geografiske midtpunkt" ? 'var(--strava-green)' : 'var(--summer-green)');
 
         function oppdaterSykkelFilter() {
             const btn = document.getElementById('sykkelBtn');
@@ -983,7 +985,7 @@
                             };
                             item.onmouseleave = () => {
                                 const l = gpxLagMap[topp.navn.toLowerCase()];
-                                const mainColor = topp.navn === "Nordfjellet - Tromsø geografiske midtpunkt" ? 'var(--strava-green)' : 'var(--summer-green)';
+                                const mainColor = hovedFarge(topp);
                                 if (l && !aktivToppNavn && !isReseting) {
                                     l.setStyle({color: mainColor, weight: defaultWeight, opacity: 0.6});
                                     map.flyTo(defaultCenter, defaultZoom, { duration: 0.4 });
@@ -1000,7 +1002,7 @@
                 });
 
                 topper.forEach(topp => {
-                    const mainTrackColor = topp.navn === "Nordfjellet - Tromsø geografiske midtpunkt" ? 'var(--strava-green)' : 'var(--summer-green)';
+                    const mainTrackColor = hovedFarge(topp);
 
                     const track = new L.GPX('gpx/' + topp.fil, {
                         async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
@@ -1052,7 +1054,7 @@
 
                             allTracksGroup.eachLayer(layer => { if (layer !== l) layer.setStyle({ opacity: 0 }); });
                             
-                            l.setStyle({ color: 'var(--summer-green)', weight: 3, opacity: 1 }).bringToFront();
+                            l.setStyle({ color: hovedFarge(topp), weight: 3, opacity: 1 }).bringToFront();
 
                             const bounds = l.getBounds();
                             map.flyToBounds(bounds, { padding: [60, 60], duration: 0.6 });
@@ -1311,7 +1313,7 @@
             document.querySelectorAll('.dropdown-item').forEach(b => b.classList.remove('active'));
             allTracksGroup.eachLayer(layer => {
                 const trackTopp = topper.find(t => 'gpx/' + t.fil === layer._gpx);
-                const color = (trackTopp && trackTopp.navn === "Nordfjellet - Tromsø geografiske midtpunkt") ? 'var(--strava-green)' : 'var(--summer-green)';
+                const color = hovedFarge(trackTopp);
                 layer.setStyle({ color: color, weight: defaultWeight, opacity: 0.6 });
                 if (erSykkel(trackTopp) && !visSykkelturer) return;
                 if (!map.hasLayer(layer)) map.addLayer(layer);
