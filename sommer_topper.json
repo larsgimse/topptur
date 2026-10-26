@@ -44,6 +44,20 @@
     "beskrivelse": "Flott tur opp fra nedre Fjellheisstasjon."
   },
   {
+    "id": "brormorstinden-brosmetinden",
+    "navn": "Brormorstinden - Brosmetinden",
+    "fil": "2020_09_03.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/CEr1Tc-MrTa/?srtk=dGRhM3hrM2hzeDg0",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/4005577895",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "buren",
     "navn": "Buren",
     "fil": "2025_10_06.gpx",
