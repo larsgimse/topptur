@@ -430,6 +430,14 @@
 
     <script>
         const map = L.map('map', { zoomSnap: 0.5 }).setView([69.65, 18.95], 10);
+
+        // Oversiktsvisning: zoomer inn fra «vis alle», selv om noen topper havner utenfor kartet.
+        // Brukes både ved første innlasting og på «Nullstill kart». Endre tallet for mer/mindre zoom.
+        const OVERSIKT_ZOOM_INN = 2;
+        function visOversikt(bounds, padding) {
+            const fullZoom = map.getBoundsZoom(bounds, false, L.point(padding * 2, padding * 2));
+            map.setView(bounds.getCenter(), Math.min(fullZoom + OVERSIKT_ZOOM_INN, map.getMaxZoom()));
+        }
         const allTracksGroup = L.featureGroup().addTo(map);
         const videoContainer = document.getElementById('video-buttons-container');
         let aktiveEkstraSporLayers = [];
@@ -831,7 +839,7 @@
             if (treff && knapperMap[treff.id] && knapperMap[treff.id].aktiver) {
                 knapperMap[treff.id].aktiver();
             } else if (allTracksGroup.getLayers().length > 0) {
-                map.fitBounds(allTracksGroup.getBounds(), {padding: [20, 20]});
+                visOversikt(allTracksGroup.getBounds(), 20);
             }
         }
 
@@ -1095,7 +1103,7 @@
             aktiveMarkører.forEach(m => map.removeLayer(m));
             aktiveMarkører = [];
             allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.6, weight:1.5, color: 'var(--strava-orange)'}); });
-            map.fitBounds(allTracksGroup.getBounds(), {padding: [40, 40]});
+            visOversikt(allTracksGroup.getBounds(), 40);
             setTimeout(() => isReseting = false, 300);
         };
     </script>
