@@ -361,6 +361,16 @@
         /* Selve kartet: samme størrelse og utsnitt, bare tynn ramme */
         #map { border-radius: 0; box-shadow: none; outline: 1px solid var(--ink); }
 
+
+        /* Popup (profil) i samme stil */
+        .leaflet-popup-content-wrapper { background: #fff; color: var(--ink); border: 1px solid var(--ink); border-radius: 0; box-shadow: 0 10px 30px rgba(0,0,0,.14); font-family: "Jost", "Helvetica Neue", Arial, sans-serif; }
+        .leaflet-popup-content { margin: 14px 16px 12px; font-size: 13px; font-weight: 400; line-height: 1.4; text-align: left; }
+        .leaflet-popup-tip { background: #fff; border: 1px solid var(--ink); box-shadow: none; }
+        .leaflet-container a.leaflet-popup-close-button { color: var(--ink); font: 300 22px/26px "Jost", Arial, sans-serif; top: 4px; right: 4px; width: 26px; height: 26px; transition: color .3s ease; }
+        .leaflet-container a.leaflet-popup-close-button:hover { color: var(--winter-ink); background: none; }
+        .prof-title { font-size: 18px; font-weight: 300; letter-spacing: -.01em; line-height: 1.2; padding-right: 18px; }
+        .prof-date { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
         /* Buy me a coffee nederst */
         .bmc-foot { order: 9; display: flex; justify-content: center; padding: 26px 0 18px; }
         .bmc { transform: scale(.62); transform-origin: center; opacity: .75; height: 28px; display: flex; align-items: center; transition: opacity .2s; }
@@ -579,8 +589,8 @@
             const popupContent = document.createElement('div');
             popupContent.style.minWidth = "220px";
             popupContent.innerHTML = `
-                <b style="font-size:14px;">${tittel}</b><br>
-                ${dato ? `<span style="font-size:11px; color:#64748b;">${dato}</span><br>` : ''}
+                <div class="prof-title">${tittel}</div>
+                ${dato ? `<div class="prof-date">${dato}</div>` : ''}
                 <canvas id="elevationChart" width="220" height="100" style="margin-top:8px; border-bottom: 1px solid #ccc;"></canvas>
                 <div style="font-size:12px; margin-top:8px; line-height:1.4; text-align:left;">
                     📏 Distanse T/R: ${(d/1000).toFixed(1)} km<br>
@@ -603,9 +613,10 @@
                 const maxDist = stats[stats.length - 1][0];
                 const rangeH = h - minH || 1;
                 ctx.beginPath();
-                ctx.strokeStyle = 'var(--strava-orange)';
-                ctx.lineWidth = 2;
-                ctx.fillStyle = 'rgba(252, 76, 2, 0.15)';
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1;
+                ctx.lineJoin = 'round';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.07)';
                 ctx.moveTo(padding, height - padding);
                 stats.forEach(([dist, elev]) => {
                     const x = padding + (dist / maxDist) * (width - padding * 2);
@@ -615,6 +626,7 @@
                 ctx.lineTo(width - padding, height - padding);
                 ctx.closePath();
                 ctx.fill(); ctx.stroke();
+
             }, 100);
         }
 
