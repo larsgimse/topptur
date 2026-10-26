@@ -193,6 +193,20 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
+    "id": "kvaloyvagen-vagsfjellet-storkjerka",
+    "navn": "Kvaløyvågen - Vågsfjellet - Storkjerka",
+    "fil": "2019_05_22.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/Bxx8rldIo09/",
+        "tittel": "Se bilder",
+        "type": "photo"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/2389106597",
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "langfjellaksla-straumsaksla",
     "navn": "Langfjellaksla - Straumsaksla",
     "fil": "2026_09_11.gpx",
