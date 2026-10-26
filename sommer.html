@@ -724,7 +724,17 @@
             return match ? `${match[3]}.${match[2]}.${match[1]}` : '';
         }
 
-        function visProfil(gpxLayer, tittel, gpxFil) {
+        function skjulProfil(gpxLayer) {
+            if (gpxLayer.getPopup && gpxLayer.getPopup()) {
+                gpxLayer.closePopup();
+                gpxLayer.unbindPopup();
+            }
+        }
+
+        function visProfil(gpxLayer, tittel, gpxFil, on) {
+            if (on === false) { skjulProfil(gpxLayer); return; }
+            skjulProfil(gpxLayer);
+            if (!map.hasLayer(gpxLayer)) return;
             const d = gpxLayer.get_distance(), e = gpxLayer.get_elevation_gain(), h = gpxLayer.get_elevation_max(), minH = gpxLayer.get_elevation_min(), stats = gpxLayer.get_elevation_data();
             const dato = parseDatoFraFil(gpxFil);
             let tidTR = "N/A", tidTilTopp = "N/A";
@@ -749,17 +759,14 @@
                 <canvas id="elevationChart" width="220" height="100" style="margin-top:8px;"></canvas>
                 <div style="font-size:12px; margin-top:8px; text-align:left;">📏 ${(d/1000).toFixed(1)} km | 📈 ${e.toFixed(0)}m | 🏔️ ${h.toFixed(0)} moh<br>⏱️ Til topp: ${tidTilTopp} | ⌛ T/R: ${tidTR}</div>`;
             
+            const canvas = popupContent.querySelector('canvas');
+            const ctx = canvas.getContext('2d'), w = canvas.width, ht = canvas.height, pad = 5, maxD = stats[stats.length - 1][0], rH = h - minH || 1;
+            ctx.beginPath(); ctx.strokeStyle = '#fc4c02'; ctx.fillStyle = 'rgba(252, 76, 2, 0.15)';
+            ctx.moveTo(pad, ht - pad);
+            stats.forEach(([dist, elev]) => ctx.lineTo(pad + (dist / maxD) * (w - pad * 2), (ht - pad) - ((elev - minH) / rH) * (ht - pad * 2)));
+            ctx.lineTo(w - pad, ht - pad); ctx.closePath(); ctx.fill(); ctx.stroke();
+
             gpxLayer.bindPopup(popupContent);
-
-            map.once('popupopen', () => {
-                const canvas = document.getElementById('elevationChart'); if (!canvas) return;
-                const ctx = canvas.getContext('2d'), w = canvas.width, ht = canvas.height, pad = 5, maxD = stats[stats.length - 1][0], rH = h - minH || 1;
-                ctx.beginPath(); ctx.strokeStyle = 'var(--strava-orange)'; ctx.fillStyle = 'rgba(252, 76, 2, 0.15)';
-                ctx.moveTo(pad, ht - pad);
-                stats.forEach(([dist, elev]) => ctx.lineTo(pad + (dist / maxD) * (w - pad * 2), (ht - pad) - ((elev - minH) / rH) * (ht - pad * 2)));
-                ctx.lineTo(w - pad, ht - pad); ctx.closePath(); ctx.fill(); ctx.stroke();
-            });
-
             gpxLayer.openPopup();
         }
 
@@ -1099,7 +1106,7 @@
                                 topp.navn, 
                                 topp.fil, true, 
                                 (on) => on ? map.addLayer(l) : map.removeLayer(l), 
-                                () => visProfil(l, topp.navn, topp.fil)
+                                (on) => visProfil(l, topp.navn, topp.fil, on)
                             ));
 
                             // Legg til kontroll for Brattskala inne på den enkelte topp
@@ -1158,7 +1165,7 @@
                                                     aktiveEkstraSporLayers = aktiveEkstraSporLayers.filter(lyr => lyr !== eLayer); 
                                                 }
                                             },
-                                            () => visProfil(eLayer, topp.navn + " (" + ekstra.tittel + ")", ekstra.fil)
+                                            (on) => visProfil(eLayer, topp.navn + " (" + ekstra.tittel + ")", ekstra.fil, on)
                                         );
                                         ekstraSlot.appendChild(eRad);
                                     });
