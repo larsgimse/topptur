@@ -315,6 +315,8 @@
         h1, .subtitle, .info-text { padding-left: 2px; padding-right: 2px; text-align: left; }
         h1 { display: flex; align-items: center; gap: 14px; margin-top: 22px; margin-bottom: 6px; font-size: clamp(30px, 6vw, 44px); font-weight: 200; letter-spacing: -.02em; line-height: 1.1; }
         h1 .h-ico { flex: none; width: 38px; height: 38px; fill: none; stroke: var(--winter-ink); stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+        /* Den tynne linjen under overskriften (lå før på infoteksten) */
+        body > h1 { margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--ink); }
         .subtitle { margin-top: 0; margin-bottom: 0; font-size: 16px; font-weight: 300; color: var(--ink); }
         .info-text { margin-top: 2px; margin-bottom: 18px; padding-bottom: 16px; color: var(--muted); border-bottom: 1px solid var(--ink); }
 
@@ -343,6 +345,13 @@
         .highlight-word { color: var(--winter-ink); font-weight: 600; }
         .badge-year { background: #fff; color: var(--muted); border: 1px solid #b5b5b5; box-shadow: none; }
         .badge-2026 { box-shadow: none; }
+
+        /* Søkefelt */
+        .search-input-wrapper { position: relative; display: flex; align-items: center; }
+        .search-input-wrapper span { position: absolute; left: 10px; display: flex; align-items: center; pointer-events: none; }
+        .search-input-wrapper svg { width: 15px; height: 15px; fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-linecap: round; }
+        #topSearchInput { width: 170px; padding: 8px 12px 8px 32px; border: 1px solid var(--ink); border-radius: 0; background: #fff; color: var(--ink); font-size: 14px; font-weight: 400; outline: none; transition: border-color .3s ease; }
+        #topSearchInput:focus { border-color: var(--winter-ink); box-shadow: 0 0 0 1px var(--winter-ink); }
 
         /* Panelet over kartet */
         body .video-link-btn, body .search-link-btn { border: 1px solid var(--ink) !important; color: var(--ink) !important; border-radius: 0; font-weight: 500; transition: background .3s ease; }
@@ -387,8 +396,6 @@
     <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><path id="arm" d="M22 22V3.5M22 9.5l-4.3-2.5M22 9.5l4.3-2.5M22 15l-3.2-1.9M22 15l3.2-1.9M22 6.5l-1.6-2M22 6.5l1.6-2" fill="none" stroke="currentColor"/></defs></svg>
 
     <h1><svg class="h-ico" viewBox="0 0 44 44" aria-hidden="true"><use href="#arm"/><use href="#arm" transform="rotate(60 22 22)"/><use href="#arm" transform="rotate(120 22 22)"/><use href="#arm" transform="rotate(180 22 22)"/><use href="#arm" transform="rotate(240 22 22)"/><use href="#arm" transform="rotate(300 22 22)"/></svg>Toppturer rundt Tromsø</h1>
-    <p class="subtitle">Klikk på sporet eller knapp for video og detaljer</p>
-    <p class="info-text">Årstallet viser når turen ble filmet/publisert</p>
 
     <div class="buttons-wrapper" id="buttonsWrapper">
         <div id="buttons"></div>
@@ -403,6 +410,12 @@
         <button id="bratthetBtn" class="ctl">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l7-12 4 7 3-4 6 9z"/></svg> Bratthet
         </button>
+
+        <div class="search-input-wrapper">
+            <span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></span>
+            <input type="text" id="topSearchInput" list="topperList" aria-label="Søk etter topp" placeholder="Søk etter topp..." autocomplete="off" />
+            <datalist id="topperList"></datalist>
+        </div>
 
         <button id="resetBtn" class="ctl">Nullstill kart</button>
     </div>
@@ -434,7 +447,9 @@
         // Oversiktsvisning: zoomer inn fra «vis alle», selv om noen topper havner utenfor kartet.
         // Brukes både ved første innlasting og på «Nullstill kart». Endre tallet for mer/mindre zoom.
         const OVERSIKT_ZOOM_INN = 2;
-        function visOversikt(bounds, padding) {
+        function visOversikt(bounds) {
+            const padding = 40;
+            map.invalidateSize({ animate: false });
             const fullZoom = map.getBoundsZoom(bounds, false, L.point(padding * 2, padding * 2));
             map.setView(bounds.getCenter(), Math.min(fullZoom + OVERSIKT_ZOOM_INN, map.getMaxZoom()));
         }
@@ -679,6 +694,10 @@
             hoverId = topp.id;
             l.setStyle({color: 'var(--strava-blue)', weight: 3, opacity: 1}).bringToFront();
             map.flyToBounds(l.getBounds(), { padding: [60, 60], duration: 0.4 });
+            // Sørg for at sporet står i hover-fargen når kartet har flyttet seg ferdig
+            map.once('moveend', () => {
+                if (hoverId === topp.id) l.setStyle({color: 'var(--strava-blue)', weight: 3, opacity: 1}).bringToFront();
+            });
         }
 
         function planleggSluttHover() {
@@ -839,7 +858,7 @@
             if (treff && knapperMap[treff.id] && knapperMap[treff.id].aktiver) {
                 knapperMap[treff.id].aktiver();
             } else if (allTracksGroup.getLayers().length > 0) {
-                visOversikt(allTracksGroup.getBounds(), 20);
+                visOversikt(allTracksGroup.getBounds());
             }
         }
 
@@ -854,6 +873,10 @@
 
                 topper.sort((a,b) => a.navn.localeCompare(b.navn));
                 byggBokstavMeny();
+
+                const topperListEl = document.getElementById('topperList');
+                topperListEl.innerHTML = '';
+                topper.forEach(t => { const o = document.createElement('option'); o.value = t.navn; topperListEl.appendChild(o); });
 
                 topper.forEach(topp => {
 
@@ -872,6 +895,7 @@
                 
                         const aktiver = () => {
                             isReseting = false; aktivToppNavn = topp.navn;
+                            document.getElementById('topSearchInput').value = topp.navn;
                         avbrytHover();
                         lukkAlleDropdowns();
 
@@ -1064,6 +1088,18 @@
 
                         knapperMap[topp.id].aktiver = aktiver;
                         l.on('click', (ev) => { L.DomEvent.stopPropagation(ev); aktiver(); });
+
+                        // Hover direkte på sporet i oversiktskartet: sporet blir blått
+                        l.on('mouseover', () => {
+                            if (!aktivToppNavn && !isReseting && !isTouchDevice) {
+                                l.setStyle({color: 'var(--strava-blue)', weight: 4, opacity: 1}).bringToFront();
+                            }
+                        });
+                        l.on('mouseout', () => {
+                            if (!aktivToppNavn && !isReseting && !isTouchDevice && hoverId !== topp.id) {
+                                l.setStyle({color: 'var(--strava-orange)', weight: 1.5, opacity: 0.6});
+                            }
+                        });
                     });
                 });
             })
@@ -1088,8 +1124,25 @@
             boks.querySelector('.desc-box-title').onclick = () => boks.classList.toggle('collapsed');
         }
 
+        // ---- Søk etter topp ----
+        const searchInput = document.getElementById('topSearchInput');
+
+        function utførSøk() {
+            const søkVal = searchInput.value.toLowerCase().trim();
+            if (!søkVal) return;
+            const treff = topper.find(t => t.navn.toLowerCase() === søkVal)
+                       || topper.find(t => t.navn.toLowerCase().includes(søkVal));
+            if (treff && knapperMap[treff.id] && knapperMap[treff.id].aktiver) {
+                knapperMap[treff.id].aktiver();
+            }
+        }
+
+        searchInput.addEventListener('change', utførSøk);
+        searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') utførSøk(); });
+
         document.getElementById('resetBtn').onclick = () => {
             isReseting = true; aktivToppNavn = null; videoContainer.innerHTML = '';
+            searchInput.value = '';
 
             const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
             window.history.pushState({path: cleanUrl}, '', cleanUrl);
@@ -1103,7 +1156,7 @@
             aktiveMarkører.forEach(m => map.removeLayer(m));
             aktiveMarkører = [];
             allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle({opacity:0.6, weight:1.5, color: 'var(--strava-orange)'}); });
-            visOversikt(allTracksGroup.getBounds(), 40);
+            visOversikt(allTracksGroup.getBounds());
             setTimeout(() => isReseting = false, 300);
         };
     </script>
