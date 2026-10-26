@@ -55,8 +55,9 @@
             font-weight: 700; 
             letter-spacing: -0.5px; 
             position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
             pointer-events: none;
         }
         
@@ -214,7 +215,7 @@
         .counter-box { 
             position: fixed; 
             bottom: 20px; 
-            left: 20px; 
+            left: 60px; 
             z-index: 10000; 
             display: flex;
             flex-direction: column;
@@ -303,7 +304,7 @@
             }
             .counter-box {
                 bottom: 120px;
-                left: 10px;
+                left: 56px;
             }
             .leaflet-bottom { bottom: 120px !important; }
         }
@@ -363,9 +364,7 @@
             renderer: minRenderer
         }).setView([69.65, 18.95], 9);
 
-        if (isTouchDevice) {
-            map.zoomControl.setPosition('topleft');
-        }
+        map.zoomControl.setPosition('bottomleft');
 
         // CARTO Basemap mørkt kart
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=cb1_2o3a_1_671194bbedbad28841272141', {
