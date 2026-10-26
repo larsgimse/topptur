@@ -380,10 +380,12 @@
         .prof-title { font-size: 18px; font-weight: 300; letter-spacing: -.01em; line-height: 1.2; padding-right: 18px; }
         .prof-date { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
-        /* Buy me a coffee nederst */
-        .bmc-foot { order: 9; display: flex; justify-content: center; padding: 26px 0 18px; }
-        .bmc { transform: scale(.62); transform-origin: center; opacity: .75; height: 28px; display: flex; align-items: center; transition: opacity .2s; }
-        .bmc:hover { opacity: 1; }
+        /* Buy me a coffee: liten og diskret (samme som sommer) */
+        .custom-bmc-btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; cursor: pointer; box-sizing: border-box; }
+        body .custom-bmc-btn { background: #fff; color: var(--ink); border: 1px solid var(--ink); border-radius: 0; font-weight: 400; font-size: 12px; padding: 5px 10px; margin-left: auto; opacity: .85; transition: background .3s ease, opacity .2s; }
+        body .custom-bmc-btn:hover { background: #fff3b0; opacity: 1; }
+        .custom-bmc-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+        @media (max-width: 768px) { body .custom-bmc-btn { margin-left: 0; } }
 
         @media (max-width: 768px) {
             .buttons-wrapper::after { background: linear-gradient(to left, rgba(255,255,255,.95), rgba(255,255,255,0)); }
@@ -430,13 +432,11 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg> Fjellturer sommer
         </button>
         <button class="ctl ctl-map" onclick="window.location.href='oversikt.html'">Oversikt turer</button>
+        <a href="https://www.buymeacoffee.com/spJcAlD" target="_blank" class="custom-bmc-btn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16M8 3v3M12 3v3"/></svg> Buy me a coffee
+        </a>
     </div>
 
-    <div class="bmc-foot">
-        <div class="bmc">
-            <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="spJcAlD" data-color="#FFDD00" data-emoji="" data-font="Cookie" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff"></script>
-        </div>
-    </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
