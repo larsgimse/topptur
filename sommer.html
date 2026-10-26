@@ -1173,7 +1173,7 @@
                                 videoContainer.appendChild(descBox);
                             }
 
-                            if (topp.veiBeskrivelse) {
+                            if (topp.veiBeskrivelse && !erSykkel(topp)) {
                                 const veiBox = document.createElement('div');
                                 veiBox.className = 'desc-box';
                                 veiBox.innerHTML = `<div class="desc-box-title"><span>🚗</span> Veibeskrivelse<span class="chev">▼</span></div><div class="desc-box-body">${topp.veiBeskrivelse}</div>`;
@@ -1240,7 +1240,7 @@
                             const latlngs = l.getLayers()[0].getLatLngs();
                             const startPunkt = latlngs[0];
 
-                            if (startPunkt) {
+                            if (startPunkt && !erSykkel(topp)) {
                                 const startLat = startPunkt.lat;
                                 const startLng = startPunkt.lng;
 
