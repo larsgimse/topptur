@@ -352,6 +352,30 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
+    "id": "nordtinden",
+    "navn": "Nordtinden",
+    "fil": "2026_10_25.gpx",
+    "overrideAar": "2026",
+    "sykkeltur": true,
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/De8sLAoI5XU/",
+        "tittel": "Se video"
+      }
+    ],
+    "strava": "https://www.strava.com/activities/20727292540",
+    "suunto": "https://maps.suunto.com/move/larsgimse/6ade1b123f672b6ea6fb473b",
+    "ekstraSpor": [
+      {
+        "tittel": "Spor 2 (kun gange)",
+        "fil": "2026_10_25_hike.gpx",
+        "defaultActive": true,
+        "startPinTekst": "Syklet inn hit og gikk herfra til toppen"
+      }
+    ],
+    "beskrivelse": "Sykkeltur på litt over 6 mil med elsykkel, kjørt på assistanse 0 eller 1 for å spare strøm. Stien over til Kvaløyvågen er litt grov og har en del klopper. Opp til Nordtinden lønner det seg å holde kanten mot sør for spektakulær utsikt. Hovedsporet viser hele turen med sykling, spor 2 er kun gangen fra der sykkelen ble parkert."
+  },
+  {
     "id": "orvasstinden",
     "navn": "Orvasstinden",
     "fil": "2025_09_28.gpx",
