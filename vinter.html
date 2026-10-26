@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Toppturer rundt Tromsø</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --strava-orange: #fc4c02;
@@ -293,11 +296,87 @@
             border: 1px solid rgba(0,0,0,0.2);
             border-radius: 3px;
         }
+
+        /* ===== Minimalistisk design (kun utseende, ingen endringer i kart eller funksjon) ===== */
+        :root {
+            --ink: #000;
+            --muted: #6b6b6b;
+            --winter-bg: #dde9f2;
+            --winter-ink: #3f6f93;
+            --summer-bg: #e6efd8;
+            --map-bg: #ededeb;
+        }
+        body { background: #fff; color: var(--ink); font-family: "Jost", "Helvetica Neue", Arial, sans-serif; font-weight: 300; }
+        button, select { font-family: inherit; }
+
+        h1, .subtitle, .info-text, .buttons-wrapper > #buttons, #controls-row, #bottom-controls-row {
+            width: 100%; max-width: 1100px; margin-left: auto; margin-right: auto; box-sizing: border-box;
+        }
+        h1, .subtitle, .info-text { padding-left: 2px; padding-right: 2px; text-align: left; }
+        h1 { display: flex; align-items: center; gap: 14px; margin-top: 22px; margin-bottom: 6px; font-size: clamp(30px, 6vw, 44px); font-weight: 200; letter-spacing: -.02em; line-height: 1.1; }
+        h1 .h-ico { flex: none; width: 38px; height: 38px; fill: none; stroke: var(--winter-ink); stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+        .subtitle { margin-top: 0; margin-bottom: 0; font-size: 16px; font-weight: 300; color: var(--ink); }
+        .info-text { margin-top: 2px; margin-bottom: 18px; padding-bottom: 16px; color: var(--muted); border-bottom: 1px solid var(--ink); }
+
+        #buttons, #controls-row, #bottom-controls-row { justify-content: flex-start; }
+        #buttons { padding-left: 2px; padding-right: 2px; }
+        #controls-row, #bottom-controls-row { padding-left: 2px; padding-right: 2px; }
+
+        /* Kontrollknapper */
+        .ctl { padding: 8px 14px; border: 1px solid var(--ink); border-radius: 0; background: #fff; color: var(--ink); font-size: 14px; font-weight: 400; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background .3s ease; }
+        .ctl svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+        .ctl:hover { background: var(--winter-bg); }
+        .ctl.ctl-summer:hover { background: var(--summer-bg); }
+        .ctl.ctl-map:hover { background: var(--map-bg); }
+        body .btn-toggle-active { background-color: var(--winter-ink) !important; color: #fff !important; border-color: var(--winter-ink) !important; }
+
+        /* Toppknapper (bokstaver) */
+        body .letter-btn { background: #fff; color: var(--ink); border: 1px solid var(--ink); border-radius: 0; box-shadow: none; font-weight: 400; transition: background .3s ease, color .3s ease; }
+        @media (hover: hover) {
+            body .letter-btn:hover:not(.active) { background: var(--winter-bg); transform: none; box-shadow: none; }
+        }
+        body .letter-btn.active { background: var(--winter-ink); border-color: var(--winter-ink); color: #fff; transform: none; box-shadow: none; }
+        body .dropdown-menu { border: 1px solid var(--ink); border-radius: 0; box-shadow: 0 10px 30px rgba(0,0,0,.12); }
+        body .dropdown-item { font-weight: 400; color: var(--ink); }
+        body .dropdown-item:hover, body .dropdown-item.active { background-color: var(--winter-bg); }
+        body .dropdown-item.active { font-weight: 500; }
+        .highlight-word { color: var(--winter-ink); font-weight: 600; }
+        .badge-year { background: #fff; color: var(--muted); border: 1px solid #b5b5b5; box-shadow: none; }
+        .badge-2026 { box-shadow: none; }
+
+        /* Panelet over kartet */
+        body .video-link-btn, body .search-link-btn { border: 1px solid var(--ink) !important; color: var(--ink) !important; border-radius: 0; font-weight: 500; transition: background .3s ease; }
+        body .video-link-btn:hover, body .search-link-btn:hover { background: var(--winter-bg); }
+        body .desc-box, body .control-row-container, body .download-area { border: 1px solid var(--ink); border-radius: 0; }
+        .desc-box-title, .download-header { text-transform: none; letter-spacing: 0; font-size: 11px; color: var(--muted); }
+        .download-header { color: var(--ink); font-weight: 600; }
+        .dl-link { color: var(--winter-ink); font-weight: 500; }
+        .toggle-text { text-transform: none; font-size: 9px; }
+        .active .switch-track { background: var(--winter-ink); }
+        body .toggle-ui-btn { background: var(--ink); border-radius: 0; font-weight: 500; }
+        body .share-ui-btn { border: 1px solid var(--ink); border-radius: 0; color: var(--ink); font-weight: 500; }
+        body .share-ui-btn:hover { background: var(--winter-bg); color: var(--ink); }
+        .legend { border: 1px solid var(--ink); border-radius: 0; box-shadow: none; }
+
+        /* Selve kartet: samme størrelse og utsnitt, bare tynn ramme */
+        #map { border-radius: 0; box-shadow: none; outline: 1px solid var(--ink); }
+
+        /* Buy me a coffee nederst */
+        .bmc-foot { order: 9; display: flex; justify-content: center; padding: 26px 0 18px; }
+        .bmc { transform: scale(.62); transform-origin: center; opacity: .75; height: 28px; display: flex; align-items: center; transition: opacity .2s; }
+        .bmc:hover { opacity: 1; }
+
+        @media (max-width: 768px) {
+            .buttons-wrapper::after { background: linear-gradient(to left, rgba(255,255,255,.95), rgba(255,255,255,0)); }
+        }
+        @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
     </style>
 </head>
 <body>
 
-    <h1>Toppturer rundt Tromsø</h1>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><path id="arm" d="M22 22V3.5M22 9.5l-4.3-2.5M22 9.5l4.3-2.5M22 15l-3.2-1.9M22 15l3.2-1.9M22 6.5l-1.6-2M22 6.5l1.6-2" fill="none" stroke="currentColor"/></defs></svg>
+
+    <h1><svg class="h-ico" viewBox="0 0 44 44" aria-hidden="true"><use href="#arm"/><use href="#arm" transform="rotate(60 22 22)"/><use href="#arm" transform="rotate(120 22 22)"/><use href="#arm" transform="rotate(180 22 22)"/><use href="#arm" transform="rotate(240 22 22)"/><use href="#arm" transform="rotate(300 22 22)"/></svg>Toppturer rundt Tromsø</h1>
     <p class="subtitle">Klikk på sporet eller knapp for video og detaljer</p>
     <p class="info-text">Årstallet viser når turen ble filmet/publisert</p>
 
@@ -306,16 +385,16 @@
     </div>
 
     <div id="controls-row">
-        <select id="mapSelect" style="padding:8px; border-radius:8px; font-weight:600;">
+        <select id="mapSelect" class="ctl">
             <option value="norge">Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
         </select>
 
-        <button id="bratthetBtn" style="padding:8px 12px; border-radius:8px; background:#fff; color:var(--dark-grey); border:1px solid #ccc; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:5px;">
-            <span>⛰️</span> Bratthet
+        <button id="bratthetBtn" class="ctl">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l7-12 4 7 3-4 6 9z"/></svg> Bratthet
         </button>
 
-        <button id="resetBtn" style="padding:8px 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer;">Nullstill kart</button>
+        <button id="resetBtn" class="ctl">Nullstill kart</button>
     </div>
 
     <div id="map-container">
@@ -324,8 +403,16 @@
     </div>
 
     <div id="bottom-controls-row">
-        <button onclick="window.location.href='sommer.html'" style="padding:8px 15px; border-radius:8px; background:var(--new-green); color:white; border:none; font-weight:600; cursor:pointer;">Sommer ⛰️</button>
-        <button onclick="window.location.href='oversikt.html'" style="padding:8px 15px; border-radius:8px; background:var(--strava-blue); color:white; border:none; font-weight:600; cursor:pointer;">Oversikt turer</button>
+        <button class="ctl ctl-summer" onclick="window.location.href='sommer.html'">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg> Fjellturer sommer
+        </button>
+        <button class="ctl ctl-map" onclick="window.location.href='oversikt.html'">Oversikt turer</button>
+    </div>
+
+    <div class="bmc-foot">
+        <div class="bmc">
+            <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="spJcAlD" data-color="#FFDD00" data-emoji="" data-font="Cookie" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff"></script>
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
