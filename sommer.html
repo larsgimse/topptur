@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Fjellturer rundt Tromsø - Sommer</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --strava-orange: #fc4c02;
@@ -415,37 +418,140 @@
             border: 1px solid rgba(0,0,0,0.2);
             border-radius: 3px;
         }
+
+        /* ===== Minimalistisk design (kun utseende, ingen endringer i funksjon) ===== */
+        :root {
+            --ink: #000;
+            --muted: #6b6b6b;
+            --winter-bg: #dde9f2;
+            --winter-ink: #3f6f93;
+            --summer-bg: #e6efd8;
+            --summer-ink: #5f7f3b;
+            --map-bg: #ededeb;
+        }
+        body { background: #fff; color: var(--ink); font-family: "Jost", "Helvetica Neue", Arial, sans-serif; font-weight: 300; }
+        button, select, input { font-family: inherit; }
+
+        body > h1, #buttons, #controls-row, .footer-row {
+            width: 100%; max-width: 1100px; margin-left: auto; margin-right: auto; box-sizing: border-box;
+        }
+        body > h1 { display: flex; align-items: center; gap: 14px; margin-top: 22px; margin-bottom: 18px; padding: 0 2px 16px; text-align: left; font-size: clamp(30px, 6vw, 44px); font-weight: 200; letter-spacing: -.02em; line-height: 1.1; border-bottom: 1px solid var(--ink); }
+        body > h1 .h-ico { flex: none; width: 38px; height: 38px; fill: none; stroke: var(--summer-ink); stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+
+        #buttons, #controls-row, .footer-row { justify-content: flex-start; padding-left: 2px; padding-right: 2px; }
+        .footer-row { margin-top: 26px; padding-bottom: 18px; }
+
+        /* Kontrollknapper */
+        .ctl { padding: 8px 14px; border: 1px solid var(--ink); border-radius: 0; background: #fff; color: var(--ink); font-size: 14px; font-weight: 400; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; box-shadow: none; transition: background .3s ease; }
+        .ctl svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+        .ctl:hover { background: var(--summer-bg); }
+        .ctl.ctl-winter:hover { background: var(--winter-bg); }
+        body .btn-toggle-active, body #sykkelBtn.active { background: var(--summer-ink) !important; color: #fff !important; border-color: var(--summer-ink) !important; }
+
+        /* Søkefelt */
+        #topSearchInput { border: 1px solid var(--ink); border-radius: 0; font-size: 14px; font-weight: 400; transition: border-color .3s ease; }
+        #topSearchInput:focus { border-color: var(--summer-ink); box-shadow: 0 0 0 1px var(--summer-ink); }
+        .search-input-wrapper span { display: flex; align-items: center; }
+        .search-input-wrapper svg { width: 15px; height: 15px; fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-linecap: round; }
+
+        /* Topp-knapper (bokstaver) */
+        body .letter-btn { background: #fff; color: var(--ink); border: 1px solid var(--ink); border-radius: 0; box-shadow: none; font-weight: 400; transition: background .3s ease, color .3s ease; }
+        body .letter-btn:hover { background: var(--summer-bg); transform: none; box-shadow: none; }
+        body .letter-btn.active { background: var(--summer-ink); border-color: var(--summer-ink); color: #fff; transform: none; box-shadow: none; }
+        body .dropdown-menu { border: 1px solid var(--ink); border-radius: 0; box-shadow: 0 10px 30px rgba(0,0,0,.12); }
+        body .dropdown-item { font-weight: 400; color: var(--ink); }
+        body .dropdown-item:hover, body .dropdown-item.active { background-color: var(--summer-bg); }
+        body .dropdown-item.active { font-weight: 500; }
+        .highlight-word { color: var(--summer-ink); font-weight: 600; }
+        .badge-label { background: #fff; color: var(--muted); border: 1px solid #b5b5b5; box-shadow: none; }
+        body .badge-2026 { background: var(--summer-bg) !important; color: #3f5a1f; border-color: var(--summer-ink); }
+
+        /* Panelet over kartet */
+        body .video-link-btn, body .search-link-btn, body .gallery-link-btn { border: 1px solid var(--ink) !important; color: var(--ink) !important; border-radius: 0; font-weight: 500; transition: background .3s ease; }
+        body .video-link-btn:hover, body .search-link-btn:hover, body .gallery-link-btn:hover { background: var(--summer-bg); }
+        body .sykkel-tag { border: 1px solid var(--ink); color: var(--ink); border-radius: 0; font-weight: 500; }
+        body .desc-box, body .control-row-container, body .download-area { border: 1px solid var(--ink); border-radius: 0; }
+        .desc-box-title, .download-header { text-transform: none; letter-spacing: 0; font-size: 11px; color: var(--muted); }
+        .download-header { color: var(--ink); font-weight: 600; }
+        .dl-link { color: var(--summer-ink); font-weight: 500; }
+        .toggle-text { text-transform: none; font-size: 9px; }
+        .active .switch-track { background: var(--summer-ink); }
+        body .toggle-ui-btn { background: var(--ink); color: #fff; border: 1px solid var(--ink); border-radius: 0; font-weight: 500; opacity: 1; }
+        body .share-ui-btn { background: #fff; color: var(--ink); border: 1px solid var(--ink); border-radius: 0; font-weight: 500; opacity: 1; transition: background .3s ease; }
+        body .share-ui-btn:hover { background: var(--summer-bg); }
+        .legend { border: 1px solid var(--ink); border-radius: 0; box-shadow: none; }
+
+        /* Selve kartet: samme størrelse og utsnitt, bare tynn ramme */
+        #map { border-radius: 0; box-shadow: none; outline: 1px solid var(--ink); }
+
+        /* Buy me a coffee: liten og diskret */
+        body .custom-bmc-btn { background: #fff; color: var(--ink); border: 1px solid var(--ink); border-radius: 0; font-weight: 400; font-size: 12px; padding: 5px 10px; margin-left: auto; transform: none; opacity: .85; transition: background .3s ease, opacity .2s; }
+        body .custom-bmc-btn:hover { background: #fff3b0; transform: none; opacity: 1; }
+        .custom-bmc-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+
+        /* Info-popup */
+        .info-popup-overlay { background: rgba(0, 0, 0, 0.35); }
+        .info-popup-content { border: 1px solid var(--ink); border-radius: 0; box-shadow: 0 20px 40px rgba(0,0,0,.15); font-family: "Jost", "Helvetica Neue", Arial, sans-serif; }
+        .info-popup-close { color: var(--ink); font-weight: 200; font-size: 30px; line-height: 1; transition: color .3s ease; }
+        .info-popup-close:hover { color: var(--summer-ink); }
+        .info-popup-text h1 { font-weight: 300; border-bottom: 1px solid var(--ink); }
+        .info-popup-text h2, .info-popup-text h3 { font-weight: 400; }
+        .info-popup-text p { font-weight: 400; color: #333; }
+        .info-popup-text a { color: var(--summer-ink) !important; }
+
+        /* Bildegalleri */
+        .gallery-image { border-radius: 0; box-shadow: none; }
+        .gallery-modal-close { font-weight: 200; }
+        .gallery-nav-btn { background: transparent; border: 1px solid rgba(255,255,255,.7); border-radius: 0; }
+        .gallery-nav-btn:hover { background: rgba(255,255,255,.18); }
+
+        /* Popup (profil) */
+        .leaflet-popup-content-wrapper { background: #fff; color: var(--ink); border: 1px solid var(--ink); border-radius: 0; box-shadow: 0 10px 30px rgba(0,0,0,.14); font-family: "Jost", "Helvetica Neue", Arial, sans-serif; }
+        .leaflet-popup-content { margin: 14px 16px 12px; font-size: 13px; font-weight: 400; line-height: 1.4; text-align: left; }
+        .leaflet-popup-tip { background: #fff; border: 1px solid var(--ink); box-shadow: none; }
+        .leaflet-container a.leaflet-popup-close-button { color: var(--ink); font: 300 22px/26px "Jost", Arial, sans-serif; top: 4px; right: 4px; width: 26px; height: 26px; transition: color .3s ease; }
+        .leaflet-container a.leaflet-popup-close-button:hover { color: var(--summer-ink); background: none; }
+        .prof-title { font-size: 18px; font-weight: 300; letter-spacing: -.01em; line-height: 1.2; padding-right: 18px; }
+        .prof-date { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+        @media (max-width: 768px) {
+            .buttons-wrapper::after { background: linear-gradient(to left, rgba(255,255,255,.95), rgba(255,255,255,0)); }
+            body .custom-bmc-btn { margin-left: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
     </style>
 </head>
 <body>
 
-    <h1>Fjellturer rundt Tromsø</h1>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><path id="arm" d="M22 22V3.5M22 9.5l-4.3-2.5M22 9.5l4.3-2.5M22 15l-3.2-1.9M22 15l3.2-1.9M22 6.5l-1.6-2M22 6.5l1.6-2" fill="none" stroke="currentColor"/></defs></svg>
+
+    <h1><svg class="h-ico" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="7"/><path d="M22 4v6M22 34v6M4 22h6M34 22h6M9.3 9.3l4.2 4.2M30.5 30.5l4.2 4.2M9.3 34.7l4.2-4.2M30.5 13.5l4.2-4.2"/></svg>Fjellturer rundt Tromsø</h1>
 
     <div class="buttons-wrapper" id="buttonsWrapper">
         <div id="buttons"></div>
     </div>
 
     <div id="controls-row">
-        <select id="mapSelect" style="padding:8px; border-radius:8px; font-weight:600; border:1px solid #ccc;">
+        <select id="mapSelect" class="ctl">
             <option value="norge">Norgeskart</option>
             <option value="osm">OpenStreetMap</option>
         </select>
 
-        <button id="bratthetBtn" style="padding:8px 12px; border-radius:8px; background:#fff; color:var(--dark-grey); border:1px solid #ccc; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:5px;">
-            <span>⛰️</span> Bratthet
+        <button id="bratthetBtn" class="ctl">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l7-12 4 7 3-4 6 9z"/></svg> Bratthet
         </button>
         
-        <button id="sykkelBtn" class="active" aria-pressed="true" style="padding:8px 12px; border-radius:8px; background:#fff; color:var(--dark-grey); border:1px solid #ccc; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:5px;">
-            <span>🚴</span> Sykkelturer: <span id="sykkelStatus">På</span>
+        <button id="sykkelBtn" class="active ctl" aria-pressed="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="16" r="3.8"/><circle cx="18" cy="16" r="3.8"/><path d="M6 16l4-8h5l3 8M10 8L8.5 5.5H6.5M12.5 12.5L10 16"/></svg> Sykkelturer: <span id="sykkelStatus">På</span>
         </button>
 
         <div class="search-input-wrapper">
-            <span>🔍</span>
+            <span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></span>
             <input type="text" id="topSearchInput" list="topperList" aria-label="Søk etter fjelltopp" placeholder="Søk etter topp..." />
             <datalist id="topperList"></datalist>
         </div>
 
-        <button id="resetBtn" style="padding:8px 15px; border-radius:8px; background:var(--dark-grey); color:white; border:none; font-weight:600; cursor:pointer;">Nullstill kart</button>
+        <button id="resetBtn" class="ctl">Nullstill kart</button>
     </div>
 
     <div id="map-container">
@@ -454,12 +560,14 @@
     </div>
 
     <div class="footer-row">
+        <button class="ctl ctl-winter" onclick="window.location.href='vinter.html'">
+            <svg viewBox="0 0 44 44" aria-hidden="true"><use href="#arm"/><use href="#arm" transform="rotate(60 22 22)"/><use href="#arm" transform="rotate(120 22 22)"/><use href="#arm" transform="rotate(180 22 22)"/><use href="#arm" transform="rotate(240 22 22)"/><use href="#arm" transform="rotate(300 22 22)"/></svg> Toppturer vinter
+        </button>
+        <button class="ctl" onclick="window.location.href='http://gimse.info'">gimse.info</button>
+        <button id="infoBtn" aria-label="Informasjon om siden" class="ctl"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg> Info</button>
         <a href="https://www.buymeacoffee.com/spJcAlD" target="_blank" class="custom-bmc-btn">
-            <span>☕</span> Buy me a coffee
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16M8 3v3M12 3v3"/></svg> Buy me a coffee
         </a>
-        <button onclick="window.location.href='http://gimse.info'" class="footer-btn" style="background:var(--dark-grey); color:white;">➡️ gimse.info</button>
-        <button onclick="window.location.href='vinter.html'" class="footer-btn" style="background:var(--download-blue); color:white;">Vinter ⛷️</button>
-        <button id="infoBtn" aria-label="Informasjon om siden" class="footer-btn" style="background:#fff; color:var(--dark-grey); border:1px solid #ccc;"><span>ℹ️</span> Info</button>
     </div>
 
     <div class="info-popup-overlay" id="infoPopup">
@@ -754,14 +862,14 @@
 
             const popupContent = document.createElement('div');
             popupContent.innerHTML = `
-                <b style="font-size:14px;">${tittel}</b><br>
-                ${dato ? `<span style="font-size:11px; color:#64748b;">${dato}</span><br>` : ''}
+                <div class="prof-title">${tittel}</div>
+                ${dato ? `<div class="prof-date">${dato}</div>` : ''}
                 <canvas id="elevationChart" width="220" height="100" style="margin-top:8px;"></canvas>
                 <div style="font-size:12px; margin-top:8px; text-align:left;">📏 ${(d/1000).toFixed(1)} km | 📈 ${e.toFixed(0)}m | 🏔️ ${h.toFixed(0)} moh<br>⏱️ Til topp: ${tidTilTopp} | ⌛ T/R: ${tidTR}</div>`;
             
             const canvas = popupContent.querySelector('canvas');
             const ctx = canvas.getContext('2d'), w = canvas.width, ht = canvas.height, pad = 5, maxD = stats[stats.length - 1][0], rH = h - minH || 1;
-            ctx.beginPath(); ctx.strokeStyle = '#fc4c02'; ctx.fillStyle = 'rgba(252, 76, 2, 0.15)';
+            ctx.beginPath(); ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.lineJoin = 'round'; ctx.fillStyle = 'rgba(0, 0, 0, 0.07)';
             ctx.moveTo(pad, ht - pad);
             stats.forEach(([dist, elev]) => ctx.lineTo(pad + (dist / maxD) * (w - pad * 2), (ht - pad) - ((elev - minH) / rH) * (ht - pad * 2)));
             ctx.lineTo(w - pad, ht - pad); ctx.closePath(); ctx.fill(); ctx.stroke();
