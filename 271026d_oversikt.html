@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Toppturer - Oversiktskart</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #000;
+            --muted: #6b6b6b;
+            --map-bg: #ededeb;
+            --winter-bg: #dde9f2;
+            --winter-ink: #3f6f93;
+            --summer-bg: #e6efd8;
+            --summer-ink: #5f7f3b;
+            /* Sekundviseren på et jernbaneur */
+            --second-hand: #e30613;
+            --trails-purple: #c084fc;
+            --dnt-cyan: #06b6d4;
+            --poi-yellow: #eab308;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: "Jost", "Helvetica Neue", Arial, sans-serif;
+            font-weight: 300;
+            background: #fff;
+            color: var(--ink);
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        button { font-family: inherit; }
+
+        header {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: #fff;
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px 16px;
+            border: 1px solid var(--ink);
+            border-radius: 0;
+            z-index: 1000;
+            min-height: 52px;
+        }
+
+        h1 {
+            font-size: 26px;
+            font-weight: 200;
+            letter-spacing: -.02em;
+            line-height: 1.1;
+        }
+
+        .nav-buttons { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border: 1px solid var(--ink);
+            border-radius: 0;
+            background: #fff;
+            color: var(--ink);
+            font-size: 14px;
+            font-weight: 400;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background .3s ease, color .3s ease;
+        }
+        .btn svg { width: 17px; height: 17px; flex: none; fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+        .btn:hover { background: var(--map-bg); }
+        .btn-winter:hover { background: var(--winter-bg); }
+        .btn-summer:hover { background: var(--summer-bg); }
+
+        .btn.active, .btn.active:hover { background: var(--ink); color: #fff; }
+        .btn-winter.active, .btn-winter.active:hover { background: var(--winter-ink); border-color: var(--winter-ink); }
+        .btn-summer.active, .btn-summer.active:hover { background: var(--summer-ink); border-color: var(--summer-ink); }
+
+        #map-container {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            background: #fff;
+        }
+
+        /* Hvitt kart med svarte streker: Kartverkets gråtonekart presset mot hvitt og svart */
+        .bw-tiles { filter: grayscale(1) contrast(1.6) brightness(1.08); }
+
+        /* STATUSLINJE OG PROGRESJONSBAR */
+        #loading-status {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            padding: 8px 14px;
+            border: 1px solid var(--ink);
+            border-radius: 0;
+            font-size: 13px;
+            font-weight: 400;
+            z-index: 1000;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+            white-space: nowrap;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            min-width: 230px;
+        }
+
+        .status-header { display: flex; align-items: center; gap: 8px; }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 2px;
+            background: rgba(0,0,0,.12);
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--second-hand);
+            transition: width 0.3s ease;
+        }
+
+        .progress-bar.indeterminate {
+            width: 50%;
+            animation: progress-slide 1.2s infinite ease-in-out;
+        }
+
+        @keyframes progress-slide {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(200%); }
+        }
+
+        .spinner {
+            width: 12px;
+            height: 12px;
+            border: 1px solid rgba(0,0,0,.15);
+            border-top-color: var(--second-hand);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (prefers-reduced-motion: reduce) {
+            .progress-bar.indeterminate, .spinner { animation: none; }
+        }
+
+        .panels-container {
+            position: fixed;
+            top: 75px;
+            right: 10px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .ui-panel {
+            background: #fff;
+            padding: 12px 15px;
+            border-radius: 0;
+            border: 1px solid var(--ink);
+            font-family: inherit;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 180px;
+            pointer-events: auto;
+        }
+
+        .ui-panel.active { display: flex; }
+
+        .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 400; color: var(--ink); }
+
+        .switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #fff; border: 1px solid var(--ink); transition: .3s; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; top: 3px; background-color: var(--ink); transition: .3s; }
+        input:checked + .slider { background-color: var(--ink); }
+        input:checked + .slider:before { background-color: #fff; transform: translateX(16px); }
+
+        .counter-box {
+            position: fixed;
+            bottom: 20px;
+            left: 60px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .counter {
+            background: #fff;
+            padding: 6px 14px;
+            border: 1px solid var(--ink);
+            border-radius: 0;
+            font-size: 13px;
+            font-weight: 400;
+            display: none;
+        }
+        #bus-counter.active { display: block; color: var(--ink); }
+
+        .overlay-canvas { pointer-events: none; z-index: 450; }
+
+        /* Leaflet-kontroller, popups og verktøytips i samme stil */
+        .leaflet-bar { border: 1px solid var(--ink) !important; border-radius: 0 !important; box-shadow: none !important; }
+        .leaflet-bar a, .leaflet-bar a:hover { background: #fff; color: var(--ink); border-bottom: 1px solid var(--ink); border-radius: 0 !important; font-family: inherit; font-weight: 300; }
+        .leaflet-bar a:last-child { border-bottom: 0; }
+        .leaflet-bar a:hover { background: var(--map-bg); }
+        .leaflet-control-attribution { background: rgba(255,255,255,.85) !important; color: var(--muted); font-family: inherit; }
+        .leaflet-control-attribution a { color: var(--ink); }
+
+        .leaflet-popup-content-wrapper {
+            background: #fff !important;
+            color: var(--ink) !important;
+            border: 1px solid var(--ink);
+            border-radius: 0;
+            box-shadow: none;
+            font-family: inherit;
+            font-weight: 400;
+        }
+        .leaflet-popup-tip { background: #fff !important; box-shadow: 0 0 0 1px var(--ink); }
+        .leaflet-container a.leaflet-popup-close-button { color: var(--ink); }
+
+        .leaflet-tooltip {
+            background: #fff;
+            color: var(--ink);
+            border: 1px solid var(--ink);
+            border-radius: 0;
+            box-shadow: none;
+            font-family: inherit;
+            font-weight: 400;
+        }
+        .leaflet-tooltip-top:before { border-top-color: var(--ink); }
+
+        .popup-link-btn {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 6px 12px;
+            background: #fff;
+            color: var(--ink) !important;
+            border: 1px solid var(--ink);
+            text-decoration: none;
+            font-weight: 400;
+            font-size: 13px;
+            text-align: center;
+            transition: background .3s ease;
+        }
+        .popup-link-btn:hover { background: var(--map-bg); }
+
+        /* Tegnforklaring for bratthet */
+        .legend {
+            background: #fff;
+            padding: 10px 12px;
+            line-height: 1.5;
+            color: var(--ink);
+            border: 1px solid var(--ink);
+            border-radius: 0;
+            box-shadow: none;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 400;
+            text-align: left;
+        }
+        .legend h4 { margin: 0 0 6px 0; font-size: 14px; font-weight: 500; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 3px; }
+        .color-box { width: 16px; height: 16px; margin-right: 8px; border: 1px solid rgba(0,0,0,.2); }
+
+        @media (max-width: 1000px) {
+            h1 { font-size: 22px; }
+        }
+
+        @media (max-width: 600px) {
+            header {
+                top: auto;
+                bottom: 20px;
+                flex-direction: column;
+                gap: 8px;
+                align-items: stretch;
+                min-height: auto;
+            }
+            h1 { font-size: 20px; text-align: center; }
+            .nav-buttons { width: 100%; justify-content: center; flex-wrap: nowrap; }
+            .btn { flex: 1; justify-content: center; padding: 9px 4px; }
+            .btn .lbl { display: none; }
+            #loading-status { bottom: auto; top: 20px; }
+            .panels-container { top: 10px; right: 10px; max-width: 200px; }
+            .counter-box { bottom: 120px; left: 56px; }
+            .leaflet-bottom { bottom: 120px !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><path id="arm" d="M22 22V3.5M22 9.5l-4.3-2.5M22 9.5l4.3-2.5M22 15l-3.2-1.9M22 15l3.2-1.9M22 6.5l-1.6-2M22 6.5l1.6-2" fill="none" stroke="currentColor"/></defs></svg>
+
+    <header>
+        <h1>Toppturer</h1>
+        <div class="nav-buttons">
+            <button id="btn-reset" class="btn btn-reset" title="Nullstill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"/></svg><span class="lbl">Nullstill</span></button>
+            <button id="btn-vinter" class="btn btn-winter" title="Vinter"><svg viewBox="0 0 44 44" aria-hidden="true"><use href="#arm"/><use href="#arm" transform="rotate(60 22 22)"/><use href="#arm" transform="rotate(120 22 22)"/><use href="#arm" transform="rotate(180 22 22)"/><use href="#arm" transform="rotate(240 22 22)"/><use href="#arm" transform="rotate(300 22 22)"/></svg><span class="lbl">Vinter</span></button>
+            <button id="btn-sommer" class="btn btn-summer" title="Sommer"><svg viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="7"/><path d="M22 4v6M22 34v6M4 22h6M34 22h6M9.3 9.3l4.2 4.2M30.5 30.5l4.2 4.2M9.3 34.7l4.2-4.2M30.5 13.5l4.2-4.2"/></svg><span class="lbl">Sommer</span></button>
+            <button id="btn-stier" class="btn btn-stier" title="Stier"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19c5 0 3-7 8-7s3-7 8-7"/></svg><span class="lbl">Stier</span></button>
+            <button id="btn-dnt" class="btn btn-dnt" title="Turløyper"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4M6 5h11l-2.5 3.5L17 12H6"/></svg><span class="lbl">Turløyper</span></button>
+            <button id="btn-poi" class="btn btn-poi" title="Severdigheter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.5 6-10a6 6 0 1 0-12 0c0 4.5 6 10 6 10z"/><circle cx="12" cy="11" r="2"/></svg><span class="lbl">Severdigheter</span></button>
+            <button id="btn-bratthet" class="btn btn-bratthet" title="Bratthet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l7-12 4 7 3-4 6 9z"/></svg><span class="lbl">Bratthet</span></button>
+            <button id="btn-buss" class="btn btn-bus" title="Buss"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="13" rx="2"/><path d="M5 11h14M8 20v-3M16 20v-3"/></svg><span class="lbl">Buss</span></button>
+        </div>
+    </header>
+
+    <div class="panels-container">
+        <!-- BRATTHET PANEL -->
+        <div id="bratthet-panel" class="ui-panel">
+            <div class="row">Bratthetsskala: <label class="switch"><input type="checkbox" id="bratthetLegendSwitch"><span class="slider"></span></label></div>
+        </div>
+
+        <!-- BUSS PANEL -->
+        <div id="bus-panel" class="ui-panel">
+            <div class="row">Linjenr: <label class="switch"><input type="checkbox" id="busLineSwitch" checked><span class="slider"></span></label></div>
+            <div class="row">Destinasjon: <label class="switch"><input type="checkbox" id="busDestSwitch"><span class="slider"></span></label></div>
+            <div class="row">Forsinkelse: <label class="switch"><input type="checkbox" id="busDelaySwitch"><span class="slider"></span></label></div>
+        </div>
+    </div>
+
+    <div class="counter-box">
+        <div id="bus-counter" class="counter">Busser: Laster...</div>
+    </div>
+
+    <div id="map-container">
+        <div id="map"></div>
+        <div id="loading-status">
+            <div class="status-header">
+                <span class="spinner" id="loading-spinner"></span>
+                <span id="loading-text">Leser inn spor...</span>
+            </div>
+            <div class="progress-bar-container" id="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
+
+    <script>
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        // Fargene på sporene: rød som standard (sekundviseren på et jernbaneur), vinter- og sommerfarge ved filtrering
+        const KLOKKE_RØD = '#e30613';
+        const VINTER_FARGE = '#3f6f93';
+        const SOMMER_FARGE = '#5f7f3b';
+        let aktivtFilter = null;
+
+        function sporStil() {
+            if (aktivtFilter === 'vinter') return { color: VINTER_FARGE, weight: 1.8, opacity: 0.9 };
+            if (aktivtFilter === 'sommer') return { color: SOMMER_FARGE, weight: 1.8, opacity: 0.9 };
+            return { color: KLOKKE_RØD, weight: 1.6, opacity: 0.8 };
+        }
+
+        const minRenderer = L.canvas({ tolerance: isTouchDevice ? 22 : 3 });
+
+        const map = L.map('map', {
+            zoomControl: true,
+            maxZoom: 18,
+            renderer: minRenderer
+        }).setView([69.65, 18.95], 9);
+
+        map.zoomControl.setPosition('bottomleft');
+
+        /* ==========================================================================
+           GRUNNKART: hvit bakgrunn med svarte linjer (kystlinje, innsjøer og veier).
+           Vektordata fra OpenStreetMap via OpenFreeMap, tegnet med MapLibre.
+           Svak grå land, difus blå innsjøer og hvitt hav. Ingen høydekurver eller annen fjelltopografi.
+           ========================================================================== */
+        const LINJE = '#000000';
+        const veiFilter = ['match', ['get', 'class'], ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor'], true, false];
+        const veiBredde = ['interpolate', ['exponential', 1.4], ['zoom'], 6, 0.4, 10, 0.8, 14, 1.6, 18, 4];
+
+        const glStil = {
+            version: 8,
+            glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+            sources: { omt: { type: 'vector', url: 'https://tiles.openfreemap.org/planet' } },
+            layers: [
+                // Land: svak grå (gjennomsiktig, så bratthetslaget under fortsatt vises)
+                { id: 'land', type: 'background',
+                  paint: { 'background-color': '#000000', 'background-opacity': 0.07 } },
+                // Havet er hvitt
+                { id: 'hav-flate', type: 'fill', source: 'omt', 'source-layer': 'water',
+                  filter: ['==', ['get', 'class'], 'ocean'],
+                  paint: { 'fill-color': '#ffffff', 'fill-opacity': 1 } },
+                // Innsjøer og elveflater: difus blå
+                { id: 'innsjo-flate', type: 'fill', source: 'omt', 'source-layer': 'water',
+                  filter: ['!=', ['get', 'class'], 'ocean'],
+                  paint: { 'fill-color': '#7fb2dc', 'fill-opacity': 0.4 } },
+                // Kystlinje og innsjøer: omrisset av vannflatene
+                { id: 'vann-linje', type: 'line', source: 'omt', 'source-layer': 'water',
+                  layout: { 'line-join': 'round' },
+                  paint: { 'line-color': LINJE, 'line-width': ['interpolate', ['linear'], ['zoom'], 4, 0.5, 10, 0.9, 14, 1.2] } },
+                // Veier
+                { id: 'veier', type: 'line', source: 'omt', 'source-layer': 'transportation',
+                  filter: ['all', veiFilter, ['!=', ['get', 'brunnel'], 'tunnel']],
+                  layout: { 'line-cap': 'round', 'line-join': 'round' },
+                  paint: { 'line-color': LINJE, 'line-width': veiBredde } },
+                { id: 'veier-tunnel', type: 'line', source: 'omt', 'source-layer': 'transportation',
+                  filter: ['all', veiFilter, ['==', ['get', 'brunnel'], 'tunnel']],
+                  layout: { 'line-join': 'round' },
+                  paint: { 'line-color': LINJE, 'line-width': veiBredde, 'line-dasharray': [2, 2] } },
+                { id: 'veier-service', type: 'line', source: 'omt', 'source-layer': 'transportation', minzoom: 13,
+                  filter: ['==', ['get', 'class'], 'service'],
+                  layout: { 'line-cap': 'round', 'line-join': 'round' },
+                  paint: { 'line-color': LINJE, 'line-width': ['interpolate', ['linear'], ['zoom'], 13, 0.4, 18, 1.5] } },
+                // Stedsnavn for orientering
+                { id: 'steder', type: 'symbol', source: 'omt', 'source-layer': 'place',
+                  filter: ['match', ['get', 'class'], ['city', 'town', 'village'], true, false],
+                  layout: {
+                      'text-field': ['coalesce', ['get', 'name:nb'], ['get', 'name']],
+                      'text-font': ['Noto Sans Regular'],
+                      'text-size': ['match', ['get', 'class'], 'city', 15, 'town', 13, 11],
+                      'text-max-width': 8
+                  },
+                  paint: { 'text-color': LINJE, 'text-halo-color': '#ffffff', 'text-halo-width': 1.5 } }
+            ]
+        };
+
+        function lagGrunnkart() {
+            // Eget lag over bratthetslaget, slik at linjene alltid vises oppå
+            map.createPane('linjePane');
+            map.getPane('linjePane').style.zIndex = 250;
+            map.getPane('linjePane').style.pointerEvents = 'none';
+            try {
+                if (typeof L.maplibreGL !== 'function' || typeof maplibregl === 'undefined') throw new Error('MapLibre er ikke lastet');
+                L.maplibreGL({
+                    style: glStil,
+                    pane: 'linjePane',
+                    attribution: '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> &copy; <a href="https://openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> Data fra <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; Entur'
+                }).addTo(map);
+            } catch (err) {
+                // Reserve hvis vektorkartet ikke kan tegnes: Kartverkets gråtonekart presset mot hvitt og svart
+                console.warn('Vektorkart feilet, bruker Kartverket gråtone i stedet', err);
+                L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topograatone/default/webmercator/{z}/{y}/{x}.png', {
+                    attribution: '&copy; <a href="https://www.kartverket.no/">Kartverket</a> &copy; Entur',
+                    maxZoom: 20,
+                    maxNativeZoom: 18,
+                    className: 'bw-tiles'
+                }).addTo(map);
+            }
+        }
+        lagGrunnkart();
+
+        /* ==========================================================================
+           BRATTHET (NVE) OG BRATTHETSSKALA, som på vinter.html
+           ========================================================================== */
+        const bratthetMap = L.tileLayer('https://gis3.nve.no/arcgis/rest/services/wmts/Bratthet_2024/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 18,
+            opacity: 0.6,
+            attribution: '&copy; NVE'
+        });
+
+        const bratthetLegend = L.control({ position: 'bottomleft' });
+        bratthetLegend.onAdd = function () {
+            const div = L.DomUtil.create('div', 'legend');
+            div.innerHTML = `
+                <h4>Hellingsvinkel</h4>
+                <div class="legend-item"><span class="color-box" style="background: #FFF500;"></span> 27° – 30°</div>
+                <div class="legend-item"><span class="color-box" style="background: #FFAA00;"></span> 30° – 35°</div>
+                <div class="legend-item"><span class="color-box" style="background: #E60000;"></span> 35° – 40°</div>
+                <div class="legend-item"><span class="color-box" style="background: #730000;"></span> 40° – 45°</div>
+                <div class="legend-item"><span class="color-box" style="background: #000000;"></span> Over 45°</div>
+            `;
+            return div;
+        };
+
+        const btnBratthet = document.getElementById('btn-bratthet');
+        const bratthetPanel = document.getElementById('bratthet-panel');
+        const bratthetLegendSwitch = document.getElementById('bratthetLegendSwitch');
+        let bratthetActive = false;
+
+        // Skalaen vises bare når bratthet er på og bryteren er skrudd på
+        function oppdaterBratthetSkala() {
+            const vis = bratthetActive && bratthetLegendSwitch.checked;
+            if (vis && !bratthetLegend._map) bratthetLegend.addTo(map);
+            if (!vis && bratthetLegend._map) map.removeControl(bratthetLegend);
+        }
+
+        function toggleBratthet() {
+            bratthetActive = !bratthetActive;
+            if (bratthetActive) {
+                map.addLayer(bratthetMap);
+                btnBratthet.classList.add('active');
+                bratthetPanel.classList.add('active');
+            } else {
+                map.removeLayer(bratthetMap);
+                btnBratthet.classList.remove('active');
+                bratthetPanel.classList.remove('active');
+            }
+            oppdaterBratthetSkala();
+        }
+
+        btnBratthet.addEventListener('click', toggleBratthet);
+        bratthetLegendSwitch.addEventListener('change', oppdaterBratthetSkala);
+
+        /* ==========================================================================
+           PROGRESJONS- OG STATUSKONTROLL
+           ========================================================================== */
+        const loadingStatusEl = document.getElementById('loading-status');
+        const loadingTextEl = document.getElementById('loading-text');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        let hideStatusTimeout = null;
+
+        function visStatus(melding, prosent = null, ubestemt = false, farge = 'var(--second-hand)') {
+            if (hideStatusTimeout) clearTimeout(hideStatusTimeout);
+            loadingStatusEl.style.opacity = '1';
+            loadingStatusEl.style.display = 'flex';
+            loadingTextEl.textContent = melding;
+
+            if (prosent !== null || ubestemt) {
+                progressContainer.style.display = 'block';
+                progressBar.style.backgroundColor = farge;
+                if (ubestemt) {
+                    progressBar.classList.add('indeterminate');
+                    progressBar.style.width = '50%';
+                } else {
+                    progressBar.classList.remove('indeterminate');
+                    progressBar.style.width = Math.min(100, Math.max(0, prosent)) + '%';
+                }
+            } else {
+                progressContainer.style.display = 'none';
+            }
+        }
+
+        function skjultStatus(forsinkelseMs = 800) {
+            hideStatusTimeout = setTimeout(() => {
+                loadingStatusEl.style.opacity = '0';
+            }, forsinkelseMs);
+        }
+
+        function formaterNavn(tags, standardType) {
+            if (tags.name && !tags.name.match(/^[a-z]{2,4}\d+$/i)) return tags.name;
+            if (tags.description) return tags.description;
+            if (tags.ref) return `Rute ${tags.ref}`;
+            return standardType;
+        }
+
+        /* ==========================================================================
+           1. STIER & TRÅKK
+           ========================================================================== */
+        const btnStier = document.getElementById('btn-stier');
+        let stierActive = false;
+        let stierLayerGroup = L.layerGroup();
+        let isFetchingStier = false;
+
+        async function hentStierStreker() {
+            if (!stierActive || isFetchingStier) return;
+            if (map.getZoom() < 10) {
+                visStatus("Zoom inn nærmere for å laste stier...", 100, false, 'var(--trails-purple)');
+                skjultStatus(2000);
+                return;
+            }
+
+            visStatus("Henter stier og tråkk fra OSM...", null, true, 'var(--trails-purple)');
+
+            const b = map.getBounds();
+            const south = b.getSouth().toFixed(3);
+            const west = b.getWest().toFixed(3);
+            const north = b.getNorth().toFixed(3);
+            const east = b.getEast().toFixed(3);
+
+            const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json][timeout:12];way["highway"~"path|footway|track"](${south},${west},${north},${east});out geom tags;`;
+
+            isFetchingStier = true;
+
+            try {
+                let res = await fetch(overpassUrl);
+                if (!res.ok) res = await fetch(`https://corsproxy.io/?${encodeURIComponent(overpassUrl)}`);
+                if (!res.ok) throw new Error("Feil ved hente stier");
+
+                const json = await res.json();
+                stierLayerGroup.clearLayers();
+
+                if (json && json.elements) {
+                    const total = json.elements.length;
+                    visStatus(`Tegner opp ${total} stier...`, 50, false, 'var(--trails-purple)');
+
+                    json.elements.forEach(el => {
+                        if (el.geometry && el.geometry.length > 1) {
+                            const latlngs = el.geometry.map(pt => [pt.lat, pt.lon]);
+                            const tags = el.tags || {};
+
+                            const stitype = tags.highway === 'path' ? 'Sti / Tråkk' : (tags.highway === 'track' ? 'Traktorvei' : 'Gangvei');
+                            const tittel = formaterNavn(tags, stitype);
+                            const underlag = tags.surface ? `<br>Underlag: <b>${tags.surface}</b>` : '';
+                            const vanskegrad = tags.sac_scale ? `<br>Gradering: <b>${tags.sac_scale.replace('_', ' ')}</b>` : '';
+                            const merking = tags.marked === 'yes' ? '<br>Merking: <b>Ja (Rød/Blå)</b>' : '';
+
+                            const line = L.polyline(latlngs, {
+                                color: '#c084fc',
+                                weight: 3,
+                                opacity: 0.8,
+                                dashArray: tags.highway === 'path' ? '5, 5' : null
+                            });
+
+                            line.bindPopup(`
+                                <div class="trail-popup">
+                                    <b style="font-size:14px; color:#c084fc;">${tittel}</b><br>
+                                    <span style="font-size:12px; color:#6b6b6b;">${stitype}</span>
+                                    ${underlag}
+                                    ${vanskegrad}
+                                    ${merking}
+                                </div>
+                            `, { className: 'trail-popup' });
+
+                            line.on('mouseover', function() { line.setStyle({ color: '#f0abfc', weight: 5, opacity: 1 }); });
+                            line.on('mouseout', function() { line.setStyle({ color: '#c084fc', weight: 3, opacity: 0.8 }); });
+
+                            stierLayerGroup.addLayer(line);
+                        }
+                    });
+                }
+
+                if (stierActive && !map.hasLayer(stierLayerGroup)) stierLayerGroup.addTo(map);
+                visStatus("Stier lastet inn!", 100, false, 'var(--trails-purple)');
+                skjultStatus();
+            } catch (err) {
+                console.warn("Kunne ikke hente sti-streker:", err);
+                visStatus("Feil ved henting av stier", 100, false, 'red');
+                skjultStatus(2000);
+            } finally {
+                isFetchingStier = false;
+            }
+        }
+
+        function toggleStier() {
+            stierActive = !stierActive;
+            if (stierActive) {
+                btnStier.classList.add('active');
+                stierLayerGroup.addTo(map);
+                hentStierStreker();
+                map.on('moveend zoomend', hentStierStreker);
+            } else {
+                btnStier.classList.remove('active');
+                map.off('moveend zoomend', hentStierStreker);
+                map.removeLayer(stierLayerGroup);
+                stierLayerGroup.clearLayers();
+            }
+        }
+
+        btnStier.addEventListener('click', toggleStier);
+
+        /* ==========================================================================
+           2. TURLØYPER & DNT-RUTER (OPTIMERT FOR HØY HASTIGHET)
+           ========================================================================== */
+        const btnDnt = document.getElementById('btn-dnt');
+        let dntActive = false;
+        let dntLayerGroup = L.layerGroup();
+        let isFetchingDnt = false;
+
+        async function hentDntRuter() {
+            if (!dntActive || isFetchingDnt) return;
+            if (map.getZoom() < 8) {
+                visStatus("Zoom inn for å vise turløyper...", 100, false, 'var(--dnt-cyan)');
+                skjultStatus(2000);
+                return;
+            }
+
+            visStatus("Henter turløyper & DNT-ruter...", null, true, 'var(--dnt-cyan)');
+
+            const b = map.getBounds();
+            const south = b.getSouth().toFixed(3);
+            const west = b.getWest().toFixed(3);
+            const north = b.getNorth().toFixed(3);
+            const east = b.getEast().toFixed(3);
+
+            // Rask spørring etter merkede turløyper og DNT-stier
+            const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json][timeout:10];(way["informational"="route"](${south},${west},${north},${east});way["osmc:symbol"](${south},${west},${north},${east});way["route"="hiking"](${south},${west},${north},${east});way["marked"="yes"](${south},${west},${north},${east}););out geom tags;`;
+
+            isFetchingDnt = true;
+
+            try {
+                let res = await fetch(overpassUrl);
+                if (!res.ok) res = await fetch(`https://corsproxy.io/?${encodeURIComponent(overpassUrl)}`);
+                if (!res.ok) throw new Error("Feil ved hente DNT-ruter");
+
+                const json = await res.json();
+                dntLayerGroup.clearLayers();
+
+                if (json && json.elements && json.elements.length > 0) {
+                    visStatus(`Tegner opp ${json.elements.length} turløyper...`, 70, false, 'var(--dnt-cyan)');
+
+                    json.elements.forEach(way => {
+                        if (way.geometry && way.geometry.length > 1) {
+                            const latlngs = way.geometry.map(pt => [pt.lat, pt.lon]);
+                            const tags = way.tags || {};
+
+                            const rutenavn = formaterNavn(tags, 'Merket DNT-rute / Turløype');
+                            const operator = tags.operator || tags.network || 'DNT / Troms Turlag';
+                            const merking = tags["osmc:symbol"] ? `<br>Symbol: <b>${tags["osmc:symbol"]}</b>` : '<br>Merking: <b>Rød T / Merkestikker</b>';
+
+                            const line = L.polyline(latlngs, {
+                                color: '#06b6d4',
+                                weight: 3.8,
+                                opacity: 0.9
+                            });
+
+                            line.bindPopup(`
+                                <div class="dnt-popup">
+                                    <b style="font-size:14px; color:#06b6d4;">${rutenavn}</b><br>
+                                    <span style="font-size:12px; color:#6b6b6b;">Ansvarlig: ${operator}</span>
+                                    ${merking}
+                                </div>
+                            `, { className: 'dnt-popup' });
+
+                            line.on('mouseover', function() { line.setStyle({ color: '#67e8f9', weight: 5.5, opacity: 1 }); });
+                            line.on('mouseout', function() { line.setStyle({ color: '#06b6d4', weight: 3.8, opacity: 0.9 }); });
+
+                            dntLayerGroup.addLayer(line);
+                        }
+                    });
+                }
+
+                if (dntActive && !map.hasLayer(dntLayerGroup)) dntLayerGroup.addTo(map);
+                visStatus("Turløyper lastet inn!", 100, false, 'var(--dnt-cyan)');
+                skjultStatus();
+            } catch (err) {
+                console.warn("Kunne ikke hente DNT-ruter:", err);
+                visStatus("Feil ved henting av turløyper", 100, false, 'red');
+                skjultStatus(2000);
+            } finally {
+                isFetchingDnt = false;
+            }
+        }
+
+        function toggleDnt() {
+            dntActive = !dntActive;
+            if (dntActive) {
+                btnDnt.classList.add('active');
+                dntLayerGroup.addTo(map);
+                hentDntRuter();
+                map.on('moveend zoomend', hentDntRuter);
+            } else {
+                btnDnt.classList.remove('active');
+                map.off('moveend zoomend', hentDntRuter);
+                map.removeLayer(dntLayerGroup);
+                dntLayerGroup.clearLayers();
+            }
+        }
+
+        btnDnt.addEventListener('click', toggleDnt);
+
+        /* ==========================================================================
+           3. SEVERDIGHETER & POIs
+           ========================================================================== */
+        const btnPoi = document.getElementById('btn-poi');
+        let poiActive = false;
+        let poiLayerGroup = L.layerGroup();
+        let isFetchingPoi = false;
+
+        async function hentPoiData() {
+            if (!poiActive || isFetchingPoi) return;
+            if (map.getZoom() < 10) return;
+
+            visStatus("Henter fjellpass og severdigheter...", null, true, 'var(--poi-yellow)');
+
+            const b = map.getBounds();
+            const south = b.getSouth().toFixed(3);
+            const west = b.getWest().toFixed(3);
+            const north = b.getNorth().toFixed(3);
+            const east = b.getEast().toFixed(3);
+
+            const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json][timeout:10];(node["mountain_pass"="yes"](${south},${west},${north},${east});node["tourism"~"viewpoint|alpine_hut|wilderness_hut|shelter"](${south},${west},${north},${east});node["amenity"="shelter"](${south},${west},${north},${east}););out tags geom;`;
+
+            isFetchingPoi = true;
+
+            try {
+                let res = await fetch(overpassUrl);
+                if (!res.ok) res = await fetch(`https://corsproxy.io/?${encodeURIComponent(overpassUrl)}`);
+                if (!res.ok) throw new Error("Feil ved hente POIs");
+
+                const json = await res.json();
+                poiLayerGroup.clearLayers();
+
+                if (json && json.elements) {
+                    json.elements.forEach(node => {
+                        const tags = node.tags || {};
+                        const lat = node.lat;
+                        const lon = node.lon;
+
+                        let poiType = "Severdighet";
+                        let ikon = "📍";
+
+                        if (tags.mountain_pass === "yes") { poiType = "Fjellpass / Skard"; ikon = "🏔️"; }
+                        else if (tags.tourism === "viewpoint") { poiType = "Utsiktspunkt"; ikon = "👁️"; }
+                        else if (tags.tourism === "alpine_hut" || tags.tourism === "wilderness_hut") { poiType = "Turisthytte / Koie"; ikon = "🏠"; }
+                        else if (tags.shelter_type || tags.amenity === "shelter") { poiType = "Gapahuk / Ly"; ikon = "⛺"; }
+
+                        const navn = tags.name || poiType;
+                        const hoyde = tags.ele ? `<br>Høyde: <b>${tags.ele} m.o.h.</b>` : '';
+
+                        const marker = L.circleMarker([lat, lon], {
+                            radius: 6,
+                            fillColor: '#eab308',
+                            color: '#000000',
+                            weight: 1.5,
+                            opacity: 1,
+                            fillOpacity: 0.9
+                        });
+
+                        marker.bindPopup(`
+                            <div class="poi-popup">
+                                <b style="font-size:14px; color:#a16207;">${ikon} ${navn}</b><br>
+                                <span style="font-size:12px; color:#6b6b6b;">${poiType}</span>
+                                ${hoyde}
+                            </div>
+                        `, { className: 'poi-popup' });
+
+                        poiLayerGroup.addLayer(marker);
+                    });
+                }
+
+                if (poiActive && !map.hasLayer(poiLayerGroup)) poiLayerGroup.addTo(map);
+                visStatus("Severdigheter lastet inn!", 100, false, 'var(--poi-yellow)');
+                skjultStatus();
+            } catch (err) {
+                console.warn("Kunne ikke hente POIs:", err);
+                visStatus("Feil ved henting av severdigheter", 100, false, 'red');
+                skjultStatus(2000);
+            } finally {
+                isFetchingPoi = false;
+            }
+        }
+
+        function togglePoi() {
+            poiActive = !poiActive;
+            if (poiActive) {
+                btnPoi.classList.add('active');
+                poiLayerGroup.addTo(map);
+                hentPoiData();
+                map.on('moveend zoomend', hentPoiData);
+            } else {
+                btnPoi.classList.remove('active');
+                map.off('moveend zoomend', hentPoiData);
+                map.removeLayer(poiLayerGroup);
+                poiLayerGroup.clearLayers();
+            }
+        }
+
+        btnPoi.addEventListener('click', togglePoi);
+
+        /* ==========================================================================
+           GPX INNLASTING FOR TOPPER (MED PROGRESJONSBAR)
+           ========================================================================== */
+        const gpxOptions = {
+            async: true,
+            polyline_options: {
+                color: KLOKKE_RØD,
+                opacity: 0.8,
+                weight: 1.6,
+                lineCap: 'round'
+            },
+            marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
+        };
+
+        let loadedCount = 0;
+        let totalFiles = 0;
+        let isFinishedLoading = false;
+        const bounds = L.latLngBounds();
+        const lagredeSpor = [];
+
+        async function hentTopper(url, type) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) return [];
+                const data = await response.json();
+                return data.map(topp => ({
+                    id: topp.id,
+                    navn: topp.navn,
+                    fil: topp.fil,
+                    ekstraSpor: topp.ekstraSpor || [],
+                    type: type
+                }));
+            } catch (error) {
+                console.warn("Kunne ikke laste data fra " + url, error);
+                return [];
+            }
+        }
+
+        function byggSporliste(topper) {
+            const sporMap = new Map();
+
+            const leggTil = (fil, type, eier) => {
+                if (!fil) return;
+                if (!sporMap.has(fil)) sporMap.set(fil, { fil: fil, type: type, eiere: [] });
+                const spor = sporMap.get(fil);
+                if (!spor.eiere.some(e => e.id === eier.id && e.type === eier.type && e.ekstraTittel === eier.ekstraTittel)) {
+                    spor.eiere.push(eier);
+                }
+            };
+
+            topper.forEach(t => leggTil(t.fil, t.type, { id: t.id, navn: t.navn, type: t.type, ekstraTittel: null }));
+            topper.forEach(t => {
+                t.ekstraSpor.forEach(es => leggTil(es.fil, t.type, { id: t.id, navn: t.navn, type: t.type, ekstraTittel: es.tittel || null }));
+            });
+
+            return Array.from(sporMap.values());
+        }
+
+        function eierUrl(eier) {
+            const målside = eier.type === "sommer" ? "sommer.html" : "vinter.html";
+            return `${målside}?fjell=${encodeURIComponent(eier.id || eier.navn)}`;
+        }
+
+        function eierTittel(eier) {
+            return eier.ekstraTittel ? `${eier.navn} – ${eier.ekstraTittel}` : eier.navn;
+        }
+
+        function zoomTilAktiveSpor() {
+            const aktiveBounds = L.latLngBounds();
+            lagredeSpor.forEach(item => {
+                if (map.hasLayer(item.layer)) {
+                    aktiveBounds.extend(item.layer.getBounds());
+                }
+            });
+            if (aktiveBounds.isValid()) {
+                map.fitBounds(aktiveBounds, { padding: isTouchDevice ? [40, 100] : [40, 40] });
+            }
+        }
+
+        function sjekkFremdrift() {
+            if (isFinishedLoading) return;
+            loadedCount++;
+            
+            const prosent = (loadedCount / totalFiles) * 100;
+            visStatus(`Laster inn spor... ${loadedCount}/${totalFiles}`, prosent, false, 'var(--second-hand)');
+
+            if (loadedCount >= totalFiles) {
+                isFinishedLoading = true;
+                zoomTilAktiveSpor();
+                visStatus(`Alle ${totalFiles} spor er lastet inn!`, 100, false, 'var(--second-hand)');
+                skjultStatus(1500);
+            }
+        }
+
+        const GPX_TIMEOUT_MS = 20000;
+        const feilede = [];
+
+        function leggTilInteraksjon(layer, topp) {
+            const typeTekst = topp.type === "vinter" ? "Vintertopp" : "Sommertopp";
+            const ikon = topp.type === "vinter" ? "❄" : "☀️";
+            const url = eierUrl(topp.eiere[0]);
+
+            const tooltipHtml = topp.eiere.map(e => `<b>${eierTittel(e)}</b>`).join('<br>');
+            const popupHtml = topp.eiere.map(e => `
+                    <b style="font-size:14px; color:#000;">${eierTittel(e)}</b><br>
+                    <a href="${eierUrl(e)}" class="popup-link-btn">Se detaljer ➔</a>`).join('<br>');
+
+            if (!isTouchDevice) {
+                layer.bindTooltip(`
+                    ${tooltipHtml}<br>
+                    <span style="font-size:11px; color:#6b6b6b; font-weight:normal;">${ikon} ${typeTekst}</span>
+                `, {
+                    sticky: true,
+                    className: 'track-tooltip',
+                    direction: 'top',
+                    offset: [0, -10]
+                });
+
+                layer.on('mouseover', function() {
+                    layer.setStyle({ color: '#000000', weight: 4.0, opacity: 1.0 });
+                    layer.bringToFront();
+                });
+
+                layer.on('mouseout', function() {
+                    layer.setStyle(sporStil());
+                    layer.closeTooltip();
+                });
+
+                layer.on('click', function() {
+                    window.location.href = url;
+                });
+            } else {
+                layer.bindPopup(`
+                    ${popupHtml}<br>
+                    <span style="font-size:11px; color:#6b6b6b;">${ikon} ${typeTekst}</span>
+                `, { closeButton: false, offset: [0, -5], className: 'mountain-popup' });
+
+                layer.on('popupopen', function() {
+                    layer.setStyle({ color: '#000000', opacity: 1.0, weight: 3.0 });
+                });
+                layer.on('popupclose', function() {
+                    layer.setStyle(sporStil());
+                });
+            }
+        }
+
+        function lastEnkeltopp(topp) {
+            return new Promise((resolve) => {
+                let fullført = false;
+                const controller = new AbortController();
+
+                const ferdig = (feil) => {
+                    if (fullført) return;
+                    fullført = true;
+                    clearTimeout(timer);
+                    if (feil) {
+                        feilede.push(topp.fil);
+                        console.warn(`GPX-spor hoppet over: gpx/${topp.fil} – ${feil}`);
+                    }
+                    sjekkFremdrift();
+                    resolve();
+                };
+
+                const timer = setTimeout(() => {
+                    controller.abort();
+                    ferdig('tidsavbrudd');
+                }, GPX_TIMEOUT_MS);
+
+                (async () => {
+                    try {
+                        const res = await fetch('gpx/' + topp.fil, { signal: controller.signal });
+                        if (!res.ok) { ferdig(`HTTP ${res.status}`); return; }
+
+                        const tekst = (await res.text()).replace(/^\uFEFF/, '').trim();
+                        if (!tekst.startsWith('<')) { ferdig('ikke gyldig XML/GPX'); return; }
+
+                        const track = new L.GPX(tekst, gpxOptions);
+
+                        track.on('loaded', function(e) {
+                            try {
+                                const layer = e.target;
+                                lagredeSpor.push({ layer: layer, type: topp.type });
+                                layer.setStyle(sporStil());
+                                if (aktivtFilter && topp.type !== aktivtFilter) map.removeLayer(layer);
+
+                                const gpxBounds = layer.getBounds();
+                                if (gpxBounds.isValid()) bounds.extend(gpxBounds);
+
+                                leggTilInteraksjon(layer, topp);
+                                ferdig();
+                            } catch (err) {
+                                ferdig('feil ved oppsett: ' + err.message);
+                            }
+                        });
+
+                        track.on('error', function(e) {
+                            ferdig('GPX-parsing feilet' + (e && e.err ? ': ' + e.err : ''));
+                        });
+
+                        track.addTo(map);
+                    } catch (err) {
+                        ferdig(err.name === 'AbortError' ? 'tidsavbrudd' : err.message);
+                    }
+                })();
+            });
+        }
+
+        async function initialiserKart() {
+            visStatus("Leser inn spor...", 0, false);
+            const [vinterTopper, sommerTopper] = await Promise.all([
+                hentTopper('vinter_topper.json', 'vinter'),
+                hentTopper('sommer_topper.json', 'sommer')
+            ]);
+
+            const alleTopper = byggSporliste([...vinterTopper, ...sommerTopper]);
+
+            totalFiles = alleTopper.length;
+
+            if (totalFiles === 0) {
+                visStatus("Ingen spor funnet.", 100, false);
+                skjultStatus(2000);
+                return;
+            }
+
+            const samtidige = isTouchDevice ? 4 : 10;
+            let neste = 0;
+            const arbeider = async () => {
+                while (neste < alleTopper.length) {
+                    const spor = alleTopper[neste++];
+                    await lastEnkeltopp(spor);
+                }
+            };
+            await Promise.all(Array.from({ length: Math.min(samtidige, alleTopper.length) }, arbeider));
+        }
+
+        initialiserKart();
+
+        // FILTRERING
+        const btnVinter = document.getElementById('btn-vinter');
+        const btnSommer = document.getElementById('btn-sommer');
+
+        function filtrerTurer(valgtType) {
+            aktivtFilter = valgtType;
+            btnVinter.classList.remove('active');
+            btnSommer.classList.remove('active');
+
+            if (valgtType === 'vinter') btnVinter.classList.add('active');
+            if (valgtType === 'sommer') btnSommer.classList.add('active');
+
+            lagredeSpor.forEach(item => {
+                if (item.type === valgtType) {
+                    if (!map.hasLayer(item.layer)) map.addLayer(item.layer);
+                    item.layer.setStyle(sporStil());
+                } else {
+                    if (map.hasLayer(item.layer)) map.removeLayer(item.layer);
+                }
+            });
+            zoomTilAktiveSpor();
+        }
+
+        btnVinter.addEventListener('click', () => filtrerTurer('vinter'));
+        btnSommer.addEventListener('click', () => filtrerTurer('sommer'));
+
+        document.getElementById('btn-reset').addEventListener('click', function() {
+            aktivtFilter = null;
+            btnVinter.classList.remove('active');
+            btnSommer.classList.remove('active');
+
+            lagredeSpor.forEach(item => {
+                if (!map.hasLayer(item.layer)) map.addLayer(item.layer);
+                item.layer.setStyle(sporStil());
+            });
+
+            if (bounds.isValid()) {
+                map.fitBounds(bounds, { padding: isTouchDevice ? [40, 100] : [40, 40] });
+            }
+        });
+
+        /* ==========================================================================
+           FELLES FUNKSJON FOR CANVAS POSISJON
+           ========================================================================== */
+        function updateCanvasPosition(c, ctx, active) {
+            if (!active) return;
+            const b = map.getBounds(), size = map.getSize(), tl = map.latLngToLayerPoint(b.getNorthWest());
+            c.style.left = tl.x + 'px'; 
+            c.style.top = tl.y + 'px';
+            c.width = size.x; 
+            c.height = size.y;
+        }
+
+        /* ==========================================================================
+           BUSSRADAR FUNKSJONALITET
+           ========================================================================== */
+        const btnBuss = document.getElementById('btn-buss');
+        const busPanel = document.getElementById('bus-panel');
+        const busCounterEl = document.getElementById('bus-counter');
+
+        let busesActive = false;
+        let buses = {};
+        let busInterval = null;
+
+        const busCanvas = L.DomUtil.create('canvas', 'leaflet-zoom-animated overlay-canvas');
+        map.getPanes().overlayPane.appendChild(busCanvas);
+        const busCtx = busCanvas.getContext('2d');
+        busCanvas.style.display = 'none';
+
+        const VEHICLE_API = 'https://api.entur.io/realtime/v2/vehicles/graphql';
+
+        function erITromso(lat, lon) {
+            return lat >= 69.55 && lat <= 69.78 && lon >= 18.80 && lon <= 19.25;
+        }
+
+        const vehicleQuery = `
+            {
+                vehicles {
+                    vehicleId
+                    delay
+                    line {
+                        publicCode
+                        lineName
+                    }
+                    location {
+                        latitude
+                        longitude
+                    }
+                }
+            }
+        `;
+
+        async function fetchBuses() {
+            if (!busesActive) return;
+
+            try {
+                const response = await fetch(VEHICLE_API, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ET-Client-Name': 'tromso-busskart-realtime'
+                    },
+                    body: JSON.stringify({ query: vehicleQuery })
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const json = await response.json();
+                const vehicles = json.data?.vehicles || [];
+                
+                let count = 0;
+                const activeIds = new Set();
+
+                vehicles.forEach(bus => {
+                    if (!bus.location || !bus.location.latitude || !bus.location.longitude) return;
+
+                    const lat = bus.location.latitude;
+                    const lon = bus.location.longitude;
+
+                    if (erITromso(lat, lon)) {
+                        const lineCode = bus.line?.publicCode || 'Buss';
+                        const lineName = bus.line?.lineName || 'Troms Fylkestrafikk';
+                        const vehicleId = bus.vehicleId || `${lineCode}-${lat}-${lon}`;
+                        const delayMin = bus.delay ? Math.round(bus.delay / 60) : 0;
+
+                        activeIds.add(vehicleId);
+
+                        if (!buses[vehicleId]) buses[vehicleId] = {};
+
+                        buses[vehicleId].lat = lat;
+                        buses[vehicleId].lon = lon;
+                        buses[vehicleId].line = lineCode;
+                        buses[vehicleId].name = lineName;
+                        buses[vehicleId].delay = delayMin;
+
+                        count++;
+                    }
+                });
+
+                for (let id in buses) {
+                    if (!activeIds.has(id)) {
+                        delete buses[id];
+                    }
+                }
+
+                busCounterEl.innerText = "Busser synlige: " + count;
+            } catch(e) {
+                console.error("Feil ved henting av bussdata:", e);
+                busCounterEl.innerText = "Tilkoblingsfeil buss";
+            }
+        }
+
+        function drawBuses() {
+            if (!busesActive) return;
+            busCtx.clearRect(0, 0, busCanvas.width, busCanvas.height);
+            const tl = map.latLngToLayerPoint(map.getBounds().getNorthWest());
+            
+            const showLine = document.getElementById('busLineSwitch').checked;
+            const showDest = document.getElementById('busDestSwitch').checked;
+            const showDelay = document.getElementById('busDelaySwitch').checked;
+
+            for (let id in buses) {
+                const b = buses[id];
+                const p = map.latLngToLayerPoint([b.lat, b.lon]);
+                
+                busCtx.fillStyle = "#000000";
+                busCtx.beginPath(); 
+                busCtx.arc(p.x - tl.x, p.y - tl.y, 4, 0, Math.PI * 2); 
+                busCtx.fill();
+                
+                busCtx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+                busCtx.lineWidth = 2;
+                busCtx.stroke();
+
+                let labels = [];
+                if (showLine) labels.push(b.line);
+                if (showDest && b.name) labels.push(b.name);
+                if (showDelay && b.delay !== 0) {
+                    const delayTxt = b.delay > 0 ? `+${b.delay}m` : `${b.delay}m`;
+                    labels.push(delayTxt);
+                }
+
+                if (labels.length > 0) {
+                    const tekst = labels.join(" | ");
+                    busCtx.font = "400 12px Jost, -apple-system, sans-serif";
+                    busCtx.lineJoin = "round";
+                    busCtx.lineWidth = 3;
+                    busCtx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+                    busCtx.strokeText(tekst, p.x - tl.x + 9, p.y - tl.y + 4);
+                    busCtx.fillStyle = "#000000";
+                    busCtx.fillText(tekst, p.x - tl.x + 9, p.y - tl.y + 4);
+                }
+            }
+            requestAnimationFrame(drawBuses);
+        }
+
+        map.on('click', function(e) {
+            const clickPoint = map.latLngToContainerPoint(e.latlng);
+            const tl = map.latLngToLayerPoint(map.getBounds().getNorthWest());
+
+            if (busesActive) {
+                let clickedBus = null;
+                let minDist = 20;
+
+                for (let id in buses) {
+                    const b = buses[id];
+                    const p = map.latLngToLayerPoint([b.lat, b.lon]);
+                    const screenX = p.x - tl.x;
+                    const screenY = p.y - tl.y;
+
+                    const dist = Math.hypot(clickPoint.x - screenX, clickPoint.y - screenY);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        clickedBus = b;
+                    }
+                }
+
+                if (clickedBus) {
+                    const delayText = clickedBus.delay !== 0 ? 
+                        `<br>Forsinkelse: <span style="color:${clickedBus.delay > 0 ? '#e30613' : '#5f7f3b'}">${clickedBus.delay > 0 ? '+' + clickedBus.delay : clickedBus.delay} min</span>` : 
+                        `<br>Forsinkelse: I rute`;
+
+                    L.popup({ offset: [0, -5], className: 'bus-popup' })
+                        .setLatLng([clickedBus.lat, clickedBus.lon])
+                        .setContent(`
+                            <b style="font-size:14px; color:#000;">Linje ${clickedBus.line}</b><br>
+                            <span style="font-size:12px; color:#6b6b6b;">${clickedBus.name || 'Troms Fylkestrafikk'}</span>
+                            ${delayText}
+                        `)
+                        .openOn(map);
+                    return;
+                }
+            }
+        });
+
+        function toggleBussVisning() {
+            busesActive = !busesActive;
+
+            if (busesActive) {
+                btnBuss.classList.add('active');
+                busPanel.classList.add('active');
+                busCounterEl.classList.add('active');
+                busCounterEl.innerText = "Busser: Laster...";
+                busCanvas.style.display = 'block';
+
+                updateCanvasPosition(busCanvas, busCtx, busesActive);
+                fetchBuses();
+                busInterval = setInterval(fetchBuses, 5000);
+                drawBuses();
+
+                map.on('move zoom', handleBusMove);
+            } else {
+                btnBuss.classList.remove('active');
+                busPanel.classList.remove('active');
+                busCounterEl.classList.remove('active');
+                busCanvas.style.display = 'none';
+
+                if (busInterval) clearInterval(busInterval);
+                busCtx.clearRect(0, 0, busCanvas.width, busCanvas.height);
+                buses = {};
+
+                map.off('move zoom', handleBusMove);
+            }
+
+            map.setView([69.6492, 18.9553], 13);
+        }
+
+        function handleBusMove() {
+            updateCanvasPosition(busCanvas, busCtx, busesActive);
+        }
+
+        btnBuss.addEventListener('click', toggleBussVisning);
+    </script>
+</body>
+</html>
