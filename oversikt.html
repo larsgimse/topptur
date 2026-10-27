@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Toppturer - Oversiktskart</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
@@ -276,6 +277,24 @@
         }
         .popup-link-btn:hover { background: var(--map-bg); }
 
+        /* Tegnforklaring for bratthet */
+        .legend {
+            background: #fff;
+            padding: 10px 12px;
+            line-height: 1.5;
+            color: var(--ink);
+            border: 1px solid var(--ink);
+            border-radius: 0;
+            box-shadow: none;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 400;
+            text-align: left;
+        }
+        .legend h4 { margin: 0 0 6px 0; font-size: 14px; font-weight: 500; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 3px; }
+        .color-box { width: 16px; height: 16px; margin-right: 8px; border: 1px solid rgba(0,0,0,.2); }
+
         @media (max-width: 1000px) {
             h1 { font-size: 22px; }
         }
@@ -313,11 +332,17 @@
             <button id="btn-stier" class="btn btn-stier" title="Stier"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19c5 0 3-7 8-7s3-7 8-7"/></svg><span class="lbl">Stier</span></button>
             <button id="btn-dnt" class="btn btn-dnt" title="Turløyper"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4M6 5h11l-2.5 3.5L17 12H6"/></svg><span class="lbl">Turløyper</span></button>
             <button id="btn-poi" class="btn btn-poi" title="Severdigheter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.5 6-10a6 6 0 1 0-12 0c0 4.5 6 10 6 10z"/><circle cx="12" cy="11" r="2"/></svg><span class="lbl">Severdigheter</span></button>
+            <button id="btn-bratthet" class="btn btn-bratthet" title="Bratthet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l7-12 4 7 3-4 6 9z"/></svg><span class="lbl">Bratthet</span></button>
             <button id="btn-buss" class="btn btn-bus" title="Buss"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="13" rx="2"/><path d="M5 11h14M8 20v-3M16 20v-3"/></svg><span class="lbl">Buss</span></button>
         </div>
     </header>
 
     <div class="panels-container">
+        <!-- BRATTHET PANEL -->
+        <div id="bratthet-panel" class="ui-panel">
+            <div class="row">Bratthetsskala: <label class="switch"><input type="checkbox" id="bratthetLegendSwitch"><span class="slider"></span></label></div>
+        </div>
+
         <!-- BUSS PANEL -->
         <div id="bus-panel" class="ui-panel">
             <div class="row">Linjenr: <label class="switch"><input type="checkbox" id="busLineSwitch" checked><span class="slider"></span></label></div>
@@ -344,6 +369,8 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
@@ -370,13 +397,126 @@
 
         map.zoomControl.setPosition('bottomleft');
 
-        // Kartverket gråtonekart, gjort om til hvitt kart med svarte streker (se .bw-tiles i CSS)
-        L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topograatone/default/webmercator/{z}/{y}/{x}.png', {
-            attribution: '&copy; <a href="https://www.kartverket.no/">Kartverket</a> &copy; Entur',
-            maxZoom: 20,
-            maxNativeZoom: 18,
-            className: 'bw-tiles'
-        }).addTo(map);
+        /* ==========================================================================
+           GRUNNKART: hvit bakgrunn med svarte linjer (kystlinje, innsjøer og veier).
+           Vektordata fra OpenStreetMap via OpenFreeMap, tegnet med MapLibre.
+           Ingen høydekurver eller annen fjelltopografi.
+           ========================================================================== */
+        const LINJE = '#000000';
+        const veiFilter = ['match', ['get', 'class'], ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor'], true, false];
+        const veiBredde = ['interpolate', ['exponential', 1.4], ['zoom'], 6, 0.4, 10, 0.8, 14, 1.6, 18, 4];
+
+        const glStil = {
+            version: 8,
+            glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+            sources: { omt: { type: 'vector', url: 'https://tiles.openfreemap.org/planet' } },
+            layers: [
+                // Kystlinje og innsjøer: omrisset av vannflatene
+                { id: 'vann-linje', type: 'line', source: 'omt', 'source-layer': 'water',
+                  layout: { 'line-join': 'round' },
+                  paint: { 'line-color': LINJE, 'line-width': ['interpolate', ['linear'], ['zoom'], 4, 0.5, 10, 0.9, 14, 1.2] } },
+                // Veier
+                { id: 'veier', type: 'line', source: 'omt', 'source-layer': 'transportation',
+                  filter: ['all', veiFilter, ['!=', ['get', 'brunnel'], 'tunnel']],
+                  layout: { 'line-cap': 'round', 'line-join': 'round' },
+                  paint: { 'line-color': LINJE, 'line-width': veiBredde } },
+                { id: 'veier-tunnel', type: 'line', source: 'omt', 'source-layer': 'transportation',
+                  filter: ['all', veiFilter, ['==', ['get', 'brunnel'], 'tunnel']],
+                  layout: { 'line-join': 'round' },
+                  paint: { 'line-color': LINJE, 'line-width': veiBredde, 'line-dasharray': [2, 2] } },
+                { id: 'veier-service', type: 'line', source: 'omt', 'source-layer': 'transportation', minzoom: 13,
+                  filter: ['==', ['get', 'class'], 'service'],
+                  layout: { 'line-cap': 'round', 'line-join': 'round' },
+                  paint: { 'line-color': LINJE, 'line-width': ['interpolate', ['linear'], ['zoom'], 13, 0.4, 18, 1.5] } },
+                // Stedsnavn for orientering
+                { id: 'steder', type: 'symbol', source: 'omt', 'source-layer': 'place',
+                  filter: ['match', ['get', 'class'], ['city', 'town', 'village'], true, false],
+                  layout: {
+                      'text-field': ['coalesce', ['get', 'name:nb'], ['get', 'name']],
+                      'text-font': ['Noto Sans Regular'],
+                      'text-size': ['match', ['get', 'class'], 'city', 15, 'town', 13, 11],
+                      'text-max-width': 8
+                  },
+                  paint: { 'text-color': LINJE, 'text-halo-color': '#ffffff', 'text-halo-width': 1.5 } }
+            ]
+        };
+
+        function lagGrunnkart() {
+            // Eget lag over bratthetslaget, slik at linjene alltid vises oppå
+            map.createPane('linjePane');
+            map.getPane('linjePane').style.zIndex = 250;
+            map.getPane('linjePane').style.pointerEvents = 'none';
+            try {
+                if (typeof L.maplibreGL !== 'function' || typeof maplibregl === 'undefined') throw new Error('MapLibre er ikke lastet');
+                L.maplibreGL({
+                    style: glStil,
+                    pane: 'linjePane',
+                    attribution: '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> &copy; <a href="https://openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> Data fra <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; Entur'
+                }).addTo(map);
+            } catch (err) {
+                // Reserve hvis vektorkartet ikke kan tegnes: Kartverkets gråtonekart presset mot hvitt og svart
+                console.warn('Vektorkart feilet, bruker Kartverket gråtone i stedet', err);
+                L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topograatone/default/webmercator/{z}/{y}/{x}.png', {
+                    attribution: '&copy; <a href="https://www.kartverket.no/">Kartverket</a> &copy; Entur',
+                    maxZoom: 20,
+                    maxNativeZoom: 18,
+                    className: 'bw-tiles'
+                }).addTo(map);
+            }
+        }
+        lagGrunnkart();
+
+        /* ==========================================================================
+           BRATTHET (NVE) OG BRATTHETSSKALA, som på vinter.html
+           ========================================================================== */
+        const bratthetMap = L.tileLayer('https://gis3.nve.no/arcgis/rest/services/wmts/Bratthet_2024/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 18,
+            opacity: 0.6,
+            attribution: '&copy; NVE'
+        });
+
+        const bratthetLegend = L.control({ position: 'bottomleft' });
+        bratthetLegend.onAdd = function () {
+            const div = L.DomUtil.create('div', 'legend');
+            div.innerHTML = `
+                <h4>Hellingsvinkel</h4>
+                <div class="legend-item"><span class="color-box" style="background: #FFF500;"></span> 27° – 30°</div>
+                <div class="legend-item"><span class="color-box" style="background: #FFAA00;"></span> 30° – 35°</div>
+                <div class="legend-item"><span class="color-box" style="background: #E60000;"></span> 35° – 40°</div>
+                <div class="legend-item"><span class="color-box" style="background: #730000;"></span> 40° – 45°</div>
+                <div class="legend-item"><span class="color-box" style="background: #000000;"></span> Over 45°</div>
+            `;
+            return div;
+        };
+
+        const btnBratthet = document.getElementById('btn-bratthet');
+        const bratthetPanel = document.getElementById('bratthet-panel');
+        const bratthetLegendSwitch = document.getElementById('bratthetLegendSwitch');
+        let bratthetActive = false;
+
+        // Skalaen vises bare når bratthet er på og bryteren er skrudd på
+        function oppdaterBratthetSkala() {
+            const vis = bratthetActive && bratthetLegendSwitch.checked;
+            if (vis && !bratthetLegend._map) bratthetLegend.addTo(map);
+            if (!vis && bratthetLegend._map) map.removeControl(bratthetLegend);
+        }
+
+        function toggleBratthet() {
+            bratthetActive = !bratthetActive;
+            if (bratthetActive) {
+                map.addLayer(bratthetMap);
+                btnBratthet.classList.add('active');
+                bratthetPanel.classList.add('active');
+            } else {
+                map.removeLayer(bratthetMap);
+                btnBratthet.classList.remove('active');
+                bratthetPanel.classList.remove('active');
+            }
+            oppdaterBratthetSkala();
+        }
+
+        btnBratthet.addEventListener('click', toggleBratthet);
+        bratthetLegendSwitch.addEventListener('change', oppdaterBratthetSkala);
 
         /* ==========================================================================
            PROGRESJONS- OG STATUSKONTROLL
