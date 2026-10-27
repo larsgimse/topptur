@@ -5,90 +5,90 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Toppturer - Oversiktskart</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #111111;
-            --panel-bg: rgba(26, 26, 26, 0.9);
-            --text-color: #eeeeee;
-            --highlight-orange: #fc4c02;
-            --winter-blue: #0ea5e9;
-            --summer-green: #34a853;
+            --ink: #000;
+            --muted: #6b6b6b;
+            --map-bg: #ededeb;
+            --winter-bg: #dde9f2;
+            --winter-ink: #3f6f93;
+            --summer-bg: #e6efd8;
+            --summer-ink: #5f7f3b;
+            /* Sekundviseren på et jernbaneur */
+            --second-hand: #e30613;
             --trails-purple: #c084fc;
             --dnt-cyan: #06b6d4;
             --poi-yellow: #eab308;
-            --bus-red: #ef4444;
         }
-        
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: var(--bg-color);
-            color: var(--text-color);
+            font-family: "Jost", "Helvetica Neue", Arial, sans-serif;
+            font-weight: 300;
+            background: #fff;
+            color: var(--ink);
             height: 100vh;
-            height: 100dvh; 
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
+        button { font-family: inherit; }
 
         header {
             position: absolute;
             top: 10px;
             left: 10px;
             right: 10px;
-            background: var(--panel-bg);
+            background: #fff;
             padding: 10px 14px;
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             align-items: center;
-            border: 1px solid #222;
-            border-radius: 8px;
+            flex-wrap: wrap;
+            gap: 10px 16px;
+            border: 1px solid var(--ink);
+            border-radius: 0;
             z-index: 1000;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
             min-height: 52px;
         }
 
-        h1 { 
-            font-size: 1.1rem; 
-            font-weight: 700; 
-            letter-spacing: -0.5px; 
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            pointer-events: none;
-        }
-        
-        .nav-buttons { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-        
-        .btn {
-            padding: 6px 12px;
-            border-radius: 6px;
-            background: #2a2a2a;
-            color: #fff;
-            border: 1px solid #333;
-            text-decoration: none;
-            font-size: 0.8rem;
-            font-weight: 500;
-            transition: all 0.2s;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        
-        .btn-reset {
-            background: #222;
-            border-color: #444;
-            color: #ccc;
+        h1 {
+            font-size: 26px;
+            font-weight: 200;
+            letter-spacing: -.02em;
+            line-height: 1.1;
         }
 
-        .btn-winter.active { background: var(--winter-blue); border-color: #fff; font-weight: 700; }
-        .btn-summer.active { background: var(--summer-green); border-color: #fff; font-weight: 700; }
-        .btn-stier.active { background: var(--trails-purple); border-color: #fff; font-weight: 700; color: #fff; }
-        .btn-dnt.active { background: var(--dnt-cyan); border-color: #fff; font-weight: 700; color: #fff; }
-        .btn-poi.active { background: var(--poi-yellow); border-color: #fff; font-weight: 700; color: #111; }
-        .btn-bus.active { background: #dc2626; border-color: #fff; font-weight: 700; color: #fff; }
+        .nav-buttons { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border: 1px solid var(--ink);
+            border-radius: 0;
+            background: #fff;
+            color: var(--ink);
+            font-size: 14px;
+            font-weight: 400;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background .3s ease, color .3s ease;
+        }
+        .btn svg { width: 17px; height: 17px; flex: none; fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+        .btn:hover { background: var(--map-bg); }
+        .btn-winter:hover { background: var(--winter-bg); }
+        .btn-summer:hover { background: var(--summer-bg); }
+
+        .btn.active, .btn.active:hover { background: var(--ink); color: #fff; }
+        .btn-winter.active, .btn-winter.active:hover { background: var(--winter-ink); border-color: var(--winter-ink); }
+        .btn-summer.active, .btn-summer.active:hover { background: var(--summer-ink); border-color: var(--summer-ink); }
 
         #map-container {
             flex: 1;
@@ -100,8 +100,11 @@
         #map {
             width: 100%;
             height: 100%;
-            background: var(--bg-color);
+            background: #fff;
         }
+
+        /* Hvitt kart med svarte streker: Kartverkets gråtonekart presset mot hvitt og svart */
+        .bw-tiles { filter: grayscale(1) contrast(1.6) brightness(1.08); }
 
         /* STATUSLINJE OG PROGRESJONSBAR */
         #loading-status {
@@ -109,11 +112,12 @@
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(26, 26, 26, 0.95);
-            padding: 10px 18px;
-            border-radius: 24px;
-            border: 1px solid #333;
-            font-size: 0.85rem;
+            background: #fff;
+            padding: 8px 14px;
+            border: 1px solid var(--ink);
+            border-radius: 0;
+            font-size: 13px;
+            font-weight: 400;
             z-index: 1000;
             pointer-events: none;
             transition: opacity 0.4s ease;
@@ -121,22 +125,16 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 6px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            min-width: 220px;
+            gap: 7px;
+            min-width: 230px;
         }
 
-        .status-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .status-header { display: flex; align-items: center; gap: 8px; }
 
         .progress-bar-container {
             width: 100%;
-            height: 4px;
-            background: #333;
-            border-radius: 2px;
+            height: 2px;
+            background: rgba(0,0,0,.12);
             overflow: hidden;
             display: none;
         }
@@ -144,7 +142,7 @@
         .progress-bar {
             height: 100%;
             width: 0%;
-            background: var(--highlight-orange);
+            background: var(--second-hand);
             transition: width 0.3s ease;
         }
 
@@ -159,17 +157,19 @@
         }
 
         .spinner {
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(255,255,255,0.2);
-            border-top-color: var(--highlight-orange);
+            width: 12px;
+            height: 12px;
+            border: 1px solid rgba(0,0,0,.15);
+            border-top-color: var(--second-hand);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             display: inline-block;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (prefers-reduced-motion: reduce) {
+            .progress-bar.indeterminate, .spinner { animation: none; }
         }
 
         .panels-container {
@@ -184,85 +184,100 @@
         }
 
         .ui-panel {
-            background: var(--panel-bg); 
-            padding: 12px 15px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-            border: 1px solid #333;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            font-family: inherit; 
-            display: none; 
-            flex-direction: column; 
-            gap: 8px;
+            background: #fff;
+            padding: 12px 15px;
+            border-radius: 0;
+            border: 1px solid var(--ink);
+            font-family: inherit;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
             min-width: 180px;
             pointer-events: auto;
         }
-        
+
         .ui-panel.active { display: flex; }
-        
-        .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 0.8rem; color: #ddd; }
-        
-        .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
+
+        .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 400; color: var(--ink); }
+
+        .switch { position: relative; display: inline-block; width: 36px; height: 20px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .3s; border-radius: 20px; }
-        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
-        
-        #bus-panel input:checked + .slider { background-color: #ef4444; }
-        
-        input:checked + .slider:before { transform: translateX(16px); }
-        
-        .counter-box { 
-            position: fixed; 
-            bottom: 20px; 
-            left: 60px; 
-            z-index: 10000; 
+        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #fff; border: 1px solid var(--ink); transition: .3s; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; top: 3px; background-color: var(--ink); transition: .3s; }
+        input:checked + .slider { background-color: var(--ink); }
+        input:checked + .slider:before { background-color: #fff; transform: translateX(16px); }
+
+        .counter-box {
+            position: fixed;
+            bottom: 20px;
+            left: 60px;
+            z-index: 10000;
             display: flex;
             flex-direction: column;
             gap: 6px;
         }
-        
-        .counter { 
-            background: var(--panel-bg); 
-            padding: 6px 14px; 
-            border-radius: 20px; 
-            border: 1px solid #333;
-            font-size: 0.8rem; 
+
+        .counter {
+            background: #fff;
+            padding: 6px 14px;
+            border: 1px solid var(--ink);
+            border-radius: 0;
+            font-size: 13px;
+            font-weight: 400;
             display: none;
         }
-        #bus-counter.active { display: block; color: #ef4444; }
+        #bus-counter.active { display: block; color: var(--ink); }
 
-        .overlay-canvas {
-            pointer-events: none;
-            z-index: 450;
-        }
+        .overlay-canvas { pointer-events: none; z-index: 450; }
+
+        /* Leaflet-kontroller, popups og verktøytips i samme stil */
+        .leaflet-bar { border: 1px solid var(--ink) !important; border-radius: 0 !important; box-shadow: none !important; }
+        .leaflet-bar a, .leaflet-bar a:hover { background: #fff; color: var(--ink); border-bottom: 1px solid var(--ink); border-radius: 0 !important; font-family: inherit; font-weight: 300; }
+        .leaflet-bar a:last-child { border-bottom: 0; }
+        .leaflet-bar a:hover { background: var(--map-bg); }
+        .leaflet-control-attribution { background: rgba(255,255,255,.85) !important; color: var(--muted); font-family: inherit; }
+        .leaflet-control-attribution a { color: var(--ink); }
 
         .leaflet-popup-content-wrapper {
-            background: #1a1a1a !important;
-            color: #fff !important;
-            border: 1px solid var(--highlight-orange);
-            border-radius: 6px;
+            background: #fff !important;
+            color: var(--ink) !important;
+            border: 1px solid var(--ink);
+            border-radius: 0;
+            box-shadow: none;
+            font-family: inherit;
+            font-weight: 400;
         }
-        .leaflet-popup-tip {
-            background: #1a1a1a !important;
+        .leaflet-popup-tip { background: #fff !important; box-shadow: 0 0 0 1px var(--ink); }
+        .leaflet-container a.leaflet-popup-close-button { color: var(--ink); }
+
+        .leaflet-tooltip {
+            background: #fff;
+            color: var(--ink);
+            border: 1px solid var(--ink);
+            border-radius: 0;
+            box-shadow: none;
+            font-family: inherit;
+            font-weight: 400;
         }
-        
-        .bus-popup .leaflet-popup-content-wrapper { border-color: #ef4444 !important; }
-        .trail-popup .leaflet-popup-content-wrapper { border-color: var(--trails-purple) !important; }
-        .dnt-popup .leaflet-popup-content-wrapper { border-color: var(--dnt-cyan) !important; }
-        .poi-popup .leaflet-popup-content-wrapper { border-color: var(--poi-yellow) !important; }
+        .leaflet-tooltip-top:before { border-top-color: var(--ink); }
 
         .popup-link-btn {
             display: inline-block;
             margin-top: 8px;
             padding: 6px 12px;
-            background: var(--highlight-orange);
-            color: white;
+            background: #fff;
+            color: var(--ink) !important;
+            border: 1px solid var(--ink);
             text-decoration: none;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 12px;
+            font-weight: 400;
+            font-size: 13px;
             text-align: center;
+            transition: background .3s ease;
+        }
+        .popup-link-btn:hover { background: var(--map-bg); }
+
+        @media (max-width: 1000px) {
+            h1 { font-size: 22px; }
         }
 
         @media (max-width: 600px) {
@@ -271,57 +286,34 @@
                 bottom: 20px;
                 flex-direction: column;
                 gap: 8px;
-                align-items: center;
-                background: rgba(20, 20, 20, 0.95);
-                box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+                align-items: stretch;
                 min-height: auto;
             }
-            h1 { 
-                position: static; 
-                transform: none; 
-                font-size: 0.9rem; 
-                text-align: center;
-            }
-            .nav-buttons {
-                width: 100%;
-                justify-content: space-between;
-                flex-wrap: wrap;
-            }
-            .btn {
-                flex: 1;
-                text-align: center;
-                padding: 8px 4px;
-                font-size: 0.75rem;
-            }
-            #loading-status {
-                bottom: auto;
-                top: 20px;
-            }
-            .panels-container {
-                top: 10px;
-                right: 10px;
-                max-width: 200px;
-            }
-            .counter-box {
-                bottom: 120px;
-                left: 56px;
-            }
+            h1 { font-size: 20px; text-align: center; }
+            .nav-buttons { width: 100%; justify-content: center; flex-wrap: nowrap; }
+            .btn { flex: 1; justify-content: center; padding: 9px 4px; }
+            .btn .lbl { display: none; }
+            #loading-status { bottom: auto; top: 20px; }
+            .panels-container { top: 10px; right: 10px; max-width: 200px; }
+            .counter-box { bottom: 120px; left: 56px; }
             .leaflet-bottom { bottom: 120px !important; }
         }
     </style>
 </head>
 <body>
 
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><path id="arm" d="M22 22V3.5M22 9.5l-4.3-2.5M22 9.5l4.3-2.5M22 15l-3.2-1.9M22 15l3.2-1.9M22 6.5l-1.6-2M22 6.5l1.6-2" fill="none" stroke="currentColor"/></defs></svg>
+
     <header>
         <h1>Toppturer</h1>
         <div class="nav-buttons">
-            <button id="btn-reset" class="btn btn-reset">🔄 Nullstill</button>
-            <button id="btn-vinter" class="btn btn-winter">❄ Vinter</button>
-            <button id="btn-sommer" class="btn btn-summer">☀ Sommer</button>
-            <button id="btn-stier" class="btn btn-stier">🗺️ Stier</button>
-            <button id="btn-dnt" class="btn btn-dnt">🥾 Turløyper</button>
-            <button id="btn-poi" class="btn btn-poi">📍 Severdigheter</button>
-            <button id="btn-buss" class="btn btn-bus">🚌 Buss</button>
+            <button id="btn-reset" class="btn btn-reset" title="Nullstill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"/></svg><span class="lbl">Nullstill</span></button>
+            <button id="btn-vinter" class="btn btn-winter" title="Vinter"><svg viewBox="0 0 44 44" aria-hidden="true"><use href="#arm"/><use href="#arm" transform="rotate(60 22 22)"/><use href="#arm" transform="rotate(120 22 22)"/><use href="#arm" transform="rotate(180 22 22)"/><use href="#arm" transform="rotate(240 22 22)"/><use href="#arm" transform="rotate(300 22 22)"/></svg><span class="lbl">Vinter</span></button>
+            <button id="btn-sommer" class="btn btn-summer" title="Sommer"><svg viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="7"/><path d="M22 4v6M22 34v6M4 22h6M34 22h6M9.3 9.3l4.2 4.2M30.5 30.5l4.2 4.2M9.3 34.7l4.2-4.2M30.5 13.5l4.2-4.2"/></svg><span class="lbl">Sommer</span></button>
+            <button id="btn-stier" class="btn btn-stier" title="Stier"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19c5 0 3-7 8-7s3-7 8-7"/></svg><span class="lbl">Stier</span></button>
+            <button id="btn-dnt" class="btn btn-dnt" title="Turløyper"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4M6 5h11l-2.5 3.5L17 12H6"/></svg><span class="lbl">Turløyper</span></button>
+            <button id="btn-poi" class="btn btn-poi" title="Severdigheter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.5 6-10a6 6 0 1 0-12 0c0 4.5 6 10 6 10z"/><circle cx="12" cy="11" r="2"/></svg><span class="lbl">Severdigheter</span></button>
+            <button id="btn-buss" class="btn btn-bus" title="Buss"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="13" rx="2"/><path d="M5 11h14M8 20v-3M16 20v-3"/></svg><span class="lbl">Buss</span></button>
         </div>
     </header>
 
@@ -356,6 +348,18 @@
 
     <script>
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        // Fargene på sporene: rød som standard (sekundviseren på et jernbaneur), vinter- og sommerfarge ved filtrering
+        const KLOKKE_RØD = '#e30613';
+        const VINTER_FARGE = '#3f6f93';
+        const SOMMER_FARGE = '#5f7f3b';
+        let aktivtFilter = null;
+
+        function sporStil() {
+            if (aktivtFilter === 'vinter') return { color: VINTER_FARGE, weight: 1.8, opacity: 0.9 };
+            if (aktivtFilter === 'sommer') return { color: SOMMER_FARGE, weight: 1.8, opacity: 0.9 };
+            return { color: KLOKKE_RØD, weight: 1.6, opacity: 0.8 };
+        }
+
         const minRenderer = L.canvas({ tolerance: isTouchDevice ? 22 : 3 });
 
         const map = L.map('map', {
@@ -366,11 +370,12 @@
 
         map.zoomControl.setPosition('bottomleft');
 
-        // CARTO Basemap mørkt kart
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=cb1_2o3a_1_671194bbedbad28841272141', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a> &copy; Entur',
-            subdomains: 'abcd',
-            maxZoom: 20
+        // Kartverket gråtonekart, gjort om til hvitt kart med svarte streker (se .bw-tiles i CSS)
+        L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topograatone/default/webmercator/{z}/{y}/{x}.png', {
+            attribution: '&copy; <a href="https://www.kartverket.no/">Kartverket</a> &copy; Entur',
+            maxZoom: 20,
+            maxNativeZoom: 18,
+            className: 'bw-tiles'
         }).addTo(map);
 
         /* ==========================================================================
@@ -382,7 +387,7 @@
         const progressBar = document.getElementById('progress-bar');
         let hideStatusTimeout = null;
 
-        function visStatus(melding, prosent = null, ubestemt = false, farge = 'var(--highlight-orange)') {
+        function visStatus(melding, prosent = null, ubestemt = false, farge = 'var(--second-hand)') {
             if (hideStatusTimeout) clearTimeout(hideStatusTimeout);
             loadingStatusEl.style.opacity = '1';
             loadingStatusEl.style.display = 'flex';
@@ -477,7 +482,7 @@
                             line.bindPopup(`
                                 <div class="trail-popup">
                                     <b style="font-size:14px; color:#c084fc;">${tittel}</b><br>
-                                    <span style="font-size:12px; color:#aaa;">${stitype}</span>
+                                    <span style="font-size:12px; color:#6b6b6b;">${stitype}</span>
                                     ${underlag}
                                     ${vanskegrad}
                                     ${merking}
@@ -579,7 +584,7 @@
                             line.bindPopup(`
                                 <div class="dnt-popup">
                                     <b style="font-size:14px; color:#06b6d4;">${rutenavn}</b><br>
-                                    <span style="font-size:12px; color:#aaa;">Ansvarlig: ${operator}</span>
+                                    <span style="font-size:12px; color:#6b6b6b;">Ansvarlig: ${operator}</span>
                                     ${merking}
                                 </div>
                             `, { className: 'dnt-popup' });
@@ -673,7 +678,7 @@
                         const marker = L.circleMarker([lat, lon], {
                             radius: 6,
                             fillColor: '#eab308',
-                            color: '#ffffff',
+                            color: '#000000',
                             weight: 1.5,
                             opacity: 1,
                             fillOpacity: 0.9
@@ -681,8 +686,8 @@
 
                         marker.bindPopup(`
                             <div class="poi-popup">
-                                <b style="font-size:14px; color:#eab308;">${ikon} ${navn}</b><br>
-                                <span style="font-size:12px; color:#aaa;">${poiType}</span>
+                                <b style="font-size:14px; color:#a16207;">${ikon} ${navn}</b><br>
+                                <span style="font-size:12px; color:#6b6b6b;">${poiType}</span>
                                 ${hoyde}
                             </div>
                         `, { className: 'poi-popup' });
@@ -726,9 +731,9 @@
         const gpxOptions = {
             async: true,
             polyline_options: {
-                color: '#ffffff',
-                opacity: 0.4,
-                weight: 1.4,
+                color: KLOKKE_RØD,
+                opacity: 0.8,
+                weight: 1.6,
                 lineCap: 'round'
             },
             marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
@@ -804,12 +809,12 @@
             loadedCount++;
             
             const prosent = (loadedCount / totalFiles) * 100;
-            visStatus(`Laster inn spor... ${loadedCount}/${totalFiles}`, prosent, false, 'var(--highlight-orange)');
+            visStatus(`Laster inn spor... ${loadedCount}/${totalFiles}`, prosent, false, 'var(--second-hand)');
 
             if (loadedCount >= totalFiles) {
                 isFinishedLoading = true;
                 zoomTilAktiveSpor();
-                visStatus(`Alle ${totalFiles} spor er lastet inn!`, 100, false, 'var(--summer-green)');
+                visStatus(`Alle ${totalFiles} spor er lastet inn!`, 100, false, 'var(--second-hand)');
                 skjultStatus(1500);
             }
         }
@@ -824,13 +829,13 @@
 
             const tooltipHtml = topp.eiere.map(e => `<b>${eierTittel(e)}</b>`).join('<br>');
             const popupHtml = topp.eiere.map(e => `
-                    <b style="font-size:14px; color:#fff;">${eierTittel(e)}</b><br>
+                    <b style="font-size:14px; color:#000;">${eierTittel(e)}</b><br>
                     <a href="${eierUrl(e)}" class="popup-link-btn">Se detaljer ➔</a>`).join('<br>');
 
             if (!isTouchDevice) {
                 layer.bindTooltip(`
                     ${tooltipHtml}<br>
-                    <span style="font-size:11px; color:#aaa; font-weight:normal;">${ikon} ${typeTekst}</span>
+                    <span style="font-size:11px; color:#6b6b6b; font-weight:normal;">${ikon} ${typeTekst}</span>
                 `, {
                     sticky: true,
                     className: 'track-tooltip',
@@ -839,12 +844,12 @@
                 });
 
                 layer.on('mouseover', function() {
-                    layer.setStyle({ color: 'var(--highlight-orange)', weight: 4.0, opacity: 1.0 });
+                    layer.setStyle({ color: '#000000', weight: 4.0, opacity: 1.0 });
                     layer.bringToFront();
                 });
 
                 layer.on('mouseout', function() {
-                    layer.setStyle({ color: '#ffffff', weight: 1.4, opacity: 0.4 });
+                    layer.setStyle(sporStil());
                     layer.closeTooltip();
                 });
 
@@ -854,14 +859,14 @@
             } else {
                 layer.bindPopup(`
                     ${popupHtml}<br>
-                    <span style="font-size:11px; color:#aaa;">${ikon} ${typeTekst}</span>
+                    <span style="font-size:11px; color:#6b6b6b;">${ikon} ${typeTekst}</span>
                 `, { closeButton: false, offset: [0, -5], className: 'mountain-popup' });
 
                 layer.on('popupopen', function() {
-                    layer.setStyle({ color: 'var(--highlight-orange)', opacity: 1.0, weight: 3.0 });
+                    layer.setStyle({ color: '#000000', opacity: 1.0, weight: 3.0 });
                 });
                 layer.on('popupclose', function() {
-                    layer.setStyle({ color: '#ffffff', opacity: 0.4, weight: 1.4 });
+                    layer.setStyle(sporStil());
                 });
             }
         }
@@ -902,6 +907,8 @@
                             try {
                                 const layer = e.target;
                                 lagredeSpor.push({ layer: layer, type: topp.type });
+                                layer.setStyle(sporStil());
+                                if (aktivtFilter && topp.type !== aktivtFilter) map.removeLayer(layer);
 
                                 const gpxBounds = layer.getBounds();
                                 if (gpxBounds.isValid()) bounds.extend(gpxBounds);
@@ -960,6 +967,7 @@
         const btnSommer = document.getElementById('btn-sommer');
 
         function filtrerTurer(valgtType) {
+            aktivtFilter = valgtType;
             btnVinter.classList.remove('active');
             btnSommer.classList.remove('active');
 
@@ -969,6 +977,7 @@
             lagredeSpor.forEach(item => {
                 if (item.type === valgtType) {
                     if (!map.hasLayer(item.layer)) map.addLayer(item.layer);
+                    item.layer.setStyle(sporStil());
                 } else {
                     if (map.hasLayer(item.layer)) map.removeLayer(item.layer);
                 }
@@ -980,12 +989,13 @@
         btnSommer.addEventListener('click', () => filtrerTurer('sommer'));
 
         document.getElementById('btn-reset').addEventListener('click', function() {
+            aktivtFilter = null;
             btnVinter.classList.remove('active');
             btnSommer.classList.remove('active');
 
             lagredeSpor.forEach(item => {
                 if (!map.hasLayer(item.layer)) map.addLayer(item.layer);
-                item.layer.setStyle({ color: '#ffffff', weight: 1.4, opacity: 0.4 });
+                item.layer.setStyle(sporStil());
             });
 
             if (bounds.isValid()) {
@@ -1117,12 +1127,12 @@
                 const b = buses[id];
                 const p = map.latLngToLayerPoint([b.lat, b.lon]);
                 
-                busCtx.fillStyle = "#ef4444";
+                busCtx.fillStyle = "#000000";
                 busCtx.beginPath(); 
                 busCtx.arc(p.x - tl.x, p.y - tl.y, 4, 0, Math.PI * 2); 
                 busCtx.fill();
                 
-                busCtx.strokeStyle = "rgba(239, 68, 68, 0.4)";
+                busCtx.strokeStyle = "rgba(255, 255, 255, 0.95)";
                 busCtx.lineWidth = 2;
                 busCtx.stroke();
 
@@ -1135,9 +1145,14 @@
                 }
 
                 if (labels.length > 0) {
-                    busCtx.font = "11px -apple-system, sans-serif";
-                    busCtx.fillStyle = "#fca5a5";
-                    busCtx.fillText(labels.join(" | "), p.x - tl.x + 9, p.y - tl.y + 4);
+                    const tekst = labels.join(" | ");
+                    busCtx.font = "400 12px Jost, -apple-system, sans-serif";
+                    busCtx.lineJoin = "round";
+                    busCtx.lineWidth = 3;
+                    busCtx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+                    busCtx.strokeText(tekst, p.x - tl.x + 9, p.y - tl.y + 4);
+                    busCtx.fillStyle = "#000000";
+                    busCtx.fillText(tekst, p.x - tl.x + 9, p.y - tl.y + 4);
                 }
             }
             requestAnimationFrame(drawBuses);
@@ -1166,14 +1181,14 @@
 
                 if (clickedBus) {
                     const delayText = clickedBus.delay !== 0 ? 
-                        `<br>Forsinkelse: <span style="color:${clickedBus.delay > 0 ? '#ef4444' : '#34a853'}">${clickedBus.delay > 0 ? '+' + clickedBus.delay : clickedBus.delay} min</span>` : 
+                        `<br>Forsinkelse: <span style="color:${clickedBus.delay > 0 ? '#e30613' : '#5f7f3b'}">${clickedBus.delay > 0 ? '+' + clickedBus.delay : clickedBus.delay} min</span>` : 
                         `<br>Forsinkelse: I rute`;
 
                     L.popup({ offset: [0, -5], className: 'bus-popup' })
                         .setLatLng([clickedBus.lat, clickedBus.lon])
                         .setContent(`
-                            <b style="font-size:14px; color:#fff;">Linje ${clickedBus.line}</b><br>
-                            <span style="font-size:12px; color:#aaa;">${clickedBus.name || 'Troms Fylkestrafikk'}</span>
+                            <b style="font-size:14px; color:#000;">Linje ${clickedBus.line}</b><br>
+                            <span style="font-size:12px; color:#6b6b6b;">${clickedBus.name || 'Troms Fylkestrafikk'}</span>
                             ${delayText}
                         `)
                         .openOn(map);
