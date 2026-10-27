@@ -400,7 +400,7 @@
         /* ==========================================================================
            GRUNNKART: hvit bakgrunn med svarte linjer (kystlinje, innsjøer og veier).
            Vektordata fra OpenStreetMap via OpenFreeMap, tegnet med MapLibre.
-           Ingen høydekurver eller annen fjelltopografi.
+           Svak grå land, difus blå innsjøer og hvitt hav. Ingen høydekurver eller annen fjelltopografi.
            ========================================================================== */
         const LINJE = '#000000';
         const veiFilter = ['match', ['get', 'class'], ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor'], true, false];
@@ -411,6 +411,17 @@
             glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
             sources: { omt: { type: 'vector', url: 'https://tiles.openfreemap.org/planet' } },
             layers: [
+                // Land: svak grå (gjennomsiktig, så bratthetslaget under fortsatt vises)
+                { id: 'land', type: 'background',
+                  paint: { 'background-color': '#000000', 'background-opacity': 0.07 } },
+                // Havet er hvitt
+                { id: 'hav-flate', type: 'fill', source: 'omt', 'source-layer': 'water',
+                  filter: ['==', ['get', 'class'], 'ocean'],
+                  paint: { 'fill-color': '#ffffff', 'fill-opacity': 1 } },
+                // Innsjøer og elveflater: difus blå
+                { id: 'innsjo-flate', type: 'fill', source: 'omt', 'source-layer': 'water',
+                  filter: ['!=', ['get', 'class'], 'ocean'],
+                  paint: { 'fill-color': '#7fb2dc', 'fill-opacity': 0.4 } },
                 // Kystlinje og innsjøer: omrisset av vannflatene
                 { id: 'vann-linje', type: 'line', source: 'omt', 'source-layer': 'water',
                   layout: { 'line-join': 'round' },
