@@ -894,6 +894,8 @@
                 abort = kontroll;
                 const t0 = Date.now();
                 let ticker = null;
+                // Stopp statusoppdatering med en gang henting avbrytes (knapp av, nytt utsnitt)
+                kontroll.signal.addEventListener('abort', () => clearInterval(ticker), { once: true });
 
                 try {
                     // 1. Hurtiglager
@@ -913,6 +915,7 @@
                     // 2. Nedlasting av resten
                     let ferdige = 0, server = '', serverFeil = null, runde = [];
                     const vis = () => {
+                        if (kontroll.signal.aborted || !o.erAktiv()) return;
                         const deler = [`${o.lasterTekst}: fliser ${ferdige + 1}–${ferdige + runde.length} av ${nett.length}`];
                         if (fraLager) deler.push(`${fraLager} fra hurtiglager`);
                         deler.push(`${elementer.size} ${o.navn} så langt`);
@@ -944,6 +947,7 @@
                         });
 
                         // Lagre i hurtiglager og tegn
+                        if (kontroll.signal.aborted || !o.erAktiv()) return;
                         runde.forEach(f => {
                             const els = perFlis.get(f.key);
                             FlisCache.lagre(o.eier, f.key, els);
@@ -975,6 +979,7 @@
                 clearTimeout(timer);
                 if (abort) { abort.abort(); abort = null; }
                 skjulStatusFor(o.eier);
+                setTimeout(() => skjulStatusFor(o.eier), 50);   // fanger en melding som rakk å bli skrevet like etter
             }
             // Fjerner fra kartet; hurtiglageret beholdes slik at av/på ikke krever ny nedlasting
             function tom() {
@@ -1408,6 +1413,8 @@
             const fliser = flisForBounds(b);
             const t0 = Date.now();
             let ticker = null;
+            // Når henting avbrytes (knappen skrus av, nytt utsnitt): stopp oppdatering av statuslinjen
+            signal.addEventListener('abort', () => clearInterval(ticker), { once: true });
 
             visStatusFor('fjell', `Sjekker hurtiglager for fjelltopper (${fliser.length} fliser)...`, null, true, 'var(--ink)');
             let lagret;
@@ -1424,6 +1431,7 @@
                 const mb = L.latLngBounds(mangler.map(f => [f.s, f.w]).concat(mangler.map(f => [f.n, f.e])));
                 let server = '';
                 const vis = () => {
+                    if (signal.aborted || !fjellAktiv) return;
                     const deler = [`Henter fjelltopper fra Kartverket og OpenStreetMap: ${mangler.length} av ${fliser.length} fliser`];
                     if (lagret.size) deler.push(`${lagret.size} fra hurtiglager`);
                     deler.push(sekTekst(Date.now() - t0));
@@ -1435,13 +1443,17 @@
 
                 const ikkeTom = (pr, navn) => pr.then(l => { if (!l.length) throw new Error('ingen treff'); return { navn, l }; });
                 let hentet = null;
+                const indre = new AbortController();
+                const videre = () => indre.abort();
+                signal.addEventListener('abort', videre, { once: true });
                 try {
                     hentet = await Promise.any([
-                        ikkeTom(fjellHentOverpass(mb, signal, (host) => { server = host; vis(); }), 'OpenStreetMap'),
-                        ikkeTom(fjellHentKartverket(mb, signal), 'Kartverket')
+                        ikkeTom(fjellHentOverpass(mb, indre.signal, (host) => { server = host; vis(); }), 'OpenStreetMap'),
+                        ikkeTom(fjellHentKartverket(mb, indre.signal), 'Kartverket')
                     ]);
+                    indre.abort();     // den andre kilden trengs ikke lenger
                 } catch (agg) {
-                    if (signal.aborted) return;
+                    if (signal.aborted) { clearInterval(ticker); return; }
                     const feil = (agg.errors || []).filter(e => e.message !== 'ingen treff');
                     if (feil.length) {
                         clearInterval(ticker);
