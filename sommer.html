@@ -662,6 +662,42 @@
             galleryModal.classList.add('open');
         }
 
+        // ---- Ekstra bilder: leser media/<dato>/<dato>.json og evt. flere mapper den peker til ----
+        function bildeMappeNavn(v) {
+            let s = (typeof v === 'string') ? v : ((v && (v.bildeMappe || v.mappe || v.json || v.navn || v.dato || v.fil)) || '');
+            s = String(s).trim().replace(/\\/g, '/').replace(/\/+$/, '');
+            return s.split('/').pop().replace(/\.json$/i, '');
+        }
+
+        async function hentBildeSamling(jsonNavn, besøkt = new Set(), dybde = 0) {
+            const navn = bildeMappeNavn(jsonNavn);
+            if (!navn || besøkt.has(navn) || dybde > 3) return [];
+            besøkt.add(navn);
+
+            const res = await fetch(`media/${navn}/${navn}.json`);
+            if (!res.ok) throw new Error('Kunne ikke laste bilde-json: ' + navn);
+            const data = await res.json();
+
+            const mappe = String(data.bildeMappe || `media/${navn}`).replace(/^\/+/, '').replace(/\/+$/, '');
+            const bilder = (data.bilder || []).map(f => `${mappe}/${f}`);
+
+            // Andre mapper som skal tas med i samme knapp
+            const nøkler = ['mapper', 'bildeMapper', 'bildemapper', 'ekstraMapper', 'inkluderMapper', 'inkluder', 'tilleggsMapper', 'folders'];
+            let andre = [];
+            nøkler.forEach(k => { if (Array.isArray(data[k])) andre = andre.concat(data[k]); });
+            if (!andre.length) {
+                Object.keys(data).forEach(k => {
+                    const v = data[k];
+                    if (k !== 'bilder' && Array.isArray(v) && v.length && v.every(x => /^\d{4}_\d{2}_\d{2}/.test(bildeMappeNavn(x)))) andre = andre.concat(v);
+                });
+            }
+            for (const a of andre) {
+                try { bilder.push(...await hentBildeSamling(a, besøkt, dybde + 1)); }
+                catch (err) { console.warn('Hopper over bildemappe:', a, err); }
+            }
+            return bilder;
+        }
+
         function lukkGalleri() {
             galleryModal.classList.remove('open');
         }
@@ -1336,24 +1372,17 @@
                             }
 
                             if (topp.ekstraBilder) {
-                                const datoNavn = topp.ekstraBilder.replace('.json', '');
-                                const jsonSti = `media/${datoNavn}/${topp.ekstraBilder}`;
-                                fetch(jsonSti)
-                                    .then(res => {
-                                        if (!res.ok) throw new Error('Kunne ikke laste bilde-json');
-                                        return res.json();
-                                    })
-                                    .then(bildeData => {
-                                        if (bildeData && bildeData.bilder && bildeData.bilder.length > 0) {
-                                            const galleryBtn = document.createElement('button');
-                                            galleryBtn.className = 'gallery-link-btn';
-                                            galleryBtn.innerHTML = `<span>🖼️</span> Bildegalleri (${bildeData.antallBilder || bildeData.bilder.length})`;
-                                            galleryBtn.onclick = () => {
-                                                åpneGalleri(bildeData.bildeMappe, bildeData.bilder);
-                                            };
-                                            videoContainer.appendChild(galleryBtn);
-                                            justerLenkeKnapper();
-                                        }
+                                const toppNavnNå = topp.navn;
+                                hentBildeSamling(topp.ekstraBilder)
+                                    .then(alleBilder => {
+                                        if (aktivToppNavn !== toppNavnNå) return;   // brukeren har byttet topp mens bildene lastet
+                                        if (alleBilder.length === 0) return;
+                                        const galleryBtn = document.createElement('button');
+                                        galleryBtn.className = 'gallery-link-btn';
+                                        galleryBtn.innerHTML = `<span>🖼️</span> Ekstra bilder (${alleBilder.length})`;
+                                        galleryBtn.onclick = () => åpneGalleri('', alleBilder);
+                                        videoContainer.appendChild(galleryBtn);
+                                        justerLenkeKnapper();
                                     })
                                     .catch(err => console.warn("Fant ikke eller kunne ikke laste ekstraBilder:", err));
                             }
