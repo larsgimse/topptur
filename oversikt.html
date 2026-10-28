@@ -701,7 +701,7 @@
             'https://overpass.kumi.systems/api/interpreter'
         ];
 
-        async function overpassHent(query, klientTimeoutMs = 30000, signal = null, info = null) {
+        async function overpassHent(query, klientTimeoutMs = 20000, signal = null, info = null) {
             const feil = [];
             for (const url of OVERPASS_SERVERE) {
                 if (signal && signal.aborted) throw new DOMException('Avbrutt', 'AbortError');
@@ -711,12 +711,7 @@
                 const avbryt = () => controller.abort();
                 if (signal) signal.addEventListener('abort', avbryt, { once: true });
                 try {
-                    const res = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-                        body: 'data=' + encodeURIComponent(query),
-                        signal: controller.signal
-                    });
+                    const res = await fetch(url + '?data=' + encodeURIComponent(query), { signal: controller.signal });
                     if (!res.ok) throw new Error('HTTP ' + res.status);
                     const json = await res.json();
                     // Overpass svarer noen ganger 200 med en feilmelding og ingen data
@@ -778,13 +773,15 @@
             let dbPromise = null;
             function apne() {
                 if (!dbPromise) dbPromise = new Promise(res => {
+                    const gi = setTimeout(() => res(null), 1500);   // henger IndexedDB, bruker vi bare minnet
+                    const ferdig = v => { clearTimeout(gi); res(v); };
                     try {
                         const r = indexedDB.open('oversikt-cache', 1);
                         r.onupgradeneeded = () => r.result.createObjectStore('fliser');
-                        r.onsuccess = () => res(r.result);
-                        r.onerror = () => res(null);
-                        r.onblocked = () => res(null);
-                    } catch (e) { res(null); }
+                        r.onsuccess = () => ferdig(r.result);
+                        r.onerror = () => ferdig(null);
+                        r.onblocked = () => ferdig(null);
+                    } catch (e) { ferdig(null); }
                 });
                 return dbPromise;
             }
@@ -795,8 +792,9 @@
                     if (m && na - m.t < TTL) ut.set(k, m.els); else rest.push(k);
                 });
                 if (rest.length) {
-                    const db = await apne();
-                    if (db) {
+                    const fraDb = async () => {
+                        const db = await apne();
+                        if (!db) return;
                         await Promise.all(rest.map(k => new Promise(res => {
                             try {
                                 const rq = db.transaction('fliser').objectStore('fliser').get(ns + ':' + k);
@@ -808,7 +806,9 @@
                                 rq.onerror = () => res();
                             } catch (e) { res(); }
                         })));
-                    }
+                    };
+                    // Aldri la hurtiglageret blokkere selve nedlastingen
+                    await Promise.race([fraDb().catch(() => {}), new Promise(r => setTimeout(r, 1500))]);
                 }
                 return ut;
             }
