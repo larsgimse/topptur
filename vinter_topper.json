@@ -217,6 +217,18 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
+    "id": "nordfjellet",
+    "navn": "Nordfjellet",
+    "fil": "2025_05_11.gpx",
+    "video": [
+      {
+        "url": "https://www.strava.com/activities/14446797728",
+        "tittel": "Se Strava-aktivitet"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "rema-1000",
     "navn": "Rema 1000",
     "fil": "2026_03_28.gpx",

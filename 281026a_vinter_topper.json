@@ -1,0 +1,394 @@
+[
+  {
+    "id": "884",
+    "navn": "884",
+    "fil": "2026_03_27.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/reel/DWg1TaHiJRJ/",
+        "tittel": "Video 1"
+      },
+      {
+        "url": "https://www.instagram.com/reel/DTnrjgliITD/",
+        "tittel": "Video 2"
+      },
+      {
+        "url": "https://www.instagram.com/p/DXFlkrDCLz1/",
+        "tittel": "Video 3"
+      }
+    ],
+    "ekstraSpor": [
+      {
+        "tittel": "Spor 2",
+        "fil": "2026_01_17.gpx",
+        "farge": "#5c6bc0"
+      },
+      {
+        "tittel": "Spor 3",
+        "fil": "2026_04_13.gpx",
+        "farge": "#008b8b"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "bentsjordtinden",
+    "navn": "Bentsjordtinden",
+    "fil": "2026_04_03.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/barfotgimse/reel/DWr1QGKiLBC/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "buren",
+    "navn": "Buren",
+    "fil": "2026_01_10.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DTVY5yfCDfU/",
+        "tittel": "Video 1"
+      },
+      {
+        "url": "https://www.instagram.com/p/DXCQalhiPgX/",
+        "tittel": "Video 2"
+      },
+      {
+        "url": "https://www.instagram.com/p/C5b3I2UsTb0/",
+        "tittel": "Video 3",
+        "dato": "2024_04_06"
+      }
+    ],
+    "ekstraSpor": [
+      {
+        "tittel": "Spor 2",
+        "fil": "2026_04_12.gpx",
+        "farge": "#5c6bc0"
+      },
+      {
+        "tittel": "Spor 3",
+        "fil": "2024_04_05.gpx",
+        "farge": "#4caf50"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "burshammeren",
+    "navn": "Burshammeren",
+    "fil": "2026_03_26.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/reel/DWXPzaUiAO5/",
+        "tittel": "Video 1"
+      },
+      {
+        "url": "https://www.instagram.com/reel/DTLiCcAiDMz/",
+        "tittel": "Video 2"
+      },
+      {
+        "url": "https://www.instagram.com/p/C5b3I2UsTb0/",
+        "tittel": "Video 3",
+        "dato": "2024_04_06"
+      }
+    ],
+    "ekstraSpor": [
+      {
+        "tittel": "Spor 2",
+        "fil": "2025_12_31.gpx",
+        "farge": "#5c6bc0"
+      },
+      {
+        "tittel": "Spor 3",
+        "fil": "2024_04_05.gpx",
+        "farge": "#4caf50"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "fagerfjellet",
+    "navn": "Fagerfjellet",
+    "fil": "2025_04_22.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DI1NoNqsl-F/",
+        "tittel": "Video 1"
+      },
+      {
+        "url": "https://www.instagram.com/p/DECfPK3sre3/",
+        "tittel": "Video 2"
+      }
+    ],
+    "ekstraSpor": [
+      {
+        "tittel": "Spor 2",
+        "fil": "2024_12_23.gpx",
+        "farge": "#5c6bc0"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "gabrielfjellet",
+    "navn": "Gabrielfjellet",
+    "fil": "2025_05_25.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DKKd9vQsRke/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "gorzelvtinden",
+    "navn": "Gorzelvtinden",
+    "fil": "2025_12_06.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DR99FHAiF62/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "gratinden",
+    "navn": "Gråtinden",
+    "fil": "2026_04_06.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/reel/DW1xhPniK_l/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "klemmartindan",
+    "navn": "Klemmartindan",
+    "fil": "2024_04_28.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/C6UAgP4M4as/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "langfjellaksla",
+    "navn": "Langfjellaksla",
+    "fil": "2026_04_08.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/reel/DW4gus-iLa9/",
+        "tittel": "Video 1"
+      },
+      {
+        "url": "https://www.instagram.com/reels/DYInP-Tosh6/",
+        "tittel": "Video 2",
+        "dato": "2026_05_09"
+      }
+    ],
+    "ekstraSpor": [
+      {
+        "tittel": "Spor 2",
+        "fil": "2026_05_09.gpx",
+        "farge": "#5c6bc0"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "middagstinden",
+    "navn": "Middagstinden",
+    "fil": "2024_04_21.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/reel/DXKmwWNtmA6/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "rema-1000",
+    "navn": "Rema 1000",
+    "fil": "2026_03_28.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/barfotgimse/reel/DWcV-W9iLB8/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "skittentinden",
+    "navn": "Skittentinden",
+    "fil": "2026_03_15.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/reel/DWHz3RbCPlU/",
+        "tittel": "Video 1"
+      },
+      {
+        "url": "https://www.instagram.com/p/DXwr41Fodzo/",
+        "tittel": "Video 2",
+        "dato": "2026_04_04"
+      }
+    ],
+    "ekstraSpor": [
+      {
+        "tittel": "Spor 2",
+        "fil": "2026_04_04.gpx",
+        "farge": "#5c6bc0"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "sollidalsaksla",
+    "navn": "Sollidalsaksla",
+    "fil": "2026_03_16.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DV9l8tPCAuh/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "steinskartinden",
+    "navn": "Steinskartinden",
+    "fil": "2026_03_08.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DVodnhniPMj/",
+        "tittel": "Video 1"
+      },
+      {
+        "url": "https://www.instagram.com/p/DWPmIqVCCo7/",
+        "tittel": "Video 2"
+      }
+    ],
+    "ekstraSpor": [
+      {
+        "tittel": "Spor 2",
+        "fil": "2026_03_22.gpx",
+        "farge": "#5c6bc0"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "stormheimfjellet",
+    "navn": "Stormheimfjellet",
+    "fil": "2024_04_06.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/C5s6FTisaY-/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "storstolpan",
+    "navn": "Storstolpan",
+    "fil": "2025_05_08.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DJjsfOesdWS/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "stortinden",
+    "navn": "Stortinden",
+    "fil": "2024_03_26.gpx",
+    "video": [
+      {
+        "url": "https://www.youtube.com/watch?v=wix86hamTQ8",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "straumsaksla",
+    "navn": "Straumsaksla",
+    "fil": "2025_05_24.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DKDbUavsE9v/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "svartnestinden",
+    "navn": "Svartnestinden",
+    "fil": "2026_04_05.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DXcJLaViMUt/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "tromsdalstinden",
+    "navn": "Tromsdalstinden",
+    "fil": "2026_05_14.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DYfYRV0o6la/",
+        "tittel": "Video 1"
+      },
+      {
+        "url": "https://www.instagram.com/p/DYpqoqRoyyR/",
+        "tittel": "Video 2"
+      },
+      {
+        "url": "https://www.instagram.com/p/DZMwqUnopJN/",
+        "tittel": "Video 3"
+      }
+    ],
+    "ekstraSpor": [
+      {
+        "tittel": "Spor 2",
+        "fil": "2026_05_21.gpx",
+        "farge": "#5c6bc0"
+      },
+      {
+        "tittel": "Spor 3",
+        "fil": "2026_06_03.gpx",
+        "farge": "#e1306c"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "tverrfjellet",
+    "navn": "Tverrfjellet",
+    "fil": "2023_12_29.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/C1cfjMVMZnJ/",
+        "tittel": "Se video"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  }
+]
