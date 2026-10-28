@@ -145,6 +145,22 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
+    "id": "finnlandsfjellet-hestefjellet",
+    "navn": "Finnlandsfjellet - Hestefjellet",
+    "fil": "2025_03_16.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/DHWCwt7IxPk/",
+        "tittel": "Video 1"
+      },
+      {
+        "url": "https://www.strava.com/activities/13899880886",
+        "tittel": "Se Strava-aktivitet"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "gabrielfjellet",
     "navn": "Gabrielfjellet",
     "fil": "2025_05_25.gpx",
