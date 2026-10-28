@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Fjellturer rundt Tromsø - Sommer</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
@@ -547,6 +548,10 @@
             <option value="osm">OpenStreetMap</option>
         </select>
 
+        <button id="topoBtn" class="ctl" title="Topografi">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="9" ry="6"/><ellipse cx="12" cy="12" rx="5.5" ry="3.5"/><ellipse cx="12" cy="12" rx="2" ry="1.2"/></svg> Topo
+        </button>
+
         <button id="bratthetBtn" class="ctl">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l7-12 4 7 3-4 6 9z"/></svg> Bratthet
         </button>
@@ -602,6 +607,8 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
@@ -718,7 +725,7 @@
         });
 
         // Bakgrunnskart
-        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { attribution: '© Kartverket' }).addTo(map);
+        const norgeLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png', { attribution: '© Kartverket' });
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
 
         // NVE Bratthet (WMTS)
@@ -759,6 +766,109 @@
         }
         bratthetBtn.onclick = () => toggleBratthet();
 
+        /* ==========================================================================
+           OVERSIKTSKART (som oversikt.html): grått land, hvitt hav, blå innsjøer og blå spor.
+           Vises når ingen topp er valgt. Når en topp velges brukes Norgeskart/OSM som før.
+           ========================================================================== */
+        const SOMMER_FARGE = '#5f7f3b';
+        const OVERSIKT_HOVER = { color: '#000000', weight: 4, opacity: 1 };
+        // Sporfarger i oversikten: sommergrønn, sykkelturer blå og Nordfjellet i egen grønnfarge
+        const hovedFargeOversikt = (t) => erSykkel(t) ? 'var(--sykkel-blue)' : (t && t.navn === "Nordfjellet - Tromsø geografiske midtpunkt" ? 'var(--strava-green)' : SOMMER_FARGE);
+        const LINJE = '#000000';
+        const veiFilter = ['match', ['get', 'class'], ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor'], true, false];
+        const veiBredde = ['interpolate', ['exponential', 1.4], ['zoom'], 6, 0.4, 10, 0.8, 14, 1.6, 18, 4];
+        const glStil = {
+            version: 8,
+            glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+            sources: { omt: { type: 'vector', url: 'https://tiles.openfreemap.org/planet' } },
+            layers: [
+                { id: 'land', type: 'background', paint: { 'background-color': '#000000', 'background-opacity': 0.07 } },
+                { id: 'hav-flate', type: 'fill', source: 'omt', 'source-layer': 'water',
+                  filter: ['==', ['get', 'class'], 'ocean'], paint: { 'fill-color': '#ffffff', 'fill-opacity': 1 } },
+                { id: 'innsjo-flate', type: 'fill', source: 'omt', 'source-layer': 'water',
+                  filter: ['!=', ['get', 'class'], 'ocean'], paint: { 'fill-color': '#7fb2dc', 'fill-opacity': 0.4 } },
+                { id: 'vann-linje', type: 'line', source: 'omt', 'source-layer': 'water',
+                  layout: { 'line-join': 'round' },
+                  paint: { 'line-color': LINJE, 'line-width': ['interpolate', ['linear'], ['zoom'], 4, 0.5, 10, 0.9, 14, 1.2] } },
+                { id: 'veier', type: 'line', source: 'omt', 'source-layer': 'transportation',
+                  filter: ['all', veiFilter, ['!=', ['get', 'brunnel'], 'tunnel']],
+                  layout: { 'line-cap': 'round', 'line-join': 'round' },
+                  paint: { 'line-color': LINJE, 'line-width': veiBredde } },
+                { id: 'veier-tunnel', type: 'line', source: 'omt', 'source-layer': 'transportation',
+                  filter: ['all', veiFilter, ['==', ['get', 'brunnel'], 'tunnel']],
+                  layout: { 'line-join': 'round' },
+                  paint: { 'line-color': LINJE, 'line-width': veiBredde, 'line-dasharray': [2, 2] } },
+                { id: 'veier-service', type: 'line', source: 'omt', 'source-layer': 'transportation', minzoom: 13,
+                  filter: ['==', ['get', 'class'], 'service'],
+                  layout: { 'line-cap': 'round', 'line-join': 'round' },
+                  paint: { 'line-color': LINJE, 'line-width': ['interpolate', ['linear'], ['zoom'], 13, 0.4, 18, 1.5] } },
+                { id: 'steder', type: 'symbol', source: 'omt', 'source-layer': 'place',
+                  filter: ['match', ['get', 'class'], ['city', 'town', 'village'], true, false],
+                  layout: { 'text-field': ['coalesce', ['get', 'name:nb'], ['get', 'name']], 'text-font': ['Noto Sans Regular'],
+                            'text-size': ['match', ['get', 'class'], 'city', 15, 'town', 13, 11], 'text-max-width': 8 },
+                  paint: { 'text-color': LINJE, 'text-halo-color': '#ffffff', 'text-halo-width': 1.5 } }
+            ]
+        };
+
+        map.createPane('linjePane');
+        map.getPane('linjePane').style.zIndex = 250;
+        map.getPane('linjePane').style.pointerEvents = 'none';
+
+        let oversiktGlLayer;
+        try {
+            if (typeof L.maplibreGL !== 'function' || typeof maplibregl === 'undefined') throw new Error('MapLibre er ikke lastet');
+            oversiktGlLayer = L.maplibreGL({
+                style: glStil,
+                pane: 'linjePane',
+                attribution: '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> &copy; <a href="https://openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> Data fra <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+            });
+        } catch (err) {
+            console.warn('Vektorkart feilet, bruker Kartverket gråtone i stedet', err);
+            oversiktGlLayer = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topograatone/default/webmercator/{z}/{y}/{x}.png', {
+                attribution: '&copy; <a href="https://www.kartverket.no/">Kartverket</a>', maxZoom: 20, maxNativeZoom: 18,
+                className: 'bw-tiles'
+            });
+        }
+
+        // Valgfritt topografilag (høydekurver) under oversiktskartet
+        const topoMap = L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topograatone/default/webmercator/{z}/{y}/{x}.png', {
+            maxZoom: 20, maxNativeZoom: 18, zIndex: 1,
+            attribution: '&copy; <a href="https://www.kartverket.no/">Kartverket</a>'
+        });
+        const topoBtn = document.getElementById('topoBtn');
+        const mapSelectEl = document.getElementById('mapSelect');
+        let topoAktiv = false;
+        topoBtn.onclick = () => {
+            topoAktiv = !topoAktiv;
+            if (topoAktiv) map.addLayer(topoMap); else map.removeLayer(topoMap);
+            topoBtn.classList.toggle('btn-toggle-active', topoAktiv);
+        };
+
+        // Bytter mellom oversiktskart (ingen topp valgt) og detaljkart (topp valgt)
+        let kartModus = null;
+        function settKartModus(modus) {
+            if (modus === kartModus) return;
+            kartModus = modus;
+            if (modus === 'oversikt') {
+                map.removeLayer(norgeLayer); map.removeLayer(osmLayer);
+                map.addLayer(oversiktGlLayer);
+                if (topoAktiv) map.addLayer(topoMap);
+                topoBtn.style.display = '';
+                mapSelectEl.style.display = 'none';
+                document.getElementById('map').classList.add('oversikt-modus');
+            } else {
+                map.removeLayer(oversiktGlLayer);
+                map.removeLayer(topoMap);
+                if (mapSelectEl.value === 'osm') map.addLayer(osmLayer); else map.addLayer(norgeLayer);
+                topoBtn.style.display = 'none';
+                mapSelectEl.style.display = '';
+                document.getElementById('map').classList.remove('oversikt-modus');
+            }
+            if (bratthetMap && map.hasLayer(bratthetMap)) bratthetMap.bringToFront();
+        }
+
+        settKartModus('oversikt');
+
         // Handtere toggling av Legende / Bratthetsforklaring via Switch
         let isLegendActive = false;
 
@@ -775,6 +885,7 @@
         }
 
         document.getElementById('mapSelect').onchange = (e) => {
+            if (kartModus !== 'topp') return;
             if (e.target.value === "osm") { map.addLayer(osmLayer); map.removeLayer(norgeLayer); }
             else { map.addLayer(norgeLayer); map.removeLayer(osmLayer); }
         };
@@ -906,6 +1017,50 @@
             return match ? `${match[3]}.${match[2]}.${match[1]}` : '';
         }
 
+
+        // Skarp høydeprofil: tegnes i enhetens fulle oppløsning (devicePixelRatio) med tynn svart strek
+        function tegnHoydeprofil(canvas, stats, minH, maxH, bredde, hoyde) {
+            const dpr = Math.max(window.devicePixelRatio || 1, 2);
+            canvas.width = Math.round(bredde * dpr);
+            canvas.height = Math.round(hoyde * dpr);
+            canvas.style.width = bredde + 'px';
+            canvas.style.height = hoyde + 'px';
+            canvas.style.display = 'block';
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            const pad = 5;
+            const bunn = hoyde - pad;
+            const maxDist = stats[stats.length - 1][0] || 1;
+            const rangeH = (maxH - minH) || 1;
+            const xAv = d => pad + (d / maxDist) * (bredde - pad * 2);
+            const yAv = e => bunn - ((e - minH) / rangeH) * (hoyde - pad * 2);
+
+            // Fyll under profilen
+            ctx.beginPath();
+            ctx.moveTo(pad, bunn);
+            stats.forEach(([d, e]) => ctx.lineTo(xAv(d), yAv(e)));
+            ctx.lineTo(bredde - pad, bunn);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.07)';
+            ctx.fill();
+
+            // Tynn svart bunnlinje
+            ctx.beginPath();
+            ctx.moveTo(pad, bunn + 0.5);
+            ctx.lineTo(bredde - pad, bunn + 0.5);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Tynn svart profillinje
+            ctx.beginPath();
+            stats.forEach(([d, e], i) => { if (i === 0) ctx.moveTo(xAv(d), yAv(e)); else ctx.lineTo(xAv(d), yAv(e)); });
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+        }
+
         function skjulProfil(gpxLayer) {
             if (gpxLayer.getPopup && gpxLayer.getPopup()) {
                 gpxLayer.closePopup();
@@ -941,12 +1096,7 @@
                 <canvas id="elevationChart" width="220" height="100" style="margin-top:8px;"></canvas>
                 <div style="font-size:12px; margin-top:8px; text-align:left;">📏 ${(d/1000).toFixed(1)} km | 📈 ${e.toFixed(0)}m | 🏔️ ${h.toFixed(0)} moh<br>⏱️ Til topp: ${tidTilTopp} | ⌛ T/R: ${tidTR}</div>`;
             
-            const canvas = popupContent.querySelector('canvas');
-            const ctx = canvas.getContext('2d'), w = canvas.width, ht = canvas.height, pad = 5, maxD = stats[stats.length - 1][0], rH = h - minH || 1;
-            ctx.beginPath(); ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.lineJoin = 'round'; ctx.fillStyle = 'rgba(0, 0, 0, 0.07)';
-            ctx.moveTo(pad, ht - pad);
-            stats.forEach(([dist, elev]) => ctx.lineTo(pad + (dist / maxD) * (w - pad * 2), (ht - pad) - ((elev - minH) / rH) * (ht - pad * 2)));
-            ctx.lineTo(w - pad, ht - pad); ctx.closePath(); ctx.fill(); ctx.stroke();
+            tegnHoydeprofil(popupContent.querySelector('canvas'), stats, minH, h, 220, 100);
 
             gpxLayer.bindPopup(popupContent);
             gpxLayer.openPopup();
@@ -1169,15 +1319,15 @@
                             item.onmouseenter = () => {
                                 const l = gpxLagMap[topp.navn.toLowerCase()];
                                 if (l && !aktivToppNavn && !isReseting) {
-                                    l.setStyle({color: 'var(--hover-blue)', weight: 4, opacity: 1}).bringToFront();
+                                    l.setStyle(OVERSIKT_HOVER).bringToFront();
                                     map.flyToBounds(l.getBounds(), { padding: [60, 60], duration: 0.4 });
                                 }
                             };
                             item.onmouseleave = () => {
                                 const l = gpxLagMap[topp.navn.toLowerCase()];
-                                const mainColor = hovedFarge(topp);
+                                const mainColor = hovedFargeOversikt(topp);
                                 if (l && !aktivToppNavn && !isReseting) {
-                                    l.setStyle({color: mainColor, weight: defaultWeight, opacity: 0.6});
+                                    l.setStyle({color: mainColor, weight: defaultWeight, opacity: 0.9});
                                     map.flyTo(defaultCenter, defaultZoom, { duration: 0.4 });
                                 }
                             };
@@ -1192,11 +1342,11 @@
                 });
 
                 topper.forEach(topp => {
-                    const mainTrackColor = hovedFarge(topp);
+                    const mainTrackColor = hovedFargeOversikt(topp);
 
                     const track = new L.GPX('gpx/' + topp.fil, {
                         async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
-                        polyline_options: { color: mainTrackColor, weight: defaultWeight, opacity: 0.6 }
+                        polyline_options: { color: mainTrackColor, weight: defaultWeight, opacity: 0.9 }
                     });
 
                     gpxLagMap[topp.navn.toLowerCase()] = track;
@@ -1221,18 +1371,19 @@
 
                         l.on('mouseover', () => { 
                             if (!aktivToppNavn && !isReseting && !isTouchDevice) {
-                                l.setStyle({color: 'var(--hover-blue)', weight: 4, opacity: 1}).bringToFront(); 
+                                l.setStyle(OVERSIKT_HOVER).bringToFront(); 
                             }
                         });
                         l.on('mouseout', () => { 
                             if (!aktivToppNavn && !isReseting && !isTouchDevice) {
-                                l.setStyle({color: mainTrackColor, weight: defaultWeight, opacity: 0.6});
+                                l.setStyle({color: mainTrackColor, weight: defaultWeight, opacity: 0.9});
                             }
                         });
 
                         const aktiver = () => {
                             if (erSykkel(topp) && !visSykkelturer) { visSykkelturer = true; oppdaterSykkelFilter(); }
                             nullstillKartVisuals();
+                            settKartModus('topp');
                             aktivToppNavn = topp.navn;
                             
                             document.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove('active'));
@@ -1496,8 +1647,8 @@
             document.querySelectorAll('.dropdown-item').forEach(b => b.classList.remove('active'));
             allTracksGroup.eachLayer(layer => {
                 const trackTopp = topper.find(t => 'gpx/' + t.fil === layer._gpx);
-                const color = hovedFarge(trackTopp);
-                layer.setStyle({ color: color, weight: defaultWeight, opacity: 0.6 });
+                const color = hovedFargeOversikt(trackTopp);
+                layer.setStyle({ color: color, weight: defaultWeight, opacity: 0.9 });
                 if (erSykkel(trackTopp) && !visSykkelturer) return;
                 if (!map.hasLayer(layer)) map.addLayer(layer);
             });
@@ -1510,6 +1661,7 @@
         document.getElementById('resetBtn').onclick = () => {
             isReseting = true;
             nullstillKartVisuals();
+            settKartModus('oversikt');
             document.getElementById('topSearchInput').value = '';
             map.flyTo(defaultCenter, defaultZoom, { duration: 0.6 });
             setTimeout(() => { isReseting = false; }, 700);

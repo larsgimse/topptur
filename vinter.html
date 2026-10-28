@@ -723,6 +723,50 @@
             return match ? `${match[3]}.${match[2]}.${match[1]}` : '';
         }
 
+
+        // Skarp høydeprofil: tegnes i enhetens fulle oppløsning (devicePixelRatio) med tynn svart strek
+        function tegnHoydeprofil(canvas, stats, minH, maxH, bredde, hoyde) {
+            const dpr = Math.max(window.devicePixelRatio || 1, 2);
+            canvas.width = Math.round(bredde * dpr);
+            canvas.height = Math.round(hoyde * dpr);
+            canvas.style.width = bredde + 'px';
+            canvas.style.height = hoyde + 'px';
+            canvas.style.display = 'block';
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            const pad = 5;
+            const bunn = hoyde - pad;
+            const maxDist = stats[stats.length - 1][0] || 1;
+            const rangeH = (maxH - minH) || 1;
+            const xAv = d => pad + (d / maxDist) * (bredde - pad * 2);
+            const yAv = e => bunn - ((e - minH) / rangeH) * (hoyde - pad * 2);
+
+            // Fyll under profilen
+            ctx.beginPath();
+            ctx.moveTo(pad, bunn);
+            stats.forEach(([d, e]) => ctx.lineTo(xAv(d), yAv(e)));
+            ctx.lineTo(bredde - pad, bunn);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.07)';
+            ctx.fill();
+
+            // Tynn svart bunnlinje
+            ctx.beginPath();
+            ctx.moveTo(pad, bunn + 0.5);
+            ctx.lineTo(bredde - pad, bunn + 0.5);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Tynn svart profillinje
+            ctx.beginPath();
+            stats.forEach(([d, e], i) => { if (i === 0) ctx.moveTo(xAv(d), yAv(e)); else ctx.lineTo(xAv(d), yAv(e)); });
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+        }
+
         function visProfil(gpxLayer, tittel, gpxFil) {
             const d = gpxLayer.get_distance();
             const e = gpxLayer.get_elevation_gain();
@@ -763,7 +807,7 @@
             popupContent.innerHTML = `
                 <div class="prof-title">${tittel}</div>
                 ${dato ? `<div class="prof-date">${dato}</div>` : ''}
-                <canvas id="elevationChart" width="220" height="100" style="margin-top:8px; border-bottom: 1px solid #ccc;"></canvas>
+                <canvas id="elevationChart" width="220" height="100" style="margin-top:8px;"></canvas>
                 <div style="font-size:12px; margin-top:8px; line-height:1.4; text-align:left;">
                     📏 Distanse T/R: ${(d/1000).toFixed(1)} km<br>
                     📈 Stigning: ${e.toFixed(0)} m<br>
@@ -773,33 +817,8 @@
                 </div>
             `;
 
+            tegnHoydeprofil(popupContent.querySelector('canvas'), stats, minH, h, 220, 100);
             gpxLayer.bindPopup(popupContent).openPopup();
-
-            setTimeout(() => {
-                const canvas = document.getElementById('elevationChart');
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                const width = canvas.width;
-                const height = canvas.height;
-                const padding = 5;
-                const maxDist = stats[stats.length - 1][0];
-                const rangeH = h - minH || 1;
-                ctx.beginPath();
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 1;
-                ctx.lineJoin = 'round';
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.07)';
-                ctx.moveTo(padding, height - padding);
-                stats.forEach(([dist, elev]) => {
-                    const x = padding + (dist / maxDist) * (width - padding * 2);
-                    const y = (height - padding) - ((elev - minH) / rangeH) * (height - padding * 2);
-                    ctx.lineTo(x, y);
-                });
-                ctx.lineTo(width - padding, height - padding);
-                ctx.closePath();
-                ctx.fill(); ctx.stroke();
-
-            }, 100);
         }
 
         function skapKontrollRad(label, badgeFil, startOn, onSporToggle, onProfilToggle) {
@@ -1132,7 +1151,7 @@
                             };
                             videoContainer.appendChild(legendRow);
 
-                            videoContainer.appendChild(skapKontrollRad('Hovedspor', null, true, 
+                            videoContainer.appendChild(skapKontrollRad(topp.navn, null, true, 
                                 (on) => on ? map.addLayer(l) : map.removeLayer(l),
                                 (on) => on ? visProfil(l, topp.navn, topp.fil) : map.closePopup()
                             ));
