@@ -1352,12 +1352,10 @@
         }
 
         async function fjellHentKartverket(b, signal) {
-            const c0 = b.getCenter();
-            const radius = Math.round(c0.distanceTo(b.getNorthEast()));
-            const url = `https://ws.geonorge.no/stedsnavn/v1/punkt?nord=${c0.lat}&ost=${c0.lng}&koordsys=4258&radius=${radius}&navneobjekttype=Fjell*&treffPerSide=100&side=1`;
+            const url = `https://ws.geonorge.no/stedsnavn/v1/punkt?nordmin=${b.getSouth()}&nordmaks=${b.getNorth()}&ostmin=${b.getWest()}&ostmaks=${b.getEast()}&navneobjekttype=Fjell*&maxAntall=50`;
             // Tidsavbrudd, slik at en treg Kartverket-tjeneste ikke fører til at henting står fast
             const c = new AbortController();
-            const timer = setTimeout(() => c.abort(), 8000);
+            const timer = setTimeout(() => c.abort(), 20000);
             const avbryt = () => c.abort();
             signal.addEventListener('abort', avbryt, { once: true });
             try {
@@ -1366,11 +1364,11 @@
                 const json = await res.json();
                 const ramme = b.pad(0.05);
                 return (json.navn || []).map(item => ({
-                    name: item.stedsnavn?.[0]?.skrivemåte,
-                    lat: item.representasjonspunkt?.nord,
-                    lon: item.representasjonspunkt?.øst,
+                    name: item.stedsnavn?.[0]?.skrivemåte || (typeof item.stedsnavn === 'string' ? item.stedsnavn : null),
+                    lat: Number(item.representasjonspunkt?.nord),
+                    lon: Number(item.representasjonspunkt?.øst),
                     elevation: item.meterOverHavet || item.stedsnavn?.[0]?.meterOverHavet
-                })).filter(p => p.name && typeof p.lat === 'number' && typeof p.lon === 'number' && ramme.contains([p.lat, p.lon]));
+                })).filter(p => p.name && Number.isFinite(p.lat) && Number.isFinite(p.lon) && ramme.contains([p.lat, p.lon]));
             } finally {
                 clearTimeout(timer);
                 signal.removeEventListener('abort', avbryt);
