@@ -481,7 +481,11 @@
             renderer: minRenderer
         }).setView([69.65, 18.95], 9);
 
-        map.zoomControl.setPosition('bottomleft');
+        // Zoomknappene nede til venstre, men øverst til venstre på mobil (der kommer de ikke i veien for kartteksten)
+        const mobilKart = window.matchMedia('(max-width: 600px)');
+        function plasserZoomknapper() { map.zoomControl.setPosition(mobilKart.matches ? 'topleft' : 'bottomleft'); }
+        plasserZoomknapper();
+        mobilKart.addEventListener('change', plasserZoomknapper);
 
         /* ==========================================================================
            GRUNNKART: hvit bakgrunn med svarte linjer (kystlinje, innsjøer og veier).
@@ -640,6 +644,7 @@
         let hideStatusTimeout = null;
 
         function visStatus(melding, prosent = null, ubestemt = false, farge = 'var(--second-hand)') {
+            statusEier = null;
             if (hideStatusTimeout) clearTimeout(hideStatusTimeout);
             loadingStatusEl.style.opacity = '1';
             loadingStatusEl.style.display = 'flex';
@@ -658,6 +663,20 @@
             } else {
                 progressContainer.style.display = 'none';
             }
+        }
+
+        // Hvilken funksjon (stier, severdigheter, fjelltopper) som viser meldingen akkurat nå
+        let statusEier = null;
+        function visStatusFor(eier, ...args) {
+            visStatus(...args);
+            statusEier = eier;
+        }
+        // Skjuler statuslinjen med en gang, men bare hvis den fortsatt viser meldingen til denne eieren
+        function skjulStatusFor(eier) {
+            if (statusEier !== eier) return;
+            if (hideStatusTimeout) clearTimeout(hideStatusTimeout);
+            loadingStatusEl.style.opacity = '0';
+            statusEier = null;
         }
 
         function skjultStatus(forsinkelseMs = 800) {
@@ -682,11 +701,14 @@
             'https://overpass.kumi.systems/api/interpreter'
         ];
 
-        async function overpassHent(query, klientTimeoutMs = 30000) {
+        async function overpassHent(query, klientTimeoutMs = 30000, signal = null) {
             const feil = [];
             for (const url of OVERPASS_SERVERE) {
+                if (signal && signal.aborted) throw new DOMException('Avbrutt', 'AbortError');
                 const controller = new AbortController();
                 const timer = setTimeout(() => controller.abort(), klientTimeoutMs);
+                const avbryt = () => controller.abort();
+                if (signal) signal.addEventListener('abort', avbryt, { once: true });
                 try {
                     const res = await fetch(url, {
                         method: 'POST',
@@ -702,11 +724,14 @@
                     }
                     return json;
                 } catch (e) {
+                    // Avbrutt av brukeren: ikke prøv neste server
+                    if (signal && signal.aborted) throw new DOMException('Avbrutt', 'AbortError');
                     const host = new URL(url).hostname;
                     feil.push(`${host}: ${e.name === 'AbortError' ? 'tidsavbrudd' : e.message}`);
                     console.warn('Overpass feilet på ' + host, e);
                 } finally {
                     clearTimeout(timer);
+                    if (signal) signal.removeEventListener('abort', avbryt);
                 }
             }
             throw new Error('Overpass svarer ikke (' + feil.join('; ') + ')');
@@ -719,16 +744,17 @@
         let stierActive = false;
         let stierLayerGroup = L.layerGroup();
         let isFetchingStier = false;
+        let stierAbort = null;
 
         async function hentStierStreker() {
             if (!stierActive || isFetchingStier) return;
             if (map.getZoom() < 10) {
-                visStatus("Zoom inn nærmere for å laste stier...", 100, false, 'var(--stier-orange)');
+                visStatusFor('stier', "Zoom inn nærmere for å laste stier...", 100, false, 'var(--stier-orange)');
                 skjultStatus(2000);
                 return;
             }
 
-            visStatus("Henter stier og tråkk fra OSM...", null, true, 'var(--stier-orange)');
+            visStatusFor('stier', "Henter stier og tråkk fra OSM...", null, true, 'var(--stier-orange)');
 
             const b = map.getBounds();
             const south = b.getSouth().toFixed(3);
@@ -739,14 +765,17 @@
             const overpassQuery = `[out:json][timeout:25];way["highway"~"path|footway|track"](${south},${west},${north},${east});out geom tags;`;
 
             isFetchingStier = true;
+            const kontroll = new AbortController();
+            stierAbort = kontroll;
 
             try {
-                const json = await overpassHent(overpassQuery);
+                const json = await overpassHent(overpassQuery, 30000, kontroll.signal);
+                if (kontroll.signal.aborted) return;
                 stierLayerGroup.clearLayers();
 
                 if (json && json.elements) {
                     const total = json.elements.length;
-                    visStatus(`Tegner opp ${total} stier...`, 50, false, 'var(--stier-orange)');
+                    visStatusFor('stier', `Tegner opp ${total} stier...`, 50, false, 'var(--stier-orange)');
 
                     json.elements.forEach(el => {
                         if (el.geometry && el.geometry.length > 1) {
@@ -784,14 +813,15 @@
                 }
 
                 if (stierActive && !map.hasLayer(stierLayerGroup)) stierLayerGroup.addTo(map);
-                visStatus("Stier lastet inn!", 100, false, 'var(--stier-orange)');
+                visStatusFor('stier', "Stier lastet inn!", 100, false, 'var(--stier-orange)');
                 skjultStatus();
             } catch (err) {
+                if (kontroll.signal.aborted) return;
                 console.warn("Kunne ikke hente sti-streker:", err);
-                visStatus("Feil ved henting av stier: " + err.message, 100, false, 'red');
+                visStatusFor('stier', "Feil ved henting av stier: " + err.message, 100, false, 'red');
                 skjultStatus(2000);
             } finally {
-                isFetchingStier = false;
+                if (stierAbort === kontroll) { isFetchingStier = false; stierAbort = null; }
             }
         }
 
@@ -804,6 +834,9 @@
                 map.on('moveend zoomend', hentStierStreker);
             } else {
                 btnStier.classList.remove('active');
+                if (stierAbort) { stierAbort.abort(); stierAbort = null; }
+                isFetchingStier = false;
+                skjulStatusFor('stier');
                 map.off('moveend zoomend', hentStierStreker);
                 map.removeLayer(stierLayerGroup);
                 stierLayerGroup.clearLayers();
@@ -819,12 +852,13 @@
         let poiActive = false;
         let poiLayerGroup = L.layerGroup();
         let isFetchingPoi = false;
+        let poiAbort = null;
 
         async function hentPoiData() {
             if (!poiActive || isFetchingPoi) return;
             if (map.getZoom() < 10) return;
 
-            visStatus("Henter fjellpass og severdigheter...", null, true, 'var(--poi-yellow)');
+            visStatusFor('poi', "Henter fjellpass og severdigheter...", null, true, 'var(--poi-yellow)');
 
             const b = map.getBounds();
             const south = b.getSouth().toFixed(3);
@@ -835,9 +869,12 @@
             const overpassQuery = `[out:json][timeout:25];(node["mountain_pass"="yes"](${south},${west},${north},${east});node["tourism"~"viewpoint|alpine_hut|wilderness_hut|shelter"](${south},${west},${north},${east});node["amenity"="shelter"](${south},${west},${north},${east}););out tags geom;`;
 
             isFetchingPoi = true;
+            const kontroll = new AbortController();
+            poiAbort = kontroll;
 
             try {
-                const json = await overpassHent(overpassQuery);
+                const json = await overpassHent(overpassQuery, 30000, kontroll.signal);
+                if (kontroll.signal.aborted) return;
                 poiLayerGroup.clearLayers();
 
                 if (json && json.elements) {
@@ -879,14 +916,15 @@
                 }
 
                 if (poiActive && !map.hasLayer(poiLayerGroup)) poiLayerGroup.addTo(map);
-                visStatus("Severdigheter lastet inn!", 100, false, 'var(--poi-yellow)');
+                visStatusFor('poi', "Severdigheter lastet inn!", 100, false, 'var(--poi-yellow)');
                 skjultStatus();
             } catch (err) {
+                if (kontroll.signal.aborted) return;
                 console.warn("Kunne ikke hente POIs:", err);
-                visStatus("Feil ved henting av severdigheter: " + err.message, 100, false, 'red');
+                visStatusFor('poi', "Feil ved henting av severdigheter: " + err.message, 100, false, 'red');
                 skjultStatus(2000);
             } finally {
-                isFetchingPoi = false;
+                if (poiAbort === kontroll) { isFetchingPoi = false; poiAbort = null; }
             }
         }
 
@@ -899,6 +937,9 @@
                 map.on('moveend zoomend', hentPoiData);
             } else {
                 btnPoi.classList.remove('active');
+                if (poiAbort) { poiAbort.abort(); poiAbort = null; }
+                isFetchingPoi = false;
+                skjulStatusFor('poi');
                 map.off('moveend zoomend', hentPoiData);
                 map.removeLayer(poiLayerGroup);
                 poiLayerGroup.clearLayers();
@@ -911,7 +952,7 @@
            FJELLTOPPER (fra enkel.html): hentes fra Kartverket (stedsnavn) med OSM som reserve.
            Navnene kan dras rundt, og funksjonen krever at kartet ikke er zoomet for langt ut.
            ========================================================================== */
-        const FJELL_MIN_ZOOM = 10;
+        const FJELL_MIN_ZOOM = 12;
         const fjellKnapp = document.getElementById('btn-fjell');
         const fjellPanel = document.getElementById('fjell-panel');
         const fjellCanvas = document.getElementById('peaks-canvas-layer');
@@ -924,7 +965,7 @@
         const fjellFjernet = new Set();   // toppene brukeren har slettet, så de ikke kommer tilbake ved panorering
         let fjellLinjeStil = 'corner';
         let fjellRammer = true;
-        let fjellHentId = 0;
+        let fjellAbort = null;
         let fjellTimer = null;
         let fjellW = 0, fjellH = 0, fjellZ = 10;
 
@@ -1135,9 +1176,9 @@
             return nye;
         }
 
-        async function fjellHentKartverket(b) {
+        async function fjellHentKartverket(b, signal) {
             const url = `https://ws.geonorge.no/stedsnavn/v1/punkt?nordmin=${b.getSouth()}&nordmaks=${b.getNorth()}&ostmin=${b.getWest()}&ostmaks=${b.getEast()}&navneobjekttype=Fjell*&maxAntall=50`;
-            const res = await fetch(url, { mode: 'cors' });
+            const res = await fetch(url, { mode: 'cors', signal });
             if (!res.ok) throw new Error('HTTP ' + res.status);
             const json = await res.json();
             const ramme = b.pad(0.15);
@@ -1149,9 +1190,9 @@
             })).filter(p => p.name && typeof p.lat === 'number' && typeof p.lon === 'number' && ramme.contains([p.lat, p.lon]));
         }
 
-        async function fjellHentOverpass(b) {
+        async function fjellHentOverpass(b, signal) {
             const query = `[out:json][timeout:25];node["natural"="peak"]["name"](${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()});out;`;
-            const json = await overpassHent(query);
+            const json = await overpassHent(query, 30000, signal);
             return (json.elements || []).map(el => ({
                 name: el.tags && el.tags.name,
                 lat: el.lat,
@@ -1164,39 +1205,50 @@
 
         async function fjellHent() {
             if (!fjellAktiv || !fjellSynlig()) return;
-            const id = ++fjellHentId;
+            if (fjellAbort) fjellAbort.abort();      // en ny henting avløser en som pågår
+            const kontroll = new AbortController();
+            fjellAbort = kontroll;
+            const signal = kontroll.signal;
             const b = map.getBounds();
-            visStatus('Henter fjelltopper...', null, true, 'var(--ink)');
+            visStatusFor('fjell', 'Henter fjelltopper...', null, true, 'var(--ink)');
 
             let liste = [];
             try {
-                liste = await fjellHentKartverket(b);
+                liste = await fjellHentKartverket(b, signal);
             } catch (err) {
+                if (signal.aborted) return;
                 console.warn('Kartverket stedsnavn feilet, prøver OpenStreetMap', err);
             }
+            if (signal.aborted) return;
             if (liste.length === 0) {
                 try {
-                    liste = await fjellHentOverpass(b);
+                    liste = await fjellHentOverpass(b, signal);
                 } catch (err) {
+                    if (signal.aborted) return;
                     console.warn('Henting av fjelltopper feilet', err);
-                    if (id === fjellHentId) {
-                        visStatus('Feil ved henting av fjelltopper: ' + err.message, 100, false, 'red');
-                        skjultStatus(2500);
-                    }
+                    fjellAbort = null;
+                    visStatusFor('fjell', 'Feil ved henting av fjelltopper: ' + err.message, 100, false, 'red');
+                    skjultStatus(2500);
                     return;
                 }
             }
-            if (id !== fjellHentId || !fjellAktiv) return;
+            if (signal.aborted || !fjellAktiv) return;
+            fjellAbort = null;
 
             const nye = fjellLeggTil(liste);
-            visStatus(nye > 0 ? `${nye} fjelltopper lagt til` : 'Ingen nye fjelltopper her', 100, false, 'var(--ink)');
+            visStatusFor('fjell', nye > 0 ? `${nye} fjelltopper lagt til` : 'Ingen nye fjelltopper her', 100, false, 'var(--ink)');
             skjultStatus(1500);
+        }
+
+        function fjellAvbrytHenting() {
+            clearTimeout(fjellTimer);
+            if (fjellAbort) { fjellAbort.abort(); fjellAbort = null; }
+            skjulStatusFor('fjell');
         }
 
         function fjellSlaAv() {
             fjellAktiv = false;
-            fjellHentId++;
-            clearTimeout(fjellTimer);
+            fjellAvbrytHenting();
             fjellKnapp.classList.remove('active');
             fjellPanel.classList.remove('active');
             fjellListe.forEach(p => p.element.remove());
@@ -1208,7 +1260,7 @@
         fjellKnapp.addEventListener('click', () => {
             if (fjellAktiv) { fjellSlaAv(); return; }
             if (!fjellSynlig()) {
-                visStatus('Zoom inn nærmere for å hente fjelltopper...', 100, false, 'var(--ink)');
+                visStatusFor('fjell', 'Zoom inn nærmere for å hente fjelltopper...', 100, false, 'var(--ink)');
                 skjultStatus(2500);
                 return;
             }
@@ -1241,7 +1293,8 @@
             fjellOppdaterPosisjoner();
             if (!fjellAktiv) return;
             if (!fjellSynlig()) {
-                visStatus('Zoom inn nærmere for å vise fjelltopper...', 100, false, 'var(--ink)');
+                fjellAvbrytHenting();
+                visStatusFor('fjell', 'Zoom inn nærmere for å vise fjelltopper...', 100, false, 'var(--ink)');
                 skjultStatus(2000);
                 return;
             }
