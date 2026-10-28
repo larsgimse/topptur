@@ -181,6 +181,18 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
+    "id": "kvannfjellet",
+    "navn": "Kvannfjellet",
+    "fil": "2024_04_27.gpx",
+    "video": [
+      {
+        "url": "https://www.strava.com/activities/11275387745",
+        "tittel": "Se Strava-aktivitet"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "langfjellaksla",
     "navn": "Langfjellaksla",
     "fil": "2026_04_08.gpx",
