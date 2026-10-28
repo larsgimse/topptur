@@ -110,6 +110,18 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
+    "id": "blaafjellet",
+    "navn": "Blåfjellet",
+    "fil": "2024_04_07.gpx",
+    "video": [
+      {
+        "url": "Blåfjellet",
+        "tittel": "Se Strava-aktivitet"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "fagerfjellet",
     "navn": "Fagerfjellet",
     "fil": "2025_04_22.gpx",
