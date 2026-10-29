@@ -479,15 +479,35 @@
         (function () {
             const boks = document.createElement('div');
             boks.id = 'diag-box';
-            boks.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:99999;width:min(420px,92vw);max-height:42vh;display:flex;flex-direction:column;background:#fff;border:1px solid #000;font:11px/1.35 monospace;color:#000;box-shadow:0 2px 8px rgba(0,0,0,.25)';
+            boks.style.cssText = 'display:none;position:fixed;right:8px;bottom:40px;z-index:99999;width:min(420px,92vw);max-height:42vh;display:flex;flex-direction:column;background:#fff;border:1px solid #000;font:11px/1.35 monospace;color:#000;box-shadow:0 2px 8px rgba(0,0,0,.25)';
             boks.innerHTML = '<div style="display:flex;gap:6px;padding:4px 6px;border-bottom:1px solid #000;align-items:center"><b style="flex:1">Feilsøking</b><button id="diag-test" style="font:inherit;cursor:pointer">Test tilkobling</button><button id="diag-copy" style="font:inherit;cursor:pointer">Kopier</button><button id="diag-x" style="font:inherit;cursor:pointer">×</button></div><div id="diag-log" style="overflow:auto;padding:4px 6px;white-space:pre-wrap;word-break:break-all"></div>';
-            const leggTil = () => document.body ? document.body.appendChild(boks) : setTimeout(leggTil, 50);
+            const knapp = document.createElement('button');
+            knapp.id = 'diag-toggle';
+            knapp.type = 'button';
+            knapp.title = 'Feilsøking';
+            knapp.textContent = 'i';
+            knapp.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:99999;width:24px;height:24px;padding:0;border:1px solid #000;background:#fff;color:#000;font:italic 13px/1 Georgia,serif;cursor:pointer;opacity:.45;border-radius:50%';
+            knapp.onmouseenter = () => { knapp.style.opacity = '1'; };
+            knapp.onmouseleave = () => { if (boks.style.display === 'none' && !knapp.dataset.feil) knapp.style.opacity = '.45'; };
+            knapp.onclick = () => {
+                const vis = boks.style.display === 'none';
+                boks.style.display = vis ? 'flex' : 'none';
+                if (vis) { knapp.style.opacity = '1'; knapp.style.background = '#fff'; knapp.style.color = '#000'; delete knapp.dataset.feil; const l = document.getElementById('diag-log'); if (l) l.scrollTop = l.scrollHeight; }
+            };
+            const leggTil = () => {
+                if (!document.body) return setTimeout(leggTil, 50);
+                document.body.appendChild(boks);
+                document.body.appendChild(knapp);
+            };
             leggTil();
             const logg = (t, rod) => {
                 const l = document.getElementById('diag-log'); if (!l) return;
                 const d = document.createElement('div');
                 d.textContent = new Date().toLocaleTimeString() + ' ' + t;
-                if (rod) d.style.color = '#c00';
+                if (rod) {
+                    d.style.color = '#c00';
+                    if (boks.style.display === 'none') { knapp.dataset.feil = '1'; knapp.style.opacity = '1'; knapp.style.background = '#c00'; knapp.style.color = '#fff'; }
+                }
                 l.appendChild(d); l.scrollTop = l.scrollHeight;
             };
             window.diagLogg = logg;
@@ -512,7 +532,7 @@
                 const b = e.target.closest && e.target.closest('button.btn');
                 if (b && window.map) logg('klikk: ' + b.id + ' · zoom ' + window.map.getZoom());
             }, true);
-            document.getElementById('diag-x').onclick = () => boks.remove();
+            document.getElementById('diag-x').onclick = () => { boks.style.display = 'none'; };
             document.getElementById('diag-copy').onclick = () => {
                 const t = document.getElementById('diag-log').innerText;
                 (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => logg('kopiert'), () => logg('kunne ikke kopiere, marker teksten manuelt'));
