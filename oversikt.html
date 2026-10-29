@@ -479,7 +479,7 @@
         (function () {
             const boks = document.createElement('div');
             boks.id = 'diag-box';
-            boks.style.cssText = 'display:none;position:fixed;right:8px;bottom:40px;z-index:99999;width:min(420px,92vw);max-height:42vh;display:flex;flex-direction:column;background:#fff;border:1px solid #000;font:11px/1.35 monospace;color:#000;box-shadow:0 2px 8px rgba(0,0,0,.25)';
+            boks.style.cssText = 'display:none;position:fixed;right:8px;bottom:40px;z-index:99999;width:min(420px,92vw);max-height:42vh;flex-direction:column;background:#fff;border:1px solid #000;font:11px/1.35 monospace;color:#000;box-shadow:0 2px 8px rgba(0,0,0,.25)';
             boks.innerHTML = '<div style="display:flex;gap:6px;padding:4px 6px;border-bottom:1px solid #000;align-items:center"><b style="flex:1">Feilsøking</b><button id="diag-test" style="font:inherit;cursor:pointer">Test tilkobling</button><button id="diag-copy" style="font:inherit;cursor:pointer">Kopier</button><button id="diag-x" style="font:inherit;cursor:pointer">×</button></div><div id="diag-log" style="overflow:auto;padding:4px 6px;white-space:pre-wrap;word-break:break-all"></div>';
             const knapp = document.createElement('button');
             knapp.id = 'diag-toggle';
