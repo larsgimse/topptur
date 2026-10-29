@@ -1056,8 +1056,14 @@
             if (stierActive) {
                 btnStier.classList.add('active');
                 stierLayerGroup.addTo(map);
-                stierLaster.planlegg(0);
                 map.on('moveend', hentStierStreker);
+                if (map.getZoom() < STIER_MIN_ZOOM) {
+                    visStatusFor('stier', 'Zoomer inn for å laste stier...', 100, false, 'var(--stier-orange)');
+                    skjultStatus(2500);
+                    map.setZoom(STIER_MIN_ZOOM);   // moveend starter lastingen
+                } else {
+                    stierLaster.planlegg(0);
+                }
             } else {
                 btnStier.classList.remove('active');
                 map.off('moveend', hentStierStreker);
@@ -1142,7 +1148,7 @@
            FJELLTOPPER (fra enkel.html): hentes fra Kartverket (stedsnavn) med OSM som reserve.
            Navnene kan dras rundt, og funksjonen krever at kartet ikke er zoomet for langt ut.
            ========================================================================== */
-        const FJELL_MIN_ZOOM = 12;
+        const FJELL_MIN_ZOOM = 10;
         const fjellKnapp = document.getElementById('btn-fjell');
         const fjellPanel = document.getElementById('fjell-panel');
         const fjellCanvas = document.getElementById('peaks-canvas-layer');
@@ -1404,7 +1410,8 @@
         }
 
         async function fjellHentOverpass(b, signal) {
-            const query = `[out:json][timeout:25];node["natural"="peak"]["name"](${b.getSouth().toFixed(5)},${b.getWest().toFixed(5)},${b.getNorth().toFixed(5)},${b.getEast().toFixed(5)});out qt 200;`;
+            const krevHoyde = map.getZoom() < 12 ? '["ele"]' : '';
+            const query = `[out:json][timeout:25];node["natural"="peak"]["name"]${krevHoyde}(${b.getSouth().toFixed(5)},${b.getWest().toFixed(5)},${b.getNorth().toFixed(5)},${b.getEast().toFixed(5)});out qt 200;`;
             const json = await overpassHent(query, 25000, signal);
             return (json.elements || []).map(el => ({
                 name: el.tags && el.tags.name,
@@ -1413,7 +1420,7 @@
                 elevation: el.tags && el.tags.ele ? parseInt(el.tags.ele, 10) : null
             })).filter(p => p.name && typeof p.lat === 'number' && typeof p.lon === 'number')
                .sort((x, y) => (y.elevation || 0) - (x.elevation || 0))
-               .slice(0, 150);
+               .slice(0, map.getZoom() < 12 ? 60 : 150);
         }
 
         async function fjellHent() {
@@ -1484,14 +1491,16 @@
 
         fjellKnapp.addEventListener('click', () => {
             if (fjellAktiv) { fjellSlaAv(); return; }
-            if (!fjellSynlig()) {
-                visStatusFor('fjell', 'Zoom inn nærmere for å hente fjelltopper...', 100, false, 'var(--ink)');
-                skjultStatus(2500);
-                return;
-            }
             fjellAktiv = true;
             fjellKnapp.classList.add('active');
             fjellPanel.classList.add('active');
+            if (!fjellSynlig()) {
+                // Kartet er for langt ute: zoom inn, så hentes toppene når zoomen er ferdig (moveend)
+                visStatusFor('fjell', 'Zoomer inn for å hente fjelltopper...', 100, false, 'var(--ink)');
+                skjultStatus(2500);
+                map.setZoom(FJELL_MIN_ZOOM);
+                return;
+            }
             fjellOppdaterPosisjoner();
             fjellHent();
         });
