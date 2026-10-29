@@ -294,6 +294,10 @@
         .legend-item { display: flex; align-items: center; margin-bottom: 3px; }
         .color-box { width: 16px; height: 16px; margin-right: 8px; border: 1px solid rgba(0,0,0,.2); }
 
+        .lagret-hoyre { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); }
+        .lagret-tom { font: inherit; font-size: 12px; background: #fff; color: var(--ink); border: 1px solid var(--ink); padding: 2px 8px; cursor: pointer; }
+        .lagret-tom:hover { background: var(--map-bg); }
+
         /* Fjelltopper: flyttbare navn med linje til toppen */
         #peaks-canvas-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 450; }
         #labels-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 500; }
@@ -408,6 +412,7 @@
             <button id="btn-stier" class="btn btn-stier" title="Stier"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19c5 0 3-7 8-7s3-7 8-7"/></svg><span class="lbl">Stier</span></button>
             <button id="btn-poi" class="btn btn-poi" title="Severdigheter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.5 6-10a6 6 0 1 0-12 0c0 4.5 6 10 6 10z"/><circle cx="12" cy="11" r="2"/></svg><span class="lbl">Severdigheter</span></button>
             <button id="btn-fjell" class="btn btn-fjell" title="Fjelltopper"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20L12 5l9 15z"/><path d="M8.5 13l3.5 2 3.5-2"/></svg><span class="lbl">Fjelltopper</span></button>
+            <button id="btn-lagret" class="btn btn-lagret" title="Lagret data"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg><span class="lbl">Lagret</span></button>
             <button id="btn-topo" class="btn btn-topo" title="Topografi"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="9" ry="6"/><ellipse cx="12" cy="12" rx="5.5" ry="3.5"/><ellipse cx="12" cy="12" rx="2" ry="1.2"/></svg><span class="lbl">Topo</span></button>
             <button id="btn-bratthet" class="btn btn-bratthet" title="Bratthet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l7-12 4 7 3-4 6 9z"/></svg><span class="lbl">Bratthet</span></button>
             <button id="btn-buss" class="btn btn-bus" title="Buss"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="13" rx="2"/><path d="M5 11h14M8 20v-3M16 20v-3"/></svg><span class="lbl">Buss</span></button>
@@ -420,6 +425,16 @@
             <div class="row">Linje: <div class="seg"><button type="button" data-stil="corner" class="active">Vinkel</button><button type="button" data-stil="arc">Bue</button><button type="button" data-stil="straight">Rett</button></div></div>
             <div class="row">Ramme: <label class="switch"><input type="checkbox" id="fjellFrameSwitch" checked><span class="slider"></span></label></div>
             <div class="row hint">Dra navnene for å flytte dem</div>
+        </div>
+
+        <!-- LAGRET DATA PANEL -->
+        <div id="lagret-panel" class="ui-panel">
+            <div class="row hint">Lagret i nettleseren (30 dager), slik at det ikke må lastes ned på nytt</div>
+            <div class="row">Stier: <span class="lagret-hoyre"><span id="lagret-n-stier">…</span><button type="button" class="lagret-tom" data-ns="stier">Tøm</button></span></div>
+            <div class="row">Severdigheter: <span class="lagret-hoyre"><span id="lagret-n-poi">…</span><button type="button" class="lagret-tom" data-ns="poi">Tøm</button></span></div>
+            <div class="row">Fjelltopper: <span class="lagret-hoyre"><span id="lagret-n-fjell">…</span><button type="button" class="lagret-tom" data-ns="fjell">Tøm</button></span></div>
+            <div class="row">Bare lagret data: <label class="switch"><input type="checkbox" id="kunLagretSwitch"><span class="slider"></span></label></div>
+            <div class="row"><button type="button" class="lagret-tom" data-ns="alle">Tøm alt</button></div>
         </div>
 
         <!-- BRATTHET PANEL -->
@@ -764,13 +779,17 @@
             'https://overpass.kumi.systems/api/interpreter'
         ];
 
+        const OVERPASS_VENTETID_FOR_NESTE = 12000;   // start neste server først hvis forrige ikke har svart på 12 s
+
         async function overpassHent(query, klientTimeoutMs = 90000, signal = null, info = null) {
-            // Alle servere spørres samtidig. Første gyldige svar vinner, resten avbrytes.
+            // Spør én server. Er den treg (12 s) eller feiler den, startes neste. Første gyldige svar vinner.
+            // Dette skåner serverne i stedet for å spørre alle samtidig.
             if (signal && signal.aborted) throw new DOMException('Avbrutt', 'AbortError');
             const samlet = new AbortController();
             const ytre = () => samlet.abort();
             if (signal) signal.addEventListener('abort', ytre, { once: true });
-            const forsok = OVERPASS_SERVERE.map(async url => {
+
+            const kjor = async url => {
                 const host = new URL(url).hostname;
                 if (window.diagLogg) window.diagLogg('overpass: spør ' + host);
                 const c = new AbortController();
@@ -793,14 +812,30 @@
                     clearTimeout(timer);
                     samlet.signal.removeEventListener('abort', videre);
                 }
-            });
+            };
+
             try {
-                return await Promise.any(forsok);
-            } catch (agg) {
-                if (signal && signal.aborted) throw new DOMException('Avbrutt', 'AbortError');
-                const feil = (agg.errors || []).map(e => e.message);
-                console.warn('Overpass feilet', feil);
-                throw new Error('Overpass svarer ikke (' + feil.join('; ') + ')');
+                return await new Promise((resolve, reject) => {
+                    let neste = 0, feilet = 0, ferdig = false, hedge = null;
+                    const feil = [];
+                    const avslutt = () => { ferdig = true; clearTimeout(hedge); };
+                    const start = () => {
+                        clearTimeout(hedge);
+                        if (ferdig || neste >= OVERPASS_SERVERE.length) return;
+                        const url = OVERPASS_SERVERE[neste++];
+                        kjor(url).then(
+                            json => { if (ferdig) return; avslutt(); resolve(json); },
+                            e => {
+                                feil.push(e.message); feilet++;
+                                if (ferdig) return;
+                                if (feilet >= OVERPASS_SERVERE.length) { avslutt(); reject(new Error('Overpass svarer ikke (' + feil.join('; ') + ')')); }
+                                else start();       // feilet: prøv neste med en gang
+                            });
+                        if (neste < OVERPASS_SERVERE.length) hedge = setTimeout(start, OVERPASS_VENTETID_FOR_NESTE);
+                    };
+                    samlet.signal.addEventListener('abort', () => { if (!ferdig) { avslutt(); reject(new DOMException('Avbrutt', 'AbortError')); } }, { once: true });
+                    start();
+                });
             } finally {
                 samlet.abort();   // stopp de som ikke vant
                 if (signal) signal.removeEventListener('abort', ytre);
@@ -843,7 +878,7 @@
         /* Hurtiglager i nettleseren (minne + IndexedDB, 7 dager). Overlever av/på og omlasting av siden. */
         const FlisCache = (() => {
             const mem = new Map();
-            const TTL = 7 * 24 * 3600 * 1000;
+            const TTL = 30 * 24 * 3600 * 1000;
             let dbPromise = null;
             function apne() {
                 if (!dbPromise) dbPromise = new Promise(res => {
@@ -852,7 +887,7 @@
                     try {
                         const r = indexedDB.open('oversikt-cache-v2', 1);
                         r.onupgradeneeded = () => r.result.createObjectStore('fliser');
-                        r.onsuccess = () => ferdig(r.result);
+                        r.onsuccess = () => { try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {} ferdig(r.result); };
                         r.onerror = () => ferdig(null);
                         r.onblocked = () => ferdig(null);
                     } catch (e) { ferdig(null); }
@@ -894,8 +929,36 @@
                     try { db.transaction('fliser', 'readwrite').objectStore('fliser').put(v, ns + ':' + key); } catch (e) {}
                 });
             }
-            return { hent, lagre };
+            async function antall(ns) {
+                const p = ns + ':';
+                const db = await apne();
+                if (!db) { let n = 0; mem.forEach((v, k) => { if (k.startsWith(p)) n++; }); return n; }
+                return new Promise(res => {
+                    try {
+                        const rq = db.transaction('fliser').objectStore('fliser').getAllKeys(IDBKeyRange.bound(p, p + '\uffff'));
+                        rq.onsuccess = () => res(rq.result.length);
+                        rq.onerror = () => res(0);
+                    } catch (e) { res(0); }
+                });
+            }
+            async function tom(ns) {
+                const p = ns + ':';
+                Array.from(mem.keys()).forEach(k => { if (k.startsWith(p)) mem.delete(k); });
+                const db = await apne();
+                if (!db) return;
+                await new Promise(res => {
+                    try {
+                        const tx = db.transaction('fliser', 'readwrite');
+                        tx.objectStore('fliser').delete(IDBKeyRange.bound(p, p + '\uffff'));
+                        tx.oncomplete = () => res(); tx.onerror = () => res(); tx.onabort = () => res();
+                    } catch (e) { res(); }
+                });
+            }
+            return { hent, lagre, antall, tom };
         })();
+
+        // «Bare lagret data»: ingen nedlasting, bare det som allerede er lagret i nettleseren
+        let kunLagret = false;
 
         const sekTekst = ms => (ms / 1000).toFixed(1).replace('.', ',') + ' s';
 
@@ -981,54 +1044,76 @@
                     const nett = mangler.filter(f => !lagret.has(f.key));
 
                     if (nett.length === 0) {
-                        visStatusFor(o.eier, `${elementer.size} ${o.navn} vist fra hurtiglager (ingen nedlasting nødvendig)`, 100, false, o.farge);
+                        visStatusFor(o.eier, `${elementer.size} ${o.navn} vist fra lagret (ingen nedlasting nødvendig)`, 100, false, o.farge);
                         skjultStatus(1800);
                         return;
                     }
 
-                    // 2. Nedlasting av resten
-                    let ferdige = 0, server = '', serverFeil = null, runde = [];
+                    if (kunLagret) {
+                        visStatusFor(o.eier, `${elementer.size} ${o.navn} vist fra lagret · ${nett.length} fliser er ikke lagret («Bare lagret data» er på)`, 100, false, o.farge);
+                        skjultStatus(3500);
+                        return;
+                    }
+
+                    // 2. Nedlasting av resten (flere spørringer samtidig, lagres etter hvert som de blir ferdige)
+                    let ferdige = 0, aktive = 0;
                     const vis = () => {
                         if (kontroll.signal.aborted || !o.erAktiv()) return;
-                        const deler = [`${o.lasterTekst}: fliser ${ferdige + 1}–${ferdige + runde.length} av ${nett.length}`];
-                        if (fraLager) deler.push(`${fraLager} fra hurtiglager`);
+                        const deler = [`${o.lasterTekst}: ${ferdige} av ${nett.length} fliser ferdig`];
+                        if (aktive) deler.push(`${aktive} spørring${aktive > 1 ? 'er' : ''} venter på Overpass`);
+                        if (fraLager) deler.push(`${fraLager} fra lagret`);
                         deler.push(`${elementer.size} ${o.navn} så langt`);
                         deler.push(sekTekst(Date.now() - t0));
-                        if (server) deler.push(serverFeil ? `${serverFeil} – prøver ${server}` : `venter på ${server}`);
                         visStatusFor(o.eier, deler.join(' · '), Math.round(ferdige / nett.length * 100), false, o.farge);
                     };
                     ticker = setInterval(vis, 1000);
 
-                    while (ferdige < nett.length) {
-                        runde = nett.slice(ferdige, ferdige + (o.perRunde || FLIS_PER_RUNDE));
-                        vis();
-                        const json = await overpassHent(o.bygQuery(runde.map(bboxTekst)), 90000, kontroll.signal,
-                            (host, feil) => { server = host; serverFeil = feil; vis(); });
-                        if (kontroll.signal.aborted) return;
-                        server = ''; serverFeil = null;
+                    const perRunde = o.perRunde || FLIS_PER_RUNDE;
+                    const runder = [];
+                    for (let i = 0; i < nett.length; i += perRunde) runder.push(nett.slice(i, i + perRunde));
+                    let neste = 0, stoppet = false, forsteFeil = null;
 
-                        const rundeNokler = new Set(runde.map(f => f.key));
-                        const perFlis = new Map(runde.map(f => [f.key, []]));
-                        (json.elements || []).forEach(el => {
-                            const treff = new Set();
-                            let sisteKey = null;
-                            o.punkter(el).forEach(([lat, lon]) => {
-                                const key = flisXFraLon(lon) + '/' + flisYFraLat(lat);
-                                if (key !== sisteKey) { sisteKey = key; if (rundeNokler.has(key)) treff.add(key); }
+                    const arbeider = async () => {
+                        while (!stoppet && !kontroll.signal.aborted) {
+                            const i = neste++;
+                            if (i >= runder.length) return;
+                            const runde = runder[i];
+                            aktive++; vis();
+                            let json;
+                            try {
+                                json = await overpassHent(o.bygQuery(runde.map(bboxTekst)), 90000, kontroll.signal);
+                            } catch (e) {
+                                stoppet = true; forsteFeil = forsteFeil || e; return;
+                            } finally { aktive--; }
+                            if (kontroll.signal.aborted || !o.erAktiv()) return;
+
+                            const rundeNokler = new Set(runde.map(f => f.key));
+                            const perFlis = new Map(runde.map(f => [f.key, []]));
+                            (json.elements || []).forEach(el => {
+                                const treff = new Set();
+                                let sisteKey = null;
+                                o.punkter(el).forEach(([lat, lon]) => {
+                                    const key = flisXFraLon(lon) + '/' + flisYFraLat(lat);
+                                    if (key !== sisteKey) { sisteKey = key; if (rundeNokler.has(key)) treff.add(key); }
+                                });
+                                if (treff.size === 0) treff.add(runde[0].key);
+                                treff.forEach(k => perFlis.get(k).push(el));
                             });
-                            if (treff.size === 0) treff.add(runde[0].key);
-                            treff.forEach(k => perFlis.get(k).push(el));
-                        });
 
-                        // Lagre i hurtiglager og tegn
-                        if (kontroll.signal.aborted || !o.erAktiv()) return;
-                        runde.forEach(f => {
-                            const els = perFlis.get(f.key);
-                            FlisCache.lagre(o.eier, f.key, els);
-                            visFlis(f, els);
-                        });
-                        ferdige += runde.length;
-                    }
+                            // Lagre med en gang (overlever omlasting) og tegn
+                            runde.forEach(f => {
+                                const els = perFlis.get(f.key);
+                                FlisCache.lagre(o.eier, f.key, els);
+                                visFlis(f, els);
+                            });
+                            ferdige += runde.length;
+                            vis();
+                            if (window.oppdaterLagret) window.oppdaterLagret();
+                        }
+                    };
+                    await Promise.all(Array.from({ length: Math.min(o.samtidig || 2, runder.length) }, arbeider));
+                    if (kontroll.signal.aborted) return;
+                    if (forsteFeil) throw new Error(forsteFeil.message + ' · det som er hentet er lagret, trykk igjen for å fortsette');
                     visStatusFor(o.eier,
                         `${o.ferdigTekst} ${elementer.size} ${o.navn} · ${nett.length} fliser hentet på ${sekTekst(Date.now() - t0)}` +
                         (fraLager ? `, ${fraLager} fra hurtiglager` : '') + ' · lagret i nettleseren',
@@ -1108,7 +1193,8 @@
             lavZoomTekst: `Zoom inn nærmere (nivå ${STIER_MIN_ZOOM}) for å laste stier...`,
             lasterTekst: 'Henter stier og tråkk fra OpenStreetMap',
             ferdigTekst: 'Ferdig:',
-            perRunde: 2,
+            perRunde: 3,
+            samtidig: 2,
             erAktiv: () => stierActive,
             bygQuery: bb => `[out:json][timeout:60];(${bb.map(x => `way["highway"~"^(path|footway|track)$"]${x};`).join('')});out geom qt;`,
             punkter: el => (el.geometry || []).map(p => [p.lat, p.lon]),
@@ -1213,7 +1299,7 @@
            FJELLTOPPER (fra enkel.html): hentes fra Kartverket (stedsnavn) med OSM som reserve.
            Navnene kan dras rundt, og funksjonen krever at kartet ikke er zoomet for langt ut.
            ========================================================================== */
-        const FJELL_MIN_ZOOM = 10;
+        const FJELL_MIN_ZOOM = 11;
         const fjellKnapp = document.getElementById('btn-fjell');
         const fjellPanel = document.getElementById('fjell-panel');
         const fjellCanvas = document.getElementById('peaks-canvas-layer');
@@ -1479,60 +1565,76 @@
             const kontroll = { aborted: false, abort() { this.aborted = true; } };
             if (fjellAbort) fjellAbort.abort();      // en ny henting avløser en som pågår
             fjellAbort = kontroll;
-            const bounds = map.getBounds();
-            const minLat = bounds.getSouth(), maxLat = bounds.getNorth();
-            const minLon = bounds.getWest(), maxLon = bounds.getEast();
-            const t0 = Date.now();
             const gammel = () => kontroll.aborted || !fjellAktiv;
-            fjellRyddUtenfor(bounds);
+            const b = map.getBounds();
+            const fliser = flisForBounds(b);
+            const t0 = Date.now();
+            fjellRyddUtenfor(b);
 
-            visStatusFor('fjell', 'Henter fjelltopper fra Kartverket...', null, true, 'var(--ink)');
-            let peaks = [];
-            let kilde = '';
-            const feil = [];
-
-            // OpenStreetMap via Overpass. Alle tre serverne spørres samtidig, første gyldige svar brukes.
-            // Overpass kan bruke over 30 sekunder, så vi venter opptil 90 s og viser at det jobbes.
-            const krevHoyde = map.getZoom() < 12 ? '["ele"]' : '';
-            const vyNokkel = [minLat, minLon, maxLat, maxLon].map(v => v.toFixed(2)).join('_') + (krevHoyde ? '_e' : '');
-            let fraLager = false;
-            try {
-                const lagret = await FlisCache.hent('fjellvy', [vyNokkel]);
-                if (lagret.has(vyNokkel) && lagret.get(vyNokkel).length) { peaks = lagret.get(vyNokkel); kilde = 'hurtiglager'; fraLager = true; }
-            } catch (_) {}
-            if (gammel()) return;
-
-            if (!fraLager) {
-                const vis = () => { if (!gammel()) visStatusFor('fjell', `Henter fjelltopper fra OpenStreetMap · ${sekTekst(Date.now() - t0)} (kan ta opptil ett minutt)`, null, true, 'var(--ink)'); };
-                vis();
-                const ticker = setInterval(vis, 1000);
-                try {
-                    const q = `[out:json][timeout:60];node["natural"="peak"]["name"]${krevHoyde}(${minLat},${minLon},${maxLat},${maxLon});out 300;`;
-                    peaks = parseOverpass(await overpassHent(q, 90000, null));
-                    if (peaks.length) { kilde = 'OpenStreetMap'; FlisCache.lagre('fjellvy', vyNokkel, peaks); }
-                } catch (err) {
-                    console.error('Overpass feilet:', err);
-                    feil.push(err.message);
-                } finally {
-                    clearInterval(ticker);
-                }
-                if (gammel()) return;
-            }
-
-            fjellAbort = null;
-            peaks.sort((x, y) => (y.elevation || 0) - (x.elevation || 0));
-            const nye = fjellLeggTil(peaks.slice(0, 120));
-
-            if (peaks.length === 0 && feil.length) {
-                visStatusFor('fjell', 'Fant ingen fjelltopper. ' + feil.join(' · '), 100, false, 'red');
-                skjultStatus(6000);
+            if (fliser.length > 40) {
+                fjellAbort = null;
+                visStatusFor('fjell', 'Zoom litt inn for å hente fjelltopper...', 100, false, 'var(--ink)');
+                skjultStatus(2500);
                 return;
             }
-            visStatusFor('fjell',
-                (nye > 0 ? `${nye} nye fjelltopper lagt til` : 'Ingen nye fjelltopper her') +
-                (kilde ? ` · ${kilde} på ${sekTekst(Date.now() - t0)}` : ''),
-                100, false, 'var(--ink)');
-            skjultStatus(2500);
+
+            // 1. Lagret: vises med en gang
+            visStatusFor('fjell', `Sjekker lagret for fjelltopper (${fliser.length} fliser)...`, null, true, 'var(--ink)');
+            let lagret;
+            try { lagret = await FlisCache.hent('fjell', fliser.map(f => f.key)); } catch (_) { lagret = new Map(); }
+            if (gammel()) return;
+            const alle = [];
+            lagret.forEach(l => alle.push(...l));
+            const vistListe = liste => fjellLeggTil(liste.slice().sort((x, y) => (y.elevation || 0) - (x.elevation || 0)).slice(0, 150));
+            let nye = vistListe(alle);
+
+            const mangler = fliser.filter(f => !lagret.has(f.key));
+            if (mangler.length === 0) {
+                fjellAbort = null;
+                visStatusFor('fjell', `${fjellListe.length} fjelltopper vist fra lagret (ingen nedlasting nødvendig)`, 100, false, 'var(--ink)');
+                skjultStatus(1800);
+                return;
+            }
+            if (kunLagret) {
+                fjellAbort = null;
+                visStatusFor('fjell', `${fjellListe.length} fjelltopper vist fra lagret · ${mangler.length} fliser er ikke lagret («Bare lagret data» er på)`, 100, false, 'var(--ink)');
+                skjultStatus(3500);
+                return;
+            }
+
+            // 2. Resten fra OpenStreetMap (Overpass kan bruke over ett minutt)
+            const vis = () => { if (!gammel()) visStatusFor('fjell', `Henter fjelltopper fra OpenStreetMap: ${mangler.length} av ${fliser.length} fliser · ${sekTekst(Date.now() - t0)} (kan ta opptil ett minutt)`, null, true, 'var(--ink)'); };
+            vis();
+            const ticker = setInterval(vis, 1000);
+            try {
+                const mb = L.latLngBounds(mangler.map(f => [f.s, f.w]).concat(mangler.map(f => [f.n, f.e])));
+                const q = `[out:json][timeout:60];node["natural"="peak"]["name"](${mb.getSouth().toFixed(5)},${mb.getWest().toFixed(5)},${mb.getNorth().toFixed(5)},${mb.getEast().toFixed(5)});out 3000;`;
+                const hentet = parseOverpass(await overpassHent(q, 90000, null));
+                // Lagres alltid (også tomme fliser), selv om du har flyttet kartet i mellomtiden
+                const perFlis = new Map(mangler.map(f => [f.key, []]));
+                hentet.forEach(pk => {
+                    const arr = perFlis.get(flisXFraLon(pk.lon) + '/' + flisYFraLat(pk.lat));
+                    if (arr) arr.push(pk);
+                });
+                perFlis.forEach((arr, key) => FlisCache.lagre('fjell', key, arr));
+                if (window.oppdaterLagret) window.oppdaterLagret();
+                if (gammel()) return;
+                nye += vistListe(hentet);
+                fjellAbort = null;
+                visStatusFor('fjell',
+                    (nye > 0 ? `${nye} nye fjelltopper lagt til` : 'Ingen nye fjelltopper her') +
+                    ` · ${mangler.length} fliser hentet på ${sekTekst(Date.now() - t0)}` + (lagret.size ? `, ${lagret.size} fra lagret` : '') + ' · lagret i nettleseren',
+                    100, false, 'var(--ink)');
+                skjultStatus(2500);
+            } catch (err) {
+                if (gammel()) return;
+                fjellAbort = null;
+                console.error('Overpass feilet:', err);
+                visStatusFor('fjell', 'Fant ikke flere fjelltopper. ' + err.message, 100, false, 'red');
+                skjultStatus(6000);
+            } finally {
+                clearInterval(ticker);
+            }
         }
 
         function fjellAvbrytHenting() {
@@ -1601,6 +1703,59 @@
 
         new ResizeObserver(fjellTilpassCanvas).observe(document.getElementById('map-container'));
         fjellTilpassCanvas();
+
+        /* ==========================================================================
+           LAGRET DATA: se hva som er lagret, tøm, eller bruk bare det som er lagret
+           ========================================================================== */
+        const btnLagret = document.getElementById('btn-lagret');
+        const lagretPanel = document.getElementById('lagret-panel');
+        const LAGRET_NAVN = ['stier', 'poi', 'fjell'];
+
+        async function oppdaterLagret() {
+            for (const ns of LAGRET_NAVN) {
+                let n = 0;
+                try { n = await FlisCache.antall(ns); } catch (_) {}
+                const el = document.getElementById('lagret-n-' + ns);
+                if (el) el.textContent = n + ' fliser';
+            }
+        }
+        window.oppdaterLagret = oppdaterLagret;
+
+        btnLagret.addEventListener('click', () => {
+            const pa = !lagretPanel.classList.contains('active');
+            lagretPanel.classList.toggle('active', pa);
+            btnLagret.classList.toggle('active', pa);
+            if (pa) oppdaterLagret();
+        });
+
+        function lasteOmIgjen() {
+            if (stierActive) stierLaster.planlegg(0);
+            if (poiActive) poiLaster.planlegg(0);
+            if (fjellAktiv) fjellHent();
+        }
+
+        lagretPanel.querySelectorAll('.lagret-tom').forEach(knapp => {
+            knapp.addEventListener('click', async () => {
+                const valg = knapp.dataset.ns === 'alle' ? LAGRET_NAVN : [knapp.dataset.ns];
+                for (const ns of valg) await FlisCache.tom(ns);
+                if (valg.includes('stier')) stierLaster.tom();
+                if (valg.includes('poi')) poiLaster.tom();
+                if (valg.includes('fjell')) {
+                    fjellListe.forEach(p => p.element.remove());
+                    fjellListe = [];
+                    fjellFjernet.clear();
+                    fjellOppdaterPosisjoner();
+                }
+                await oppdaterLagret();
+                if (!kunLagret) lasteOmIgjen();
+            });
+        });
+
+        document.getElementById('kunLagretSwitch').addEventListener('change', e => {
+            kunLagret = e.target.checked;
+            if (!kunLagret) lasteOmIgjen();
+        });
+        oppdaterLagret();
 
         /* ==========================================================================
            GPX INNLASTING FOR TOPPER (MED PROGRESJONSBAR)
