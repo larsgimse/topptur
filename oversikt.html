@@ -460,6 +460,67 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
     <script>
+        /* ===== FEILSØKING: viser på skjermen hva som skjer (fjern dette blokken når alt virker) ===== */
+        (function () {
+            const boks = document.createElement('div');
+            boks.id = 'diag-box';
+            boks.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:99999;width:min(420px,92vw);max-height:42vh;display:flex;flex-direction:column;background:#fff;border:1px solid #000;font:11px/1.35 monospace;color:#000;box-shadow:0 2px 8px rgba(0,0,0,.25)';
+            boks.innerHTML = '<div style="display:flex;gap:6px;padding:4px 6px;border-bottom:1px solid #000;align-items:center"><b style="flex:1">Feilsøking</b><button id="diag-test" style="font:inherit;cursor:pointer">Test tilkobling</button><button id="diag-copy" style="font:inherit;cursor:pointer">Kopier</button><button id="diag-x" style="font:inherit;cursor:pointer">×</button></div><div id="diag-log" style="overflow:auto;padding:4px 6px;white-space:pre-wrap;word-break:break-all"></div>';
+            const leggTil = () => document.body ? document.body.appendChild(boks) : setTimeout(leggTil, 50);
+            leggTil();
+            const logg = (t, rod) => {
+                const l = document.getElementById('diag-log'); if (!l) return;
+                const d = document.createElement('div');
+                d.textContent = new Date().toLocaleTimeString() + ' ' + t;
+                if (rod) d.style.color = '#c00';
+                l.appendChild(d); l.scrollTop = l.scrollHeight;
+            };
+            window.diagLogg = logg;
+            window.addEventListener('error', e => logg('SKRIPTFEIL: ' + e.message + ' (linje ' + e.lineno + ')', true));
+            window.addEventListener('unhandledrejection', e => logg('LØFTEFEIL: ' + (e.reason && e.reason.message || e.reason), true));
+            logg('Leaflet: ' + (typeof L !== 'undefined' ? L.version : 'IKKE LASTET') + ' · MapLibre: ' + (typeof maplibregl !== 'undefined' ? 'ok' : 'IKKE LASTET') + ' · GPX: ' + (typeof L !== 'undefined' && L.GPX ? 'ok' : 'IKKE LASTET'), typeof L === 'undefined');
+            // Logger alle nettverkskall
+            const orig = window.fetch.bind(window);
+            window.fetch = async (url, opt) => {
+                const t0 = Date.now();
+                const kort = String(url).replace(/\?data=.*/, '?data=…').replace(/\?nordmin.*/, '?bbox…').slice(0, 70);
+                try {
+                    const r = await orig(url, opt);
+                    logg('fetch ' + kort + ' → HTTP ' + r.status + ' (' + (Date.now() - t0) + ' ms)', !r.ok);
+                    return r;
+                } catch (e) {
+                    if (e.name !== 'AbortError') logg('fetch ' + kort + ' FEILET: ' + e.message, true);
+                    throw e;
+                }
+            };
+            document.addEventListener('click', e => {
+                const b = e.target.closest && e.target.closest('button.btn');
+                if (b && window.map) logg('klikk: ' + b.id + ' · zoom ' + window.map.getZoom());
+            }, true);
+            document.getElementById('diag-x').onclick = () => boks.remove();
+            document.getElementById('diag-copy').onclick = () => {
+                const t = document.getElementById('diag-log').innerText;
+                (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => logg('kopiert'), () => logg('kunne ikke kopiere, marker teksten manuelt'));
+            };
+            document.getElementById('diag-test').onclick = async () => {
+                logg('--- TEST ---');
+                try {
+                    const r = await fetch('https://ws.geonorge.no/stedsnavn/v1/punkt?nordmin=69.6&nordmaks=69.7&ostmin=18.8&ostmaks=19.2&navneobjekttype=Fjell*&maxAntall=50');
+                    const j = await r.json();
+                    logg('Kartverket: ' + (j.navn ? j.navn.length + ' treff' : 'svar uten «navn»: ' + JSON.stringify(j).slice(0, 150)), !j.navn);
+                } catch (e) { logg('Kartverket-test: ' + e.message, true); }
+                for (const u of ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']) {
+                    try {
+                        const r = await fetch(u + '?data=' + encodeURIComponent('[out:json][timeout:15];node["natural"="peak"](69.6,18.8,69.7,19.2);out 5;'));
+                        const j = await r.json();
+                        logg(new URL(u).hostname + ': ' + (j.elements ? j.elements.length + ' topper' : 'tomt svar'), !j.elements);
+                    } catch (e) { logg(new URL(u).hostname + ': ' + e.message, true); }
+                }
+                logg('--- TEST FERDIG ---');
+            };
+        })();
+    </script>
+    <script>
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         // Fargene på sporene: rød som standard (sekundviseren på et jernbaneur), vinter- og sommerfarge ved filtrering
         const KLOKKE_RØD = '#e30613';
@@ -480,6 +541,7 @@
             maxZoom: 18,
             renderer: minRenderer
         }).setView([69.65, 18.95], 9);
+        window.map = map;
 
         // Zoomknappene nede til venstre, men øverst til venstre på mobil (der kommer de ikke i veien for kartteksten)
         const mobilKart = window.matchMedia('(max-width: 600px)');
@@ -645,6 +707,7 @@
 
         function visStatus(melding, prosent = null, ubestemt = false, farge = 'var(--second-hand)') {
             statusEier = null;
+            if (window.diagLogg && !/^(Henter|Sjekker).*\d+,\d s/.test(melding)) window.diagLogg('status: ' + melding.slice(0, 160));
             if (hideStatusTimeout) clearTimeout(hideStatusTimeout);
             loadingStatusEl.style.opacity = '1';
             loadingStatusEl.style.display = 'flex';
