@@ -701,36 +701,45 @@
             'https://overpass.kumi.systems/api/interpreter'
         ];
 
-        async function overpassHent(query, klientTimeoutMs = 20000, signal = null, info = null) {
-            const feil = [];
-            for (const url of OVERPASS_SERVERE) {
-                if (signal && signal.aborted) throw new DOMException('Avbrutt', 'AbortError');
-                if (info) info(new URL(url).hostname, feil.length ? feil[feil.length - 1] : null);
-                const controller = new AbortController();
-                const timer = setTimeout(() => controller.abort(), klientTimeoutMs);
-                const avbryt = () => controller.abort();
-                if (signal) signal.addEventListener('abort', avbryt, { once: true });
+        async function overpassHent(query, klientTimeoutMs = 25000, signal = null, info = null) {
+            // Alle servere spørres samtidig. Første gyldige svar vinner, resten avbrytes.
+            if (signal && signal.aborted) throw new DOMException('Avbrutt', 'AbortError');
+            const samlet = new AbortController();
+            const ytre = () => samlet.abort();
+            if (signal) signal.addEventListener('abort', ytre, { once: true });
+            const forsok = OVERPASS_SERVERE.map(async url => {
+                const host = new URL(url).hostname;
+                const c = new AbortController();
+                const timer = setTimeout(() => c.abort(), klientTimeoutMs);
+                const videre = () => c.abort();
+                samlet.signal.addEventListener('abort', videre, { once: true });
                 try {
-                    const res = await fetch(url + '?data=' + encodeURIComponent(query), { signal: controller.signal });
+                    const res = await fetch(url + '?data=' + encodeURIComponent(query), { signal: c.signal });
                     if (!res.ok) throw new Error('HTTP ' + res.status);
                     const json = await res.json();
-                    // Overpass svarer noen ganger 200 med en feilmelding og ingen data
                     if (json.remark && /error|timed out|out of memory/i.test(json.remark) && !(json.elements && json.elements.length)) {
                         throw new Error('tidsavbrudd på serveren');
                     }
+                    if (info) info(host, null);
                     return json;
                 } catch (e) {
-                    // Avbrutt av brukeren: ikke prøv neste server
-                    if (signal && signal.aborted) throw new DOMException('Avbrutt', 'AbortError');
-                    const host = new URL(url).hostname;
-                    feil.push(`${host}: ${e.name === 'AbortError' ? 'tidsavbrudd' : e.message}`);
-                    console.warn('Overpass feilet på ' + host, e);
+                    throw new Error(host + ': ' + (e.name === 'AbortError' ? 'tidsavbrudd' : e.message));
                 } finally {
                     clearTimeout(timer);
-                    if (signal) signal.removeEventListener('abort', avbryt);
+                    samlet.signal.removeEventListener('abort', videre);
                 }
+            });
+            try {
+                return await Promise.any(forsok);
+            } catch (agg) {
+                if (signal && signal.aborted) throw new DOMException('Avbrutt', 'AbortError');
+                const feil = (agg.errors || []).map(e => e.message);
+                console.warn('Overpass feilet', feil);
+                throw new Error('Overpass svarer ikke (' + feil.join('; ') + ')');
+            } finally {
+                samlet.abort();   // stopp de som ikke vant
+                if (signal) signal.removeEventListener('abort', ytre);
             }
-            throw new Error('Overpass svarer ikke (' + feil.join('; ') + ')');
         }
 
         /* ==========================================================================
@@ -739,8 +748,8 @@
            - Ny panorering/zoom avbryter pågående henting (i stedet for å vente på den).
            - Allerede lastede fliser hentes ikke på nytt, og fliser langt unna fjernes.
            ========================================================================== */
-        const FLIS_ZOOM = 11;          // fliseinndeling (ca. 20 x 10 km på Østlandet)
-        const FLIS_PER_RUNDE = 6;      // maks antall fliser per Overpass-spørring
+        const FLIS_ZOOM = 12;          // fliseinndeling (ca. 10 x 5 km på Østlandet)
+        const FLIS_PER_RUNDE = 4;      // maks antall fliser per Overpass-spørring
         const FLIS_N = Math.pow(2, FLIS_ZOOM);
 
         function flisLon(x) { return x / FLIS_N * 360 - 180; }
@@ -776,7 +785,7 @@
                     const gi = setTimeout(() => res(null), 1500);   // henger IndexedDB, bruker vi bare minnet
                     const ferdig = v => { clearTimeout(gi); res(v); };
                     try {
-                        const r = indexedDB.open('oversikt-cache', 1);
+                        const r = indexedDB.open('oversikt-cache-v2', 1);
                         r.onupgradeneeded = () => r.result.createObjectStore('fliser');
                         r.onsuccess = () => ferdig(r.result);
                         r.onerror = () => ferdig(null);
@@ -926,7 +935,7 @@
                     ticker = setInterval(vis, 1000);
 
                     while (ferdige < nett.length) {
-                        runde = nett.slice(ferdige, ferdige + FLIS_PER_RUNDE);
+                        runde = nett.slice(ferdige, ferdige + (o.perRunde || FLIS_PER_RUNDE));
                         vis();
                         const json = await overpassHent(o.bygQuery(runde.map(bboxTekst)), 30000, kontroll.signal,
                             (host, feil) => { server = host; serverFeil = feil; vis(); });
@@ -1034,8 +1043,9 @@
             lavZoomTekst: `Zoom inn nærmere (nivå ${STIER_MIN_ZOOM}) for å laste stier...`,
             lasterTekst: 'Henter stier og tråkk fra OpenStreetMap',
             ferdigTekst: 'Ferdig:',
+            perRunde: 2,
             erAktiv: () => stierActive,
-            bygQuery: bb => `[out:json][timeout:25];(${bb.map(x => `way["highway"~"^(path|footway|track)$"]${x};`).join('')});out geom tags;`,
+            bygQuery: bb => `[out:json][timeout:25];(${bb.map(x => `way["highway"~"^(path|footway|track)$"]${x};`).join('')});out geom qt;`,
             punkter: el => (el.geometry || []).map(p => [p.lat, p.lon]),
             tegn: tegnSti
         });
@@ -1266,7 +1276,7 @@
                 el.appendChild(hoyde);
             }
 
-            const p = { key: nokkel, lat: peak.lat, lon: peak.lon, relX: 25, relY: -20, element: el, customStyle: null };
+            const p = { key: nokkel, navn: peak.name, lat: peak.lat, lon: peak.lon, relX: 25, relY: -20, element: el, customStyle: null };
 
             // Slett og innstillinger
             const slett = document.createElement('span');
@@ -1349,6 +1359,10 @@
             liste.forEach(peak => {
                 const nokkel = fjellNokkel(peak);
                 if (fjellFjernet.has(nokkel) || fjellListe.some(x => x.key === nokkel)) return;
+                if (!map.getBounds().pad(1).contains([peak.lat, peak.lon])) return;
+                // Samme topp fra både Kartverket og OSM (litt ulike koordinater)
+                if (fjellListe.some(x => x.navn === peak.name
+                    && Math.abs(x.lat - peak.lat) < 0.01 && Math.abs(x.lon - peak.lon) < 0.02)) return;
                 fjellOpprett(peak, nokkel);
                 nye++;
             });
@@ -1358,7 +1372,6 @@
 
         async function fjellHentKartverket(b, signal) {
             const url = `https://ws.geonorge.no/stedsnavn/v1/punkt?nordmin=${b.getSouth()}&nordmaks=${b.getNorth()}&ostmin=${b.getWest()}&ostmaks=${b.getEast()}&navneobjekttype=Fjell*&maxAntall=50`;
-            // Tidsavbrudd, slik at en treg Kartverket-tjeneste ikke fører til at henting står fast
             const c = new AbortController();
             const timer = setTimeout(() => c.abort(), 20000);
             const avbryt = () => c.abort();
@@ -1367,13 +1380,13 @@
                 const res = await fetch(url, { mode: 'cors', signal: c.signal });
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const json = await res.json();
-                const ramme = b.pad(0.05);
+                // Som i index-2: ingen streng filtrering her, utsnittet sjekkes i fjellLeggTil
                 return (json.navn || []).map(item => ({
                     name: item.stedsnavn?.[0]?.skrivemåte || (typeof item.stedsnavn === 'string' ? item.stedsnavn : null),
                     lat: Number(item.representasjonspunkt?.nord),
                     lon: Number(item.representasjonspunkt?.øst),
                     elevation: item.meterOverHavet || item.stedsnavn?.[0]?.meterOverHavet
-                })).filter(p => p.name && Number.isFinite(p.lat) && Number.isFinite(p.lon) && ramme.contains([p.lat, p.lon]));
+                })).filter(p => p.name && Number.isFinite(p.lat) && Number.isFinite(p.lon));
             } finally {
                 clearTimeout(timer);
                 signal.removeEventListener('abort', avbryt);
@@ -1390,9 +1403,9 @@
             });
         }
 
-        async function fjellHentOverpass(b, signal, info = null) {
+        async function fjellHentOverpass(b, signal) {
             const query = `[out:json][timeout:25];node["natural"="peak"]["name"](${b.getSouth().toFixed(5)},${b.getWest().toFixed(5)},${b.getNorth().toFixed(5)},${b.getEast().toFixed(5)});out qt 200;`;
-            const json = await overpassHent(query, 30000, signal, info);
+            const json = await overpassHent(query, 25000, signal);
             return (json.elements || []).map(el => ({
                 name: el.tags && el.tags.name,
                 lat: el.lat,
@@ -1409,87 +1422,45 @@
             const kontroll = new AbortController();
             fjellAbort = kontroll;
             const signal = kontroll.signal;
-            const b = map.getBounds();
-            const fliser = flisForBounds(b);
+            const b = map.getBounds().pad(0.1);
             const t0 = Date.now();
-            let ticker = null;
-            // Når henting avbrytes (knappen skrus av, nytt utsnitt): stopp oppdatering av statuslinjen
+            fjellRyddUtenfor(map.getBounds());
+
+            const vis = () => {
+                if (signal.aborted || !fjellAktiv) return;
+                visStatusFor('fjell', `Henter fjelltopper fra Kartverket og OpenStreetMap · ${sekTekst(Date.now() - t0)}`, null, true, 'var(--ink)');
+            };
+            vis();
+            const ticker = setInterval(vis, 1000);
             signal.addEventListener('abort', () => clearInterval(ticker), { once: true });
 
-            visStatusFor('fjell', `Sjekker hurtiglager for fjelltopper (${fliser.length} fliser)...`, null, true, 'var(--ink)');
-            let lagret;
-            try { lagret = await FlisCache.hent('fjell', fliser.map(f => f.key)); } catch (_) { lagret = new Map(); }
-            if (signal.aborted || !fjellAktiv) return;
+            let nye = 0;
+            const kilder = [];
+            const feil = [];
+            // Det som kommer først vises med en gang, den andre kilden fyller på
+            const ferdig = (navn, liste) => {
+                if (signal.aborted || !fjellAktiv || !liste.length) return;
+                kilder.push(navn);
+                nye += fjellLeggTil(liste);
+            };
+            const feilFra = navn => e => { if (!signal.aborted) { console.warn(navn + ' feilet', e); feil.push(navn + ': ' + e.message); } };
 
-            const alle = [];
-            lagret.forEach(l => alle.push(...l));
-            const mangler = fliser.filter(f => !lagret.has(f.key));
-            let kilde = null;
-
-            if (mangler.length > 0) {
-                // Én spørring for området som mangler
-                const mb = L.latLngBounds(mangler.map(f => [f.s, f.w]).concat(mangler.map(f => [f.n, f.e])));
-                let server = '';
-                const vis = () => {
-                    if (signal.aborted || !fjellAktiv) return;
-                    const deler = [`Henter fjelltopper fra Kartverket og OpenStreetMap: ${mangler.length} av ${fliser.length} fliser`];
-                    if (lagret.size) deler.push(`${lagret.size} fra hurtiglager`);
-                    deler.push(sekTekst(Date.now() - t0));
-                    if (server) deler.push('OSM-server: ' + server);
-                    visStatusFor('fjell', deler.join(' · '), null, true, 'var(--ink)');
-                };
-                vis();
-                ticker = setInterval(vis, 1000);
-
-                const ikkeTom = (pr, navn) => pr.then(l => { if (!l.length) throw new Error('ingen treff'); return { navn, l }; });
-                let hentet = null;
-                const indre = new AbortController();
-                const videre = () => indre.abort();
-                signal.addEventListener('abort', videre, { once: true });
-                try {
-                    hentet = await Promise.any([
-                        ikkeTom(fjellHentOverpass(mb, indre.signal, (host) => { server = host; vis(); }), 'OpenStreetMap'),
-                        ikkeTom(fjellHentKartverket(mb, indre.signal), 'Kartverket')
-                    ]);
-                    indre.abort();     // den andre kilden trengs ikke lenger
-                } catch (agg) {
-                    if (signal.aborted) { clearInterval(ticker); return; }
-                    const feil = (agg.errors || []).filter(e => e.message !== 'ingen treff');
-                    if (feil.length) {
-                        clearInterval(ticker);
-                        console.warn('Henting av fjelltopper feilet', agg.errors);
-                        fjellAbort = null;
-                        visStatusFor('fjell', 'Feil ved henting av fjelltopper: ' + feil.map(e => e.message).join('; '), 100, false, 'red');
-                        skjultStatus(4000);
-                        fjellLeggTil(alle);      // vis i det minste det som lå i hurtiglageret
-                        return;
-                    }
-                }
-                clearInterval(ticker);
-                if (signal.aborted || !fjellAktiv) return;
-
-                // Fordel på fliser og lagre (også tomme fliser, så de ikke hentes på nytt)
-                const perFlis = new Map(mangler.map(f => [f.key, []]));
-                if (hentet) {
-                    kilde = hentet.navn;
-                    hentet.l.forEach(pk => {
-                        const arr = perFlis.get(flisXFraLon(pk.lon) + '/' + flisYFraLat(pk.lat));
-                        if (arr) arr.push(pk);
-                    });
-                }
-                perFlis.forEach((arr, key) => { FlisCache.lagre('fjell', key, arr); alle.push(...arr); });
-            }
-
+            await Promise.allSettled([
+                fjellHentKartverket(b, signal).then(l => ferdig('Kartverket', l)).catch(feilFra('Kartverket')),
+                fjellHentOverpass(b, signal).then(l => ferdig('OpenStreetMap', l)).catch(feilFra('OpenStreetMap'))
+            ]);
+            clearInterval(ticker);
             if (signal.aborted || !fjellAktiv) return;
             fjellAbort = null;
 
-            fjellRyddUtenfor(b);
-            const nye = fjellLeggTil(alle);
-            const info = [];
-            if (mangler.length) info.push(`${mangler.length} fliser hentet fra ${kilde || 'Kartverket/OSM'} på ${sekTekst(Date.now() - t0)}`);
-            if (lagret.size) info.push(`${lagret.size} fra hurtiglager`);
+            if (nye === 0 && feil.length >= 2 && fjellListe.length === 0) {
+                visStatusFor('fjell', 'Fant ingen fjelltopper. ' + feil.join('; '), 100, false, 'red');
+                skjultStatus(6000);
+                return;
+            }
             visStatusFor('fjell',
-                (nye > 0 ? `${nye} nye fjelltopper lagt til` : 'Ingen nye fjelltopper her') + (info.length ? ' · ' + info.join(', ') : ''),
+                (nye > 0 ? `${nye} nye fjelltopper lagt til` : 'Ingen nye fjelltopper her') +
+                (kilder.length ? ` · ${kilder.join(' + ')} på ${sekTekst(Date.now() - t0)}` : ''),
                 100, false, 'var(--ink)');
             skjultStatus(2500);
         }
