@@ -435,6 +435,7 @@
         </div>
 
         <button id="resetBtn" class="ctl">Nullstill kart</button>
+        <button id="langBtn" type="button" class="ctl ctl-lang" title="Switch to English" aria-label="Switch to English"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg><span class="lang-code">EN</span></button>
     </div>
 
     <div id="map-container">
@@ -1328,6 +1329,341 @@
             visOversikt(allTracksGroup.getBounds());
             setTimeout(() => isReseting = false, 300);
         };
+    </script>
+    <script>
+/* ===== SPRÅKBRYTER NO / EN (innebygd; ingen eksterne filer) =====
+   Norsk er originalspråket. Engelsk legges på av denne modulen:
+   - eksakte tekster slås opp i ORDBOK
+   - tekster med tall/variabler oversettes av REGLER
+   - valgt språk huskes i localStorage («lang») og deles mellom sidene
+   Mangler en tekst i ORDBOK, vises den på norsk. Legg den til nedenfor. */
+(function () {
+    'use strict';
+
+    var ORDBOK = {
+        /* --- Felles / navigasjon --- */
+        'Toppturer - Oversiktskart': 'Summit trips - Overview map',
+        'Toppturer': 'Summit trips',
+        'Nullstill': 'Reset',
+        'Nullstill kart': 'Reset map',
+        'Vinter': 'Winter',
+        'Sommer': 'Summer',
+        'Stier': 'Trails',
+        'Stier:': 'Trails:',
+        'Severdigheter': 'Points of interest',
+        'Severdigheter:': 'Points of interest:',
+        'Fjelltopper': 'Mountain peaks',
+        'Fjelltopper:': 'Mountain peaks:',
+        'Marker': 'Select',
+        'Marker et område du vil zoome til (dra en firkant med musen)': 'Select an area to zoom to (drag a rectangle with the mouse)',
+        'Lagret': 'Saved',
+        'Lagret data': 'Saved data',
+        'Topografi': 'Topography',
+        'Bratthet': 'Steepness',
+        'Buss': 'Bus',
+        'Hellingsvinkel': 'Slope angle',
+        'Over 45°': 'Over 45°',
+        'Norgeskart': 'Norway map',
+        'Søk etter topp...': 'Search for a peak...',
+        'Søk etter topp': 'Search for a peak',
+        'Søk etter fjelltopp': 'Search for a mountain peak',
+        'Laster spor': 'Loading tracks',
+        'Laster spor …': 'Loading tracks …',
+        'Kunne ikke laste spor': 'Could not load tracks',
+        'Bilde': 'Image',
+
+        /* --- Oversikt: paneler --- */
+        'Linje:': 'Line:',
+        'Vinkel': 'Angle',
+        'Bue': 'Arc',
+        'Rett': 'Straight',
+        'Ramme:': 'Frame:',
+        'Dra navnene for å flytte dem': 'Drag the names to move them',
+        'Lagret i nettleseren (30 dager), slik at det ikke må lastes ned på nytt': 'Saved in the browser (30 days) so it does not have to be downloaded again',
+        'Tøm': 'Clear',
+        'Tøm alt': 'Clear all',
+        'Bare lagret data:': 'Saved data only:',
+        'Bratthetsskala:': 'Steepness scale:',
+        'Linjenr:': 'Line no.:',
+        'Destinasjon:': 'Destination:',
+        'Forsinkelse:': 'Delay:',
+        'Busser: Laster...': 'Buses: Loading...',
+        'Tilkoblingsfeil buss': 'Bus connection error',
+        'Leser inn spor...': 'Loading tracks...',
+        'Ingen spor funnet.': 'No tracks found.',
+        'Ukjent topp': 'Unknown peak',
+        'Fjern': 'Remove',
+        'Innstillinger': 'Settings',
+        'Ramme': 'Frame',
+        'Linje': 'Line',
+        'Vis ramme': 'Show frame',
+        'Skjul ramme': 'Hide frame',
+        'Feilsøking': 'Debugging',
+        'Test tilkobling': 'Test connection',
+        'Kopier': 'Copy',
+
+        /* --- Oversikt: popup og statusmeldinger --- */
+        'Sti / Tråkk': 'Path / Trail',
+        'Traktorvei': 'Tractor road',
+        'Gangvei': 'Footpath',
+        'Underlag:': 'Surface:',
+        'Gradering:': 'Grade:',
+        'Merking:': 'Marking:',
+        'Ja (Rød/Blå)': 'Yes (Red/Blue)',
+        'Høyde:': 'Elevation:',
+        'Severdighet': 'Point of interest',
+        'Fjellpass / Skard': 'Mountain pass / Gap',
+        'Utsiktspunkt': 'Viewpoint',
+        'Turisthytte / Koie': 'Mountain hut / Cabin',
+        'Gapahuk / Ly': 'Lean-to / Shelter',
+        'Se detaljer ➔': 'See details ➔',
+        'Vintertopp': 'Winter peak',
+        'Sommertopp': 'Summer peak',
+        'I rute': 'On time',
+        'Zoomer inn for å laste stier...': 'Zooming in to load trails...',
+        'Zoomer inn for å hente fjelltopper...': 'Zooming in to fetch peaks...',
+        'Zoom inn nærmere for å vise fjelltopper...': 'Zoom in closer to show peaks...',
+        'Zoom litt inn for å hente fjelltopper...': 'Zoom in a little to fetch peaks...',
+        'Dra en firkant over området du vil zoome til': 'Drag a rectangle over the area you want to zoom to',
+        'Esc avbryter': 'Esc to cancel',
+        'Vektorkart feilet, bruker Kartverket gråtone i stedet': 'Vector map failed, using Kartverket greyscale instead',
+
+        /* --- Sommer / vinter: sider --- */
+        'Fjellturer rundt Tromsø': 'Mountain hikes around Tromsø',
+        'Toppturer rundt Tromsø': 'Summit trips around Tromsø',
+        'Toppturer vinter': 'Winter summit trips',
+        'Fjellturer sommer': 'Summer mountain hikes',
+        'Oversikt turer': 'Trip overview',
+        'Sykkelturer:': 'Bike trips:',
+        'På': 'On',
+        'Av': 'Off',
+        'Informasjon om siden': 'Information about the site',
+        'Laster informasjon...': 'Loading information...',
+        'Klarte ikke å laste informasjonen (info.txt ble ikke funnet eller kunde ikke åpnes).': 'Could not load the information (info.txt was not found or could not be opened).',
+        'Skjul Meny': 'Hide menu',
+        'Skjul meny': 'Hide menu',
+        'Vis Meny': 'Show menu',
+        'Vis meny': 'Show menu',
+        'Del': 'Share',
+        'Kopiert!': 'Copied!',
+        'Turbeskrivelse': 'Trip description',
+        'Veibeskrivelse': 'Driving directions',
+        'Last ned GPX': 'Download GPX',
+        'Hovedspor': 'Main track',
+        'Spor': 'Track',
+        'Profil': 'Profile',
+        'Vis': 'Show',
+        'Brattskala': 'Steepness scale',
+        '3D visualisering': '3D visualization',
+        'Sykkeltur': 'Bike trip',
+        'Nordfjellet - Tromsø geografiske midtpunkt': 'Nordfjellet - geographical midpoint of Tromsø',
+
+        /* --- Data fra JSON-filene (titler, beskrivelser, pin-tekster) --- */
+        'Kommer mer info snart...': 'More info coming soon...',
+        'Se video': 'Watch video',
+        'Se bilder': 'View photos',
+        'Se bilder (Spor 2)': 'View photos (Track 2)',
+        'Se Strava-aktivitet': 'View Strava activity',
+        'Gjeste video': 'Guest video',
+        'Alternativ rute, som ikke er eksponert': 'Alternative route, not exposed',
+        'Spor 2 (kun gange)': 'Track 2 (walking only)',
+        'Spor kun til Nattmålsfjellet': 'Track to Nattmålsfjellet only',
+        'Syklet inn hit og gikk herfra til toppen': 'Cycled in to here and walked from here to the summit',
+        'Hovedspor er delvis eksponert til hit, velg alternativ rute opp': 'The main track is partly exposed up to here; choose the alternative route up',
+        'Fin tur med god utsikt over Ersfjorden.': 'Nice hike with great views over Ersfjorden.',
+        'Flott tur opp fra nedre Fjellheisstasjon.': 'Great hike up from the lower Fjellheisen cable car station.',
+        'Klassisk og luftig tur på Kvaløya.': 'Classic and airy hike on Kvaløya.',
+        'Sykkeltur til Linken er en fin tur fra byen der du får en nydelig utsikt over Tromsø': 'The bike trip to Linken is a nice trip from town with a lovely view over Tromsø.',
+        'Syklet inn og gikk herfra til toppen. Hovedsporet viser hele turen med sykling, spor 2 er kun gangen fra der sykkelen ble parkert.': 'Cycled in and walked from here to the summit. The main track shows the whole trip including the cycling; track 2 is only the walk from where the bike was parked.',
+        'Sykkeltur på litt over 6 mil med elsykkel, kjørt på assistanse 0 eller 1 for å spare strøm. Stien over til Kvaløyvågen er litt grov og har en del klopper. Opp til Nordtinden lønner det seg å holde kanten mot sør for spektakulær utsikt. Hovedsporet viser hele turen med sykling, spor 2 er kun gangen fra der sykkelen ble parkert.': 'Bike trip of just over 60 km on an e-bike, ridden on assist level 0 or 1 to save battery. The trail across to Kvaløyvågen is a bit rough with quite a few boulders. On the way up to Nordtinden it pays off to keep to the southern edge for spectacular views. The main track shows the whole trip including the cycling; track 2 is only the walk from where the bike was parked.',
+        'TMC HalvUltra (25 km) er et krevende terreng- og toppturløp med start og mål ved TUIL Arena i Tromsdalen. Løpet er en del av Tromsø Mountain Challenge (arrangert av Midnight Sun Marathon).': 'TMC HalvUltra (25 km) is a demanding trail and mountain running race with start and finish at TUIL Arena in Tromsdalen. The race is part of the Tromsø Mountain Challenge (organized by Midnight Sun Marathon).'
+    };
+
+    var NOUN = { stier: 'trails', severdigheter: 'points of interest', fjelltopper: 'peaks' };
+    var N = function (w) { return NOUN[w] || w; };
+    var NN = '(stier|severdigheter|fjelltopper)';
+
+    /* Regler for tekst med tall. Brukes i rekkefølge på teksten som ikke fantes i ORDBOK. */
+    var REGLER = [
+        [/Sjekker hurtiglager for (\S+) \((\d+) fliser\)\.\.\./g, function (m, a, b) { return 'Checking cache for ' + N(a) + ' (' + b + ' tiles)...'; }],
+        [/Sjekker lagret for fjelltopper \((\d+) fliser\)\.\.\./g, 'Checking saved data for peaks ($1 tiles)...'],
+        [new RegExp('(\\d+) ' + NN + ' vist fra lagret', 'g'), function (m, n, w) { return n + ' ' + N(w) + ' shown from saved data'; }],
+        [/\(ingen nedlasting nødvendig\)/g, '(no download needed)'],
+        [/(\d+) fliser er ikke lagret \(«Bare lagret data» er på\)/g, '$1 tiles are not saved ("Saved data only" is on)'],
+        [/Henter stier og tråkk fra OpenStreetMap/g, 'Fetching trails from OpenStreetMap'],
+        [/Henter fjellpass og severdigheter/g, 'Fetching mountain passes and points of interest'],
+        [/Henter fjelltopper fra OpenStreetMap: (\d+) av (\d+) fliser/g, 'Fetching peaks from OpenStreetMap: $1 of $2 tiles'],
+        [/\(kan ta opptil ett minutt\)/g, '(may take up to a minute)'],
+        [/(\d+) av (\d+) fliser ferdig/g, '$1 of $2 tiles done'],
+        [/(\d+) spørringer venter på Overpass/g, '$1 requests waiting for Overpass'],
+        [/(\d+) spørring venter på Overpass/g, '$1 request waiting for Overpass'],
+        [new RegExp('(\\d+) ' + NN + ' så langt', 'g'), function (m, n, w) { return n + ' ' + N(w) + ' so far'; }],
+        [new RegExp('Ferdig: (\\d+) ' + NN, 'g'), function (m, n, w) { return 'Done: ' + n + ' ' + N(w); }],
+        [/(\d+) fliser hentet på/g, '$1 tiles fetched in'],
+        [/, (\d+) fra hurtiglager/g, ', $1 from cache'],
+        [/, (\d+) fra lagret/g, ', $1 from saved data'],
+        [/(\d+) fra lagret/g, '$1 from saved data'],
+        [/lagret i nettleseren/g, 'saved in the browser'],
+        [/(\d+) nye fjelltopper lagt til/g, '$1 new peaks added'],
+        [/Ingen nye fjelltopper her/g, 'No new peaks here'],
+        [new RegExp('Feil ved henting av ' + NN + ':', 'g'), function (m, w) { return 'Error fetching ' + N(w) + ':'; }],
+        [/Fant ikke flere fjelltopper\./g, 'Could not find more peaks.'],
+        [/Overpass svarer ikke/g, 'Overpass is not responding'],
+        [/tidsavbrudd på serveren/g, 'server timeout'],
+        [/det som er hentet er lagret, trykk igjen for å fortsette/g, 'what has been fetched is saved, press again to continue'],
+        [/Dra en firkant over området du vil zoome til/g, 'Drag a rectangle over the area you want to zoom to'],
+        [/Esc avbryter/g, 'Esc to cancel'],
+        [/Zoom inn nærmere \(nivå (\d+)\) for å laste stier\.\.\./g, 'Zoom in closer (level $1) to load trails...'],
+        [/Laster inn spor\.\.\. (\d+)\/(\d+)/g, 'Loading tracks... $1/$2'],
+        [/Alle (\d+) spor er lastet inn!/g, 'All $1 tracks loaded!'],
+        [/Laster spor (\d+) \/ (\d+)/g, 'Loading tracks $1 / $2'],
+        [/^(\d+) spor lastet$/g, '$1 tracks loaded'],
+        [/^(\d+) fliser$/g, '$1 tiles'],
+        [/(\d+),(\d) s\b/g, '$1.$2 s'],
+        [/^Rute (.+)$/g, 'Route $1'],
+        [/^Busser synlige: (\d+)$/g, 'Buses visible: $1'],
+        [/^Busser: (\d+)$/g, 'Buses: $1'],
+        [/^Linje (\S+)$/g, 'Line $1'],
+        [/Forsinkelse: I rute/g, 'Delay: On time'],
+        [/^Forsinkelse:/g, 'Delay:'],
+        [/^(\d+) m\.o\.h\.$/g, '$1 m a.s.l.'],
+        [/^Ekstra bilder \((\d+)\)$/g, 'Extra photos ($1)'],
+        [/^Se video \((\d{4})\)$/g, 'Watch video ($1)'],
+        [/^Spor (\d+)$/g, 'Track $1'],
+        [/^Tur (\d+) \((\d{4})\)$/g, 'Trip $1 ($2)'],
+        [/Lenke for (.+) er kopiert til utklippstavlen!/g, 'Link for $1 copied to the clipboard!'],
+        [/Kopier denne lenken:/g, 'Copy this link:'],
+        /* Høydeprofil-popup */
+        [/Distanse T\/R:/g, 'Distance round trip:'],
+        [/Stigning:/g, 'Ascent:'],
+        [/Tid til topp:/g, 'Time to summit:'],
+        [/Tid T\/R:/g, 'Time round trip:'],
+        [/Til topp:/g, 'To summit:'],
+        [/⌛ T\/R:/g, '⌛ Round trip:'],
+        [/(\u{1F3D4}\uFE0F?\s*)Topp:/gu, '$1Summit:'],
+        [/(\d+)t (\d+)min/g, '$1h $2min'],
+        [/(\d+) moh\b/g, '$1 m a.s.l.']
+    ];
+
+    function oversett(tekst) {
+        if (!tekst) return tekst;
+        var m = /^(\s*)([\s\S]*?)(\s*)$/.exec(tekst);
+        var kjerne = m[2];
+        if (!kjerne) return tekst;
+        if (Object.prototype.hasOwnProperty.call(ORDBOK, kjerne)) return m[1] + ORDBOK[kjerne] + m[3];
+        var ut = kjerne;
+        for (var i = 0; i < REGLER.length; i++) ut = ut.replace(REGLER[i][0], REGLER[i][1]);
+        return ut === kjerne ? tekst : m[1] + ut + m[3];
+    }
+
+    var lang = 'no';
+    try {
+        var url = new URLSearchParams(location.search).get('lang');
+        var lagret = localStorage.getItem('lang');
+        lang = (url === 'en' || url === 'no') ? url : (lagret === 'en' ? 'en' : 'no');
+    } catch (_) { var u2 = /[?&]lang=en/.test(location.search); lang = u2 ? 'en' : 'no'; }
+
+    var tekstMinne = new WeakMap();   // tekstnode  -> {no, en}
+    var attrMinne = new WeakMap();    // element    -> { attr: {no, en} }
+    var ATTR = ['title', 'placeholder', 'aria-label', 'alt'];
+    var hopp = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, NOSCRIPT: 1 };
+    var observer = null;
+
+    function tekstNode(n) {
+        var p = n.parentNode;
+        if (p && hopp[p.nodeName]) return;
+        var rec = tekstMinne.get(n), cur = n.nodeValue;
+        if (rec && cur === rec.en) { if (lang === 'no') n.nodeValue = rec.no; return; }
+        if (lang === 'en') {
+            var en = oversett(cur);
+            if (en !== cur) { tekstMinne.set(n, { no: cur, en: en }); n.nodeValue = en; }
+            else tekstMinne.delete(n);
+        } else tekstMinne.delete(n);
+    }
+
+    function attributter(el) {
+        if (!el.getAttribute) return;
+        var rek = attrMinne.get(el);
+        for (var i = 0; i < ATTR.length; i++) {
+            var a = ATTR[i];
+            if (!el.hasAttribute(a)) continue;
+            var cur = el.getAttribute(a), r = rek && rek[a];
+            if (r && cur === r.en) { if (lang === 'no') el.setAttribute(a, r.no); continue; }
+            if (lang === 'en') {
+                var en = oversett(cur);
+                if (en !== cur) {
+                    if (!rek) { rek = {}; attrMinne.set(el, rek); }
+                    rek[a] = { no: cur, en: en };
+                    el.setAttribute(a, en);
+                } else if (rek) delete rek[a];
+            } else if (rek) delete rek[a];
+        }
+    }
+
+    function gjennom(rot) {
+        if (!rot) return;
+        if (rot.nodeType === 3) { tekstNode(rot); return; }
+        if (rot.nodeType !== 1 && rot.nodeType !== 9 && rot.nodeType !== 11) return;
+        if (rot.nodeType === 1) { if (hopp[rot.nodeName]) return; attributter(rot); }
+        var tw = document.createTreeWalker(rot, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null);
+        var n;
+        while ((n = tw.nextNode())) {
+            if (n.nodeType === 3) tekstNode(n); else if (!hopp[n.nodeName]) attributter(n);
+        }
+    }
+
+    function start() {
+        if (observer) return;
+        observer = new MutationObserver(function (muts) {
+            for (var i = 0; i < muts.length; i++) {
+                var m = muts[i];
+                if (m.type === 'characterData') tekstNode(m.target);
+                else if (m.type === 'attributes') attributter(m.target);
+                else for (var j = 0; j < m.addedNodes.length; j++) gjennom(m.addedNodes[j]);
+            }
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTR });
+    }
+
+    /* alert() og prompt() er ikke DOM, så de pakkes inn */
+    var _alert = window.alert, _prompt = window.prompt;
+    window.alert = function (m) { return _alert.call(window, lang === 'en' ? oversett(String(m)) : m); };
+    window.prompt = function (m, d) { return _prompt.call(window, lang === 'en' ? oversett(String(m)) : m, d); };
+
+    function oppdaterKnapp() {
+        var b = document.getElementById('langBtn');
+        if (!b) return;
+        var kode = b.querySelector('.lang-code');
+        if (kode) kode.textContent = lang === 'en' ? 'NO' : 'EN';
+        b.setAttribute('aria-label', lang === 'en' ? 'Bytt til norsk' : 'Switch to English');
+        b.setAttribute('title', lang === 'en' ? 'Bytt til norsk' : 'Switch to English');
+    }
+
+    function sett(nytt) {
+        lang = nytt;
+        try { localStorage.setItem('lang', lang); } catch (_) {}
+        document.documentElement.lang = lang === 'en' ? 'en' : 'no';
+        if (observer) observer.disconnect();
+        gjennom(document.documentElement);
+        observer = null; start();
+        oppdaterKnapp();
+        try { document.dispatchEvent(new CustomEvent('langchange', { detail: lang })); } catch (_) {}
+    }
+
+    window.__lang = function () { return lang; };
+    window.__oversett = oversett;
+    window.__setLang = sett;
+
+    function init() {
+        var b = document.getElementById('langBtn');
+        if (b) b.addEventListener('click', function () { sett(lang === 'en' ? 'no' : 'en'); });
+        document.documentElement.lang = lang === 'en' ? 'en' : 'no';
+        if (lang === 'en') gjennom(document.documentElement);
+        start();
+        oppdaterKnapp();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
     </script>
 </body>
 </html>

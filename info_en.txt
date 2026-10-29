@@ -1,0 +1,8 @@
+<h1>About this page</h1>
+<p>
+<h2>This page shows hikes around Tromsø, both in winter and in summer.</h2>
+<h3>All the trips are ones I, Lars Gimse, have been on. The page contains GPS tracks with profile data, video and photos from the different trips. You get access to this by clicking on each trip. Since there are already many good trip descriptions online, the Trip description on this page is a Google search for the summit. The whole page was built with AI, and new functionality will come when I get new ideas.
+<br>
+Have an idea, or wondering about something? Send me a message on 40455304
+</h3>
+<br>
