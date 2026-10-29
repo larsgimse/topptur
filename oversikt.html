@@ -174,7 +174,7 @@
 
         .panels-container {
             position: fixed;
-            top: 75px;
+            top: var(--panels-top, 75px);
             right: 10px;
             z-index: 10000;
             display: flex;
@@ -2406,6 +2406,14 @@
         'Kunne ikke laste spor': 'Could not load tracks',
         'Bilde': 'Image',
 
+        /* --- Forside (index.html) --- */
+        'Toppturer og Fjellturer': 'Summit trips and mountain hikes',
+        'Vinter og sommer rundt Tromsø': 'Winter and summer around Tromsø',
+        'Ski og skredfare': 'Skiing and avalanche danger',
+        'Stier og utsikt': 'Trails and views',
+        'Alle turene på kartet': 'All trips on the map',
+        'Unike besøk': 'Unique visits',
+
         /* --- Oversikt: paneler --- */
         'Linje:': 'Line:',
         'Vinkel': 'Angle',
@@ -2698,6 +2706,17 @@
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
+    </script>
+    <script>
+        /* Panelene (Fjelltopper, Lagret osv.) legges alltid rett under menyen, også når menyen brytes over to linjer */
+        (function () {
+            const h = document.querySelector('header');
+            if (!h) return;
+            const sett = () => document.documentElement.style.setProperty('--panels-top', (Math.ceil(h.getBoundingClientRect().bottom) + 10) + 'px');
+            sett();
+            if (window.ResizeObserver) new ResizeObserver(sett).observe(h);
+            window.addEventListener('resize', sett);
+        })();
     </script>
 </body>
 </html>
