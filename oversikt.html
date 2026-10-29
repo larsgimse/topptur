@@ -1365,7 +1365,6 @@
             liste.forEach(peak => {
                 const nokkel = fjellNokkel(peak);
                 if (fjellFjernet.has(nokkel) || fjellListe.some(x => x.key === nokkel)) return;
-                if (!map.getBounds().pad(1).contains([peak.lat, peak.lon])) return;
                 // Samme topp fra både Kartverket og OSM (litt ulike koordinater)
                 if (fjellListe.some(x => x.navn === peak.name
                     && Math.abs(x.lat - peak.lat) < 0.01 && Math.abs(x.lon - peak.lon) < 0.02)) return;
@@ -1376,27 +1375,28 @@
             return nye;
         }
 
-        async function fjellHentKartverket(b, signal) {
-            const url = `https://ws.geonorge.no/stedsnavn/v1/punkt?nordmin=${b.getSouth()}&nordmaks=${b.getNorth()}&ostmin=${b.getWest()}&ostmaks=${b.getEast()}&navneobjekttype=Fjell*&maxAntall=50`;
-            const c = new AbortController();
-            const timer = setTimeout(() => c.abort(), 20000);
-            const avbryt = () => c.abort();
-            signal.addEventListener('abort', avbryt, { once: true });
-            try {
-                const res = await fetch(url, { mode: 'cors', signal: c.signal });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                const json = await res.json();
-                // Som i index-2: ingen streng filtrering her, utsnittet sjekkes i fjellLeggTil
-                return (json.navn || []).map(item => ({
-                    name: item.stedsnavn?.[0]?.skrivemåte || (typeof item.stedsnavn === 'string' ? item.stedsnavn : null),
-                    lat: Number(item.representasjonspunkt?.nord),
-                    lon: Number(item.representasjonspunkt?.øst),
-                    elevation: item.meterOverHavet || item.stedsnavn?.[0]?.meterOverHavet
-                })).filter(p => p.name && Number.isFinite(p.lat) && Number.isFinite(p.lon));
-            } finally {
-                clearTimeout(timer);
-                signal.removeEventListener('abort', avbryt);
-            }
+        // ---- Fra index-2 (fungerer der): enkel henting uten ekstra filtrering ----
+        function parseKartverketGeonorge(data) {
+            if (!data || !data.navn) return [];
+            return data.navn.map(item => ({
+                name: item.stedsnavn?.[0]?.skrivemåte || item.stedsnavn,
+                lat: item.representasjonspunkt?.nord,
+                lon: item.representasjonspunkt?.øst,
+                elevation: item.meterOverHavet || item.stedsnavn?.[0]?.meterOverHavet
+            })).filter(p => typeof p.name === 'string' && p.name && p.lat && p.lon)
+               .map(p => ({ ...p, lat: Number(p.lat), lon: Number(p.lon) }));
+        }
+
+        function parseOverpass(data) {
+            if (!data || !data.elements) return [];
+            return data.elements
+                .filter(el => typeof el.lat === 'number' && typeof el.lon === 'number')
+                .map(el => ({
+                    name: el.tags?.name || 'Ukjent topp',
+                    lat: el.lat,
+                    lon: el.lon,
+                    elevation: el.tags?.ele ? parseInt(el.tags.ele) : null
+                }));
         }
 
         // Fjerner navn langt utenfor utsnittet (men ikke de brukeren har flyttet på)
@@ -1409,65 +1409,78 @@
             });
         }
 
-        async function fjellHentOverpass(b, signal) {
-            const krevHoyde = map.getZoom() < 12 ? '["ele"]' : '';
-            const query = `[out:json][timeout:25];node["natural"="peak"]["name"]${krevHoyde}(${b.getSouth().toFixed(5)},${b.getWest().toFixed(5)},${b.getNorth().toFixed(5)},${b.getEast().toFixed(5)});out qt 200;`;
-            const json = await overpassHent(query, 25000, signal);
-            return (json.elements || []).map(el => ({
-                name: el.tags && el.tags.name,
-                lat: el.lat,
-                lon: el.lon,
-                elevation: el.tags && el.tags.ele ? parseInt(el.tags.ele, 10) : null
-            })).filter(p => p.name && typeof p.lat === 'number' && typeof p.lon === 'number')
-               .sort((x, y) => (y.elevation || 0) - (x.elevation || 0))
-               .slice(0, map.getZoom() < 12 ? 60 : 150);
-        }
-
         async function fjellHent() {
             if (!fjellAktiv || !fjellSynlig()) return;
+            const kontroll = { aborted: false, abort() { this.aborted = true; } };
             if (fjellAbort) fjellAbort.abort();      // en ny henting avløser en som pågår
-            const kontroll = new AbortController();
             fjellAbort = kontroll;
-            const signal = kontroll.signal;
-            const b = map.getBounds().pad(0.1);
+            const bounds = map.getBounds();
+            const minLat = bounds.getSouth(), maxLat = bounds.getNorth();
+            const minLon = bounds.getWest(), maxLon = bounds.getEast();
             const t0 = Date.now();
-            fjellRyddUtenfor(map.getBounds());
+            const gammel = () => kontroll.aborted || !fjellAktiv;
+            fjellRyddUtenfor(bounds);
 
-            const vis = () => {
-                if (signal.aborted || !fjellAktiv) return;
-                visStatusFor('fjell', `Henter fjelltopper fra Kartverket og OpenStreetMap · ${sekTekst(Date.now() - t0)}`, null, true, 'var(--ink)');
-            };
-            vis();
-            const ticker = setInterval(vis, 1000);
-            signal.addEventListener('abort', () => clearInterval(ticker), { once: true });
-
-            let nye = 0;
-            const kilder = [];
+            visStatusFor('fjell', 'Henter fjelltopper fra Kartverket...', null, true, 'var(--ink)');
+            let peaks = [];
+            let kilde = '';
             const feil = [];
-            // Det som kommer først vises med en gang, den andre kilden fyller på
-            const ferdig = (navn, liste) => {
-                if (signal.aborted || !fjellAktiv || !liste.length) return;
-                kilder.push(navn);
-                nye += fjellLeggTil(liste);
-            };
-            const feilFra = navn => e => { if (!signal.aborted) { console.warn(navn + ' feilet', e); feil.push(navn + ': ' + e.message); } };
 
-            await Promise.allSettled([
-                fjellHentKartverket(b, signal).then(l => ferdig('Kartverket', l)).catch(feilFra('Kartverket')),
-                fjellHentOverpass(b, signal).then(l => ferdig('OpenStreetMap', l)).catch(feilFra('OpenStreetMap'))
-            ]);
-            clearInterval(ticker);
-            if (signal.aborted || !fjellAktiv) return;
+            // 1. Kartverket (som i index-2)
+            try {
+                const url = `https://ws.geonorge.no/stedsnavn/v1/punkt?nordmin=${minLat}&nordmaks=${maxLat}&ostmin=${minLon}&ostmaks=${maxLon}&navneobjekttype=Fjell*&maxAntall=50`;
+                const res = await fetch(url, { mode: 'cors' });
+                if (res.ok) {
+                    peaks = parseKartverketGeonorge(await res.json());
+                    if (peaks.length) kilde = 'Kartverket';
+                } else feil.push('Kartverket HTTP ' + res.status);
+            } catch (err) {
+                console.warn('Kartverket API feilet, prøver Overpass...', err);
+                feil.push('Kartverket: ' + err.message);
+            }
+            if (gammel()) return;
+
+            // 2. Overpass (som i index-2)
+            if (peaks.length === 0) {
+                visStatusFor('fjell', 'Henter fjelltopper fra OpenStreetMap...', null, true, 'var(--ink)');
+                try {
+                    const q = `[out:json];node["natural"="peak"](${minLat},${minLon},${maxLat},${maxLon});out 200;`;
+                    const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`);
+                    if (res.ok) {
+                        peaks = parseOverpass(await res.json());
+                        if (peaks.length) kilde = 'OpenStreetMap';
+                    } else feil.push('Overpass HTTP ' + res.status);
+                } catch (err) {
+                    console.error('Overpass API feilet:', err);
+                    feil.push('Overpass: ' + err.message);
+                }
+                if (gammel()) return;
+            }
+
+            // 3. Siste utvei: de andre Overpass-serverne, alle samtidig
+            if (peaks.length === 0 && feil.length) {
+                try {
+                    const q = `[out:json][timeout:25];node["natural"="peak"](${minLat},${minLon},${maxLat},${maxLon});out 200;`;
+                    peaks = parseOverpass(await overpassHent(q, 25000, null));
+                    if (peaks.length) kilde = 'OpenStreetMap (reserveserver)';
+                } catch (err) {
+                    feil.push(err.message);
+                }
+                if (gammel()) return;
+            }
+
             fjellAbort = null;
+            peaks.sort((x, y) => (y.elevation || 0) - (x.elevation || 0));
+            const nye = fjellLeggTil(peaks.slice(0, 120));
 
-            if (nye === 0 && feil.length >= 2 && fjellListe.length === 0) {
-                visStatusFor('fjell', 'Fant ingen fjelltopper. ' + feil.join('; '), 100, false, 'red');
+            if (peaks.length === 0 && feil.length) {
+                visStatusFor('fjell', 'Fant ingen fjelltopper. ' + feil.join(' · '), 100, false, 'red');
                 skjultStatus(6000);
                 return;
             }
             visStatusFor('fjell',
                 (nye > 0 ? `${nye} nye fjelltopper lagt til` : 'Ingen nye fjelltopper her') +
-                (kilder.length ? ` · ${kilder.join(' + ')} på ${sekTekst(Date.now() - t0)}` : ''),
+                (kilde ? ` · ${kilde} på ${sekTekst(Date.now() - t0)}` : ''),
                 100, false, 'var(--ink)');
             skjultStatus(2500);
         }
