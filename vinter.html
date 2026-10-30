@@ -502,35 +502,43 @@
         let dbPromise = null, endret = null;
         function apne() {
             if (!dbPromise) dbPromise = new Promise(res => {
-                const gi = setTimeout(() => res(null), 1500);   // henger IndexedDB, bruker vi bare minnet
-                const ferdig = v => { clearTimeout(gi); res(v); };
                 try {
                     const r = indexedDB.open('toppturer-gpx-v1', 1);
                     r.onupgradeneeded = () => r.result.createObjectStore('gpx');
-                    r.onsuccess = () => { try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {} ferdig(r.result); };
-                    r.onerror = () => ferdig(null);
-                    r.onblocked = () => ferdig(null);
-                } catch (e) { ferdig(null); }
+                    r.onsuccess = () => { try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {} res(r.result); };
+                    r.onerror = () => { dbPromise = null; res(null); };
+                } catch (e) { dbPromise = null; res(null); }
             });
-            return dbPromise;
+            // Vent romslig (siden er travel ved omlasting), men ikke for alltid
+            return Promise.race([dbPromise, new Promise(r => setTimeout(() => r(null), 10000))]);
+        }
+        // Les alle lagrede spor i én transaksjon ved første bruk (mye raskere og sikrere enn ett oppslag per spor)
+        let forhent = null;
+        function lastAlle() {
+            if (!forhent) forhent = (async () => {
+                const db = await apne();
+                if (!db) return;
+                const na = Date.now();
+                await new Promise(res => {
+                    try {
+                        const rq = db.transaction('gpx').objectStore('gpx').openCursor();
+                        rq.onsuccess = () => {
+                            const c = rq.result;
+                            if (c) { const v = c.value; if (v && v.txt && na - v.t < TTL && !mem.has(c.key)) mem.set(c.key, v); c.continue(); }
+                            else res();
+                        };
+                        rq.onerror = () => res();
+                    } catch (e) { res(); }
+                });
+            })();
+            return forhent;
         }
         async function hent(key) {
-            const na = Date.now(), m = mem.get(key);
-            if (m && na - m.t < TTL) return m.txt;
-            const db = await apne();
-            if (!db) return null;
-            const fraDb = new Promise(res => {
-                try {
-                    const rq = db.transaction('gpx').objectStore('gpx').get(key);
-                    rq.onsuccess = () => {
-                        const v = rq.result;
-                        if (v && na - v.t < TTL) { mem.set(key, v); res(v.txt); } else res(null);
-                    };
-                    rq.onerror = () => res(null);
-                } catch (e) { res(null); }
-            });
-            // Aldri la lageret blokkere selve nedlastingen
-            return Promise.race([fraDb, new Promise(r => setTimeout(() => r(null), 1500))]);
+            let m = mem.get(key);
+            if (m && Date.now() - m.t < TTL) return m.txt;
+            await lastAlle();
+            m = mem.get(key);
+            return (m && Date.now() - m.t < TTL) ? m.txt : null;
         }
         function lagre(key, txt) {
             const v = { t: Date.now(), txt };
