@@ -32,6 +32,26 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
+    "id": "akselkollen-finnlandsfjellet",
+    "navn": "Akselkollen - Finnlandsfjellet",
+    "fil": "2025_11_16.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/reel/DRIkwhMiHvg/",
+        "tittel": "Se video"
+      },
+      {
+        "url": "https://www.strava.com/activities/16475633460",
+        "tittel": "Se Strava-aktivitet"
+      },
+      {
+        "url": "https://maps.suunto.com/move/larsgimse/6919d1a4b1d813421b337193",
+        "tittel": "Se Suunto-aktivitet"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "bentsjordtinden",
     "navn": "Bentsjordtinden",
     "fil": "2026_04_03.gpx",
