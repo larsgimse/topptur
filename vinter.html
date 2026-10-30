@@ -403,6 +403,25 @@
         @keyframes tp-slide { 0% { margin-left: -30%; } 100% { margin-left: 100%; } }
         @media (prefers-reduced-motion: reduce) { #track-progress.indeterminate .tp-fill { animation: none; width: 100%; opacity: .4; } }
     </style>
+
+    <style>
+    /* ===== Lagret (GPX-spor lagret i nettleseren) ===== */
+    .lagret-wrap { position: relative; display: inline-block; }
+    #lagretBtn.active, #lagretBtn.active:hover { background: var(--ink, #000); color: #fff; }
+    .lagret-panel { display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 10001; min-width: 250px; max-width: calc(100vw - 24px); box-sizing: border-box; background: #fff; border: 1px solid var(--ink, #000); padding: 12px 15px; flex-direction: column; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.14); font-size: 14px; font-weight: 400; color: var(--ink, #000); text-align: left; }
+    .lagret-panel.active { display: flex; }
+    .lagret-panel .lg-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .lagret-panel .lg-hint { font-size: 12px; font-weight: 300; color: var(--muted, #6b6b6b); }
+    .lagret-hoyre { display: inline-flex; align-items: center; gap: 8px; color: var(--muted, #6b6b6b); }
+    .lagret-tom { font: inherit; font-size: 12px; background: #fff; color: var(--ink, #000); border: 1px solid var(--ink, #000); padding: 2px 8px; cursor: pointer; }
+    .lagret-tom:hover { background: var(--map-bg, #ededeb); }
+    .lg-switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+    .lg-switch input { opacity: 0; width: 0; height: 0; }
+    .lg-slider { position: absolute; cursor: pointer; inset: 0; background-color: #fff; border: 1px solid var(--ink, #000); transition: .3s; }
+    .lg-slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; top: 3px; background-color: var(--ink, #000); transition: .3s; }
+    .lg-switch input:checked + .lg-slider { background-color: var(--ink, #000); }
+    .lg-switch input:checked + .lg-slider:before { background-color: #fff; transform: translateX(16px); }
+    </style>
 </head>
 <body>
 
@@ -434,6 +453,16 @@
             <datalist id="topperList"></datalist>
         </div>
 
+        <div class="lagret-wrap">
+            <button id="lagretBtn" type="button" class="ctl" title="Lagret data" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg> Lagret</button>
+            <div id="lagretPanel" class="lagret-panel">
+                <div class="lg-row lg-hint">Lagret i nettleseren (30 dager), slik at det ikke må lastes ned på nytt</div>
+                <div class="lg-row">Spor: <span class="lagret-hoyre"><span id="lagretAntall">…</span><button type="button" class="lagret-tom" id="lagretTom">Tøm</button></span></div>
+                <div class="lg-row">Bare lagret data: <label class="lg-switch"><input type="checkbox" id="kunLagretSwitch"><span class="lg-slider"></span></label></div>
+                <div class="lg-row lg-hint">Gjelder fra neste innlasting</div>
+            </div>
+        </div>
+
         <button id="resetBtn" class="ctl">Nullstill kart</button>
         <button id="langBtn" type="button" class="ctl ctl-lang" title="Switch to English" aria-label="Switch to English"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg><span class="lang-code">EN</span></button>
     </div>
@@ -462,6 +491,162 @@
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
+
+    <script>
+    /* ===== LAGRET: GPX-spor lagres i nettleseren (IndexedDB, 30 dager) =====
+       Første gang et spor lastes ned legges det i lageret; neste gang hentes det derfra.
+       Lageret deles mellom vinter- og sommersiden. «Tøm» sletter alle lagrede spor. */
+    const GpxCache = (() => {
+        const TTL = 30 * 24 * 3600 * 1000;
+        const mem = new Map();
+        let dbPromise = null, endret = null;
+        function apne() {
+            if (!dbPromise) dbPromise = new Promise(res => {
+                const gi = setTimeout(() => res(null), 1500);   // henger IndexedDB, bruker vi bare minnet
+                const ferdig = v => { clearTimeout(gi); res(v); };
+                try {
+                    const r = indexedDB.open('toppturer-gpx-v1', 1);
+                    r.onupgradeneeded = () => r.result.createObjectStore('gpx');
+                    r.onsuccess = () => { try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {} ferdig(r.result); };
+                    r.onerror = () => ferdig(null);
+                    r.onblocked = () => ferdig(null);
+                } catch (e) { ferdig(null); }
+            });
+            return dbPromise;
+        }
+        async function hent(key) {
+            const na = Date.now(), m = mem.get(key);
+            if (m && na - m.t < TTL) return m.txt;
+            const db = await apne();
+            if (!db) return null;
+            const fraDb = new Promise(res => {
+                try {
+                    const rq = db.transaction('gpx').objectStore('gpx').get(key);
+                    rq.onsuccess = () => {
+                        const v = rq.result;
+                        if (v && na - v.t < TTL) { mem.set(key, v); res(v.txt); } else res(null);
+                    };
+                    rq.onerror = () => res(null);
+                } catch (e) { res(null); }
+            });
+            // Aldri la lageret blokkere selve nedlastingen
+            return Promise.race([fraDb, new Promise(r => setTimeout(() => r(null), 1500))]);
+        }
+        function lagre(key, txt) {
+            const v = { t: Date.now(), txt };
+            mem.set(key, v);
+            apne().then(db => {
+                if (!db) return;
+                try {
+                    const tx = db.transaction('gpx', 'readwrite');
+                    tx.objectStore('gpx').put(v, key);
+                    tx.oncomplete = () => { if (endret) endret(); };
+                } catch (e) {}
+            });
+        }
+        async function antall() {
+            const db = await apne();
+            if (!db) return mem.size;
+            return new Promise(res => {
+                try {
+                    const rq = db.transaction('gpx').objectStore('gpx').getAllKeys();
+                    rq.onsuccess = () => res(rq.result.length);
+                    rq.onerror = () => res(0);
+                } catch (e) { res(0); }
+            });
+        }
+        async function tom() {
+            mem.clear();
+            const db = await apne();
+            if (!db) return;
+            await new Promise(res => {
+                try {
+                    const tx = db.transaction('gpx', 'readwrite');
+                    tx.objectStore('gpx').clear();
+                    tx.oncomplete = () => res(); tx.onerror = () => res(); tx.onabort = () => res();
+                } catch (e) { res(); }
+            });
+        }
+        const LS = 'kunLagretSpor';
+        const kunLagret = () => { try { return localStorage.getItem(LS) === '1'; } catch (e) { return false; } };
+        const settKunLagret = on => { try { localStorage.setItem(LS, on ? '1' : '0'); } catch (e) {} };
+        return { hent, lagre, antall, tom, kunLagret, settKunLagret, ved: fn => { endret = fn; } };
+    })();
+
+    /* leaflet-gpx henter GPX med XHR. Her går alle gpx/-filer via lageret først. */
+    (function () {
+        if (!window.L || !L.GPX || typeof L.GPX.prototype._load_xml !== 'function') return;
+        const orig = L.GPX.prototype._load_xml;
+        L.GPX.prototype._load_xml = function (url, cb, options, async) {
+            if (typeof url !== 'string' || !/^gpx\//.test(url)) return orig.apply(this, arguments);
+            if (options == undefined) options = this.options;
+            const self = this;
+            const parse = txt => new DOMParser().parseFromString(txt, 'text/xml');
+            const feil = msg => { try { self.fire('error', { err: msg }); } catch (e) {} };
+            (async () => {
+                let txt = null;
+                try { txt = await GpxCache.hent(url); } catch (e) {}
+                if (!txt) {
+                    if (GpxCache.kunLagret()) { feil('Ikke lagret: ' + url); return; }
+                    try {
+                        const r = await fetch(url);
+                        if (r.ok) txt = await r.text();
+                    } catch (e) {}
+                    if (!txt || !/<gpx[\s>]/i.test(txt)) { feil('Kunne ikke hente ' + url); return; }
+                    GpxCache.lagre(url, txt);
+                }
+                cb(parse(txt), options);
+            })();
+        };
+    })();
+
+    /* Lenketype for video-listen: Strava og Suunto skal ha egne ikoner, ikke filmkamera */
+    function lenkeType(v) {
+        const u = String((v && v.url) || ''), t = String((v && v.type) || '').toLowerCase();
+        if (t === 'strava' || /strava\.(com|app\.link)/i.test(u)) return 'strava';
+        if (t === 'suunto' || /suunto/i.test(u)) return 'suunto';
+        if (t === 'photo') return 'photo';
+        return 'video';
+    }
+
+    /* Lagret-knapp og panel */
+    (function () {
+        const btn = document.getElementById('lagretBtn');
+        const panel = document.getElementById('lagretPanel');
+        const antallEl = document.getElementById('lagretAntall');
+        const sw = document.getElementById('kunLagretSwitch');
+        if (!btn || !panel) return;
+
+        async function oppdater() {
+            let n = 0;
+            try { n = await GpxCache.antall(); } catch (e) {}
+            antallEl.textContent = n + ' spor';
+        }
+        let timer = null;
+        GpxCache.ved(() => { if (!panel.classList.contains('active')) return; clearTimeout(timer); timer = setTimeout(oppdater, 300); });
+
+        function plasser() {
+            panel.style.left = '0'; panel.style.right = 'auto';
+            const r = panel.getBoundingClientRect();
+            if (r.right > window.innerWidth - 8) { panel.style.left = 'auto'; panel.style.right = '0'; }
+        }
+        function sett(pa) {
+            panel.classList.toggle('active', pa);
+            btn.classList.toggle('active', pa);
+            btn.setAttribute('aria-expanded', pa ? 'true' : 'false');
+            if (pa) { oppdater(); plasser(); }
+        }
+        btn.addEventListener('click', () => sett(!panel.classList.contains('active')));
+        document.addEventListener('click', e => { if (panel.classList.contains('active') && !e.target.closest('.lagret-wrap')) sett(false); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel.classList.contains('active')) sett(false); });
+
+        document.getElementById('lagretTom').addEventListener('click', async () => { await GpxCache.tom(); oppdater(); });
+
+        sw.checked = GpxCache.kunLagret();
+        sw.addEventListener('change', () => GpxCache.settKunLagret(sw.checked));
+        oppdater();
+    })();
+    </script>
 
     <script>
         const map = L.map('map', { zoomSnap: 0.5 }).setView([69.65, 18.95], 10);
@@ -1110,9 +1295,13 @@
                             videoContainer.appendChild(menuTopRow);
 
                             topp.video?.forEach((v, i) => {
-                                const a = document.createElement('a'); a.href = v.url; a.target = "_blank"; a.className = 'video-link-btn';
-                                const ikon = v.type === 'photo' ? '📷' : '🎥';
-                                a.innerHTML = `<span>${ikon}</span> ${v.tittel}`;
+                                const lt = lenkeType(v);
+                                // Strava/Suunto vises av egne knapper under når de finnes
+                                if ((lt === 'strava' && topp.strava) || (lt === 'suunto' && topp.suunto)) return;
+                                const a = document.createElement('a'); a.href = v.url; a.target = "_blank";
+                                a.className = 'video-link-btn' + (lt === 'strava' ? ' strava-link-btn' : lt === 'suunto' ? ' suunto-link-btn' : '');
+                                const ikonHtml = lt === 'strava' ? '<span>🏃</span>' : lt === 'suunto' ? '<span class="suunto-icon">▲</span>' : `<span>${lt === 'photo' ? '📷' : '🎥'}</span>`;
+                                a.innerHTML = `${ikonHtml} ${v.tittel}`;
                                 const filRef = v.dato ? v.dato : ((topp.ekstraSpor && topp.ekstraSpor[i-1]) ? topp.ekstraSpor[i-1].fil : topp.fil);
                                 const vBadge = lagBadge(filRef, (filRef === topp.fil) ? topp.overrideAar : null);
                                 if (vBadge) a.appendChild(vBadge);
@@ -1382,6 +1571,8 @@
         'Lagret i nettleseren (30 dager), slik at det ikke må lastes ned på nytt': 'Saved in the browser (30 days) so it does not have to be downloaded again',
         'Tøm': 'Clear',
         'Tøm alt': 'Clear all',
+        'Spor:': 'Tracks:',
+        'Gjelder fra neste innlasting': 'Applies from the next page load',
         'Bare lagret data:': 'Saved data only:',
         'Bratthetsskala:': 'Steepness scale:',
         'Linjenr:': 'Line no.:',
@@ -1518,6 +1709,7 @@
         [/Alle (\d+) spor er lastet inn!/g, 'All $1 tracks loaded!'],
         [/Laster spor (\d+) \/ (\d+)/g, 'Loading tracks $1 / $2'],
         [/^(\d+) spor lastet$/g, '$1 tracks loaded'],
+        [/^(\d+) spor$/g, '$1 tracks'],
         [/^(\d+) fliser$/g, '$1 tiles'],
         [/(\d+),(\d) s\b/g, '$1.$2 s'],
         [/^Rute (.+)$/g, 'Route $1'],
