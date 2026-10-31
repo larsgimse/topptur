@@ -329,6 +329,17 @@
         .ctl { padding: 8px 14px; border: 1px solid var(--ink); border-radius: 0; background: #fff; color: var(--ink); font-size: 14px; font-weight: 400; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background .3s ease; }
         .ctl svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
         .ctl:hover { background: var(--winter-bg); }
+        /* Skredterreng-tegnforklaring og faregrad-panel */
+        .legend.faregrad { width: 270px; max-width: calc(100vw - 40px); box-sizing: border-box; }
+        .fg-tabell { border-collapse: collapse; width: 100%; }
+        .fg-tabell th { font-weight: 400; font-size: 11px; color: var(--muted); text-align: left; padding: 0 8px 4px 0; }
+        .fg-tabell td { padding: 3px 8px 3px 0; white-space: nowrap; vertical-align: middle; font-weight: 400; }
+        .fg-tabell td:first-child { font-weight: 500; }
+        .fg-badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin-right: 6px; border: 1px solid var(--ink); font-size: 12px; font-weight: 500; vertical-align: middle; }
+        .fg-merk, .fg-kilde { margin: 6px 0 0; font-size: 11px; line-height: 1.35; color: var(--muted); }
+        .fg-lenke { display: inline-block; margin-top: 6px; color: var(--winter-ink); font-weight: 500; text-decoration: underline; }
+        .legend .color-box.skred-s3 { background: #dc3220; }
+        .legend .color-box.skred-s2 { background: #cc79a7; }
         .ctl.ctl-summer:hover { background: var(--summer-bg); }
         .ctl.ctl-map:hover { background: var(--map-bg); }
         body .btn-toggle-active { background-color: var(--winter-ink) !important; color: #fff !important; border-color: var(--winter-ink) !important; }
@@ -435,6 +446,14 @@
 
         <button id="bratthetBtn" class="ctl">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l7-12 4 7 3-4 6 9z"/></svg> Bratthet
+        </button>
+
+        <button id="skredBtn" type="button" class="ctl" title="Vis områder der snøskred kan løsne og gå (NVE aktsomhetskart)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l6-10 3 5 2-3 9 8z"/><path d="M13 5l2 2M16 3l2 2M17 8l1.5 1.5"/></svg> Skredterreng
+        </button>
+
+        <button id="faregradBtn" type="button" class="ctl" title="Vis faregrad for snøskred i Tromsø-området">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5L21.5 20h-19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg> Faregrad
         </button>
 
         <button id="markerBtn" type="button" class="ctl ctl-marker" title="Marker et område du vil zoome til (dra en firkant med musen)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5"/><circle cx="11" cy="11" r="3.5"/><path d="M13.6 13.6L17 17"/></svg> Marker</button>
@@ -604,6 +623,46 @@
         }
         bratthetBtn.onclick = () => toggleBratthet();
 
+        // NVE aktsomhetskart for snøskred (2023). Hentes som bilder fra NVEs ArcGIS-tjeneste for hver rute i kartet.
+        // Lag 1 = S3, lag 2 = S2 uten skogeffekt. Endre «show:1,2» for å vise andre lag (3 = S2 med skogeffekt).
+        const SKRED_URL = 'https://gis3.nve.no/map/rest/services/SnoskredAktsomhet/MapServer/export';
+        const SkredAktLag = L.TileLayer.extend({
+            getTileUrl: function (c) {
+                const R = 20037508.342789244, rute = (2 * R) / Math.pow(2, c.z);
+                const xmin = -R + c.x * rute, ymax = R - c.y * rute;
+                const bbox = [xmin, ymax - rute, xmin + rute, ymax].join(',');
+                return SKRED_URL + '?bbox=' + bbox + '&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&layers=show:1,2&f=image';
+            }
+        });
+        const skredAktLag = new SkredAktLag('', { maxZoom: 20, opacity: 0.65, zIndex: 5, attribution: '© NVE' });
+
+        const skredLegend = L.control({ position: 'bottomleft' });
+        skredLegend.onAdd = function () {
+            const div = L.DomUtil.create('div', 'legend');
+            div.innerHTML = `
+                <h4>Skredterreng</h4>
+                <div class="legend-item"><span class="color-box skred-s3"></span> Aktsomhetsområde S3</div>
+                <div class="legend-item"><span class="color-box skred-s2"></span> Aktsomhetsområde S2</div>
+                <div class="fg-kilde">Grov oversikt, ikke et varsel. Kilde: NVE</div>
+            `;
+            return div;
+        };
+
+        const skredBtn = document.getElementById('skredBtn');
+        let isSkredActive = false;
+        function toggleSkredTerreng(state) {
+            isSkredActive = (typeof state === 'boolean') ? state : !isSkredActive;
+            if (isSkredActive) {
+                map.addLayer(skredAktLag);
+                skredLegend.addTo(map);
+            } else {
+                map.removeLayer(skredAktLag);
+                map.removeControl(skredLegend);
+            }
+            skredBtn.classList.toggle('btn-toggle-active', isSkredActive);
+        }
+        skredBtn.onclick = () => toggleSkredTerreng();
+
         /* ==========================================================================
            OVERSIKTSKART (som oversikt.html): grått land, hvitt hav, blå innsjøer og blå spor.
            Vises når ingen topp er valgt. Når en topp velges brukes Norgeskart/OSM som før.
@@ -701,6 +760,7 @@
                 document.getElementById('map').classList.remove('oversikt-modus');
             }
             if (bratthetMap && map.hasLayer(bratthetMap)) bratthetMap.bringToFront();
+            if (typeof skredAktLag !== 'undefined' && map.hasLayer(skredAktLag)) skredAktLag.bringToFront();
         }
 
         settKartModus('oversikt');
@@ -1386,6 +1446,28 @@
         'Lagret data': 'Saved data',
         'Topografi': 'Topography',
         'Bratthet': 'Steepness',
+        'Snøskredvarsel': 'Avalanche forecast',
+        'Snøskredvarsel fra Varsom.no': 'Avalanche forecast from Varsom.no',
+        'Skredterreng': 'Avalanche terrain',
+        'Faregrad': 'Danger level',
+        'Vis områder der snøskred kan løsne og gå (NVE aktsomhetskart)': 'Show areas where avalanches can start and run (NVE attention map)',
+        'Vis faregrad for snøskred i Tromsø-området': 'Show avalanche danger level for the Tromsø area',
+        'Aktsomhetsområde S3': 'Attention area S3',
+        'Aktsomhetsområde S2': 'Attention area S2',
+        'Grov oversikt, ikke et varsel. Kilde: NVE': 'Rough overview, not a forecast. Source: NVE',
+        'I dag': 'Today',
+        'I morgen': 'Tomorrow',
+        'Ikke vurdert': 'Not rated',
+        'Liten': 'Low',
+        'Moderat': 'Moderate',
+        'Betydelig': 'Considerable',
+        'Stor': 'High',
+        'Meget stor': 'Very high',
+        'Henter varsel …': 'Fetching forecast …',
+        'Kunne ikke hente varselet': 'Could not fetch the forecast',
+        'Varsom publiserer varsel fra 1. desember til 31. mai.': 'Varsom publishes forecasts from 1 December to 31 May.',
+        'Les hele varselet på Varsom.no': 'Read the full forecast on Varsom.no',
+        'Kilde: NVE / Varsom.no': 'Source: NVE / Varsom.no',
         'Buss': 'Bus',
         'Hellingsvinkel': 'Slope angle',
         'Over 45°': 'Over 45°',
@@ -1690,6 +1772,116 @@
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
+    </script>
+    <script>
+    /* ===== Faregrad-knapp: snøskredvarsel fra NVE/Varsom for regionene rundt Tromsø ===== */
+    (function () {
+        const knapp = document.getElementById('faregradBtn');
+        if (!knapp || typeof map === 'undefined') return;
+
+        // NVEs snøskredvarsel-API. Versjonen står i adressen; bytt ved behov (se api.nve.no/doc/snoeskredvarsel).
+        const API = 'https://api01.nve.no/hydrology/forecast/avalanche/v6.2.1/api/AvalancheWarningByRegion/Simple/';
+        const REGIONER = [
+            { id: 3011, navn: 'Tromsø' },
+            { id: 3010, navn: 'Lyngen' },
+            { id: 3012, navn: 'Sør-Troms' }
+        ];
+        const NIVA = { 0: 'Ikke vurdert', 1: 'Liten', 2: 'Moderat', 3: 'Betydelig', 4: 'Stor', 5: 'Meget stor' };
+        const FARGE = { 0: ['#e2e2e2', '#000'], 1: ['#ccff66', '#000'], 2: ['#ffff00', '#000'], 3: ['#ff9900', '#000'], 4: ['#ff0000', '#fff'], 5: ['#000', '#fff'] };
+
+        const URL_NO = 'https://www.varsom.no/snoskred/varsling/';
+        const URL_EN = 'https://www.varsom.no/en/snow/forecast/warning/Troms%C3%B8/';
+        const varsomUrl = () => (typeof window.__lang === 'function' && window.__lang() === 'en') ? URL_EN : URL_NO;
+
+        const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+
+        function hent(id, fra, til) {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 8000);
+            return fetch(API + id + '/1/' + fra + '/' + til, { signal: ctrl.signal })
+                .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .finally(() => clearTimeout(timer));
+        }
+
+        let boks = null, innhold = null, sesong = null, lenke = null;
+
+        const panel = L.control({ position: 'bottomright' });
+        panel.onAdd = function () {
+            boks = L.DomUtil.create('div', 'legend faregrad');
+            boks.innerHTML =
+                '<h4>Snøskredvarsel</h4>' +
+                '<div class="fg-innhold"></div>' +
+                '<p class="fg-merk" hidden>Varsom publiserer varsel fra 1. desember til 31. mai.</p>' +
+                '<a class="fg-lenke" target="_blank" rel="noopener">Les hele varselet på Varsom.no</a>' +
+                '<div class="fg-kilde">Kilde: NVE / Varsom.no</div>';
+            innhold = boks.querySelector('.fg-innhold');
+            sesong = boks.querySelector('.fg-merk');
+            lenke = boks.querySelector('.fg-lenke');
+            lenke.href = varsomUrl();
+            L.DomEvent.disableClickPropagation(boks);
+            L.DomEvent.disableScrollPropagation(boks);
+            return boks;
+        };
+
+        function tekst(el, t) { el.textContent = ''; const d = document.createElement('div'); d.textContent = t; el.appendChild(d); }
+
+        function vis(resultater, datoer) {
+            const tabell = document.createElement('table');
+            tabell.className = 'fg-tabell';
+            const hode = tabell.createTHead().insertRow();
+            ['', 'I dag', 'I morgen'].forEach(t => { const th = document.createElement('th'); th.textContent = t; hode.appendChild(th); });
+            const kropp = tabell.createTBody();
+            let alleNull = true, noenData = false;
+
+            resultater.forEach((res, i) => {
+                const rad = kropp.insertRow();
+                rad.insertCell().textContent = REGIONER[i].navn;
+                datoer.forEach(dato => {
+                    const celle = rad.insertCell();
+                    if (res.status !== 'fulfilled' || !Array.isArray(res.value)) { celle.textContent = '–'; return; }
+                    noenData = true;
+                    const w = res.value.find(x => String(x.ValidFrom || '').slice(0, 10) === dato);
+                    const niva = w ? (Number(w.DangerLevel) || 0) : 0;
+                    if (niva > 0) alleNull = false;
+                    const badge = document.createElement('span');
+                    badge.className = 'fg-badge';
+                    badge.textContent = niva > 0 ? String(niva) : '–';
+                    badge.style.background = FARGE[niva][0];
+                    badge.style.color = FARGE[niva][1];
+                    const navn = document.createElement('span');
+                    navn.textContent = NIVA[niva] || NIVA[0];
+                    celle.appendChild(badge);
+                    celle.appendChild(navn);
+                });
+            });
+
+            innhold.textContent = '';
+            innhold.appendChild(tabell);
+            sesong.hidden = !(noenData && alleNull);
+        }
+
+        function last() {
+            tekst(innhold, 'Henter varsel …');
+            sesong.hidden = true;
+            const idag = new Date(), imorgen = new Date(Date.now() + 864e5);
+            const a = iso(idag), b = iso(imorgen);
+            Promise.allSettled(REGIONER.map(r => hent(r.id, a, b))).then(res => {
+                if (!boks || !boks.isConnected) return;       // panelet ble lukket mens vi ventet
+                if (res.every(r => r.status === 'rejected')) { tekst(innhold, 'Kunne ikke hente varselet'); return; }
+                vis(res, [a, b]);
+            });
+        }
+
+        let aktiv = false;
+        knapp.onclick = () => {
+            aktiv = !aktiv;
+            knapp.classList.toggle('btn-toggle-active', aktiv);
+            if (aktiv) { panel.addTo(map); last(); }
+            else { map.removeControl(panel); }
+        };
+
+        document.addEventListener('langchange', () => { if (lenke) lenke.href = varsomUrl(); });
+    })();
     </script>
     <script>
     /* ===== MARKER OMRÅDE FOR Å ZOOME (pc): trykk «Marker», dra en firkant, kartet zoomer til den. Esc avbryter. ===== */
