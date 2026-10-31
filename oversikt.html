@@ -404,6 +404,11 @@
         }
         .btn-lang .lang-code { font-size: 13px; letter-spacing: .04em; }
         @media (max-width: 600px) { .btn-lang { flex: 0 0 auto; padding: 9px 7px; } .btn-lang svg { display: none; } }
+
+        /* ===== Top Rope Solo: klatresteder med fjellikon ===== */
+        .klatre-pin { background: none; border: 0; box-shadow: none; display: flex; justify-content: center; align-items: center; }
+        .klatre-pin svg { width: 22px; height: 22px; fill: none; stroke: #1d4560; stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; overflow: visible; transform-origin: 50% 60%; filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 3px #fff) drop-shadow(0 0 5px rgba(255,255,255,.95)); transition: transform .2s ease, fill .25s ease; }
+        .klatre-pin:hover svg, .klatre-pin:focus svg { transform: scale(1.25); fill: #1d4560; }
     </style>
 </head>
 <body>
@@ -419,6 +424,7 @@
             <button id="btn-stier" class="btn btn-stier" title="Stier"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19c5 0 3-7 8-7s3-7 8-7"/></svg><span class="lbl">Stier</span></button>
             <button id="btn-poi" class="btn btn-poi" title="Severdigheter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.5 6-10a6 6 0 1 0-12 0c0 4.5 6 10 6 10z"/><circle cx="12" cy="11" r="2"/></svg><span class="lbl">Severdigheter</span></button>
             <button id="btn-fjell" class="btn btn-fjell" title="Fjelltopper"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20L12 5l9 15z"/><path d="M8.5 13l3.5 2 3.5-2"/></svg><span class="lbl">Fjelltopper</span></button>
+            <button id="btn-trs" class="btn btn-trs" title="Vis klatrestedene fra Top Rope Solo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l7-12 4 7 3-4 6 9z"/></svg><span class="lbl">Top Rope Solo</span></button>
             <button id="btn-marker" class="btn btn-marker" title="Marker et område du vil zoome til (dra en firkant med musen)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5" stroke-dasharray="0"/><circle cx="11" cy="11" r="3.5"/><path d="M13.6 13.6L17 17"/></svg><span class="lbl">Marker</span></button>
             <button id="btn-lagret" class="btn btn-lagret" title="Lagret data"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg><span class="lbl">Lagret</span></button>
             <button id="btn-topo" class="btn btn-topo" title="Topografi"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="9" ry="6"/><ellipse cx="12" cy="12" rx="5.5" ry="3.5"/><ellipse cx="12" cy="12" rx="2" ry="1.2"/></svg><span class="lbl">Topo</span></button>
@@ -2365,6 +2371,85 @@
         btnBuss.addEventListener('click', toggleBussVisning);
     </script>
     <script>
+        /* ==========================================================================
+           TOP ROPE SOLO: klatrestedene fra https://larsgimse.github.io/topropesolo/
+           Knappen slår lagene av/på. Når den slås på, zoomes kartet så langt inn det kan
+           mens alle klatrestedene fortsatt vises. Klikk på et fjellikon åpner stedet på Top Rope Solo.
+           ========================================================================== */
+        (function () {
+            const TRS_SIDE = 'https://larsgimse.github.io/topropesolo/';
+            const TRS_JSON = TRS_SIDE + 'topropsolo.json';
+            const knapp = document.getElementById('btn-trs');
+            const gruppe = L.featureGroup();
+            let aktiv = false, bygget = false, laster = false, sisteTrykk = null;
+
+            const lagIkon = () => L.divIcon({
+                html: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 20l7-12 4 7 3-4 6 9z"/></svg>',
+                className: 'klatre-pin',
+                iconSize: [34, 34], iconAnchor: [17, 17]
+            });
+
+            function bygg(data) {
+                const liste = (Array.isArray(data) ? data : (data && data.steder) || [])
+                    .filter(s => s && s.gps && typeof s.gps.lat === 'number' && typeof s.gps.lng === 'number');
+                liste.forEach(sted => {
+                    const lenke = TRS_SIDE + '?sted=' + encodeURIComponent(sted.id || sted.navn);
+                    const m = L.marker([sted.gps.lat, sted.gps.lng], { icon: lagIkon(), keyboard: true, title: sted.navn }).addTo(gruppe);
+                    m.bindTooltip(sted.navn, { direction: 'top', offset: [0, -20] });
+                    m.on('click', e => {
+                        L.DomEvent.stopPropagation(e);
+                        // Berøringsskjerm: første trykk viser navnet, andre trykk åpner stedet
+                        if (isTouchDevice && sisteTrykk !== lenke) { sisteTrykk = lenke; m.openTooltip(); return; }
+                        window.open(lenke, '_blank', 'noopener');
+                    });
+                });
+                bygget = true;
+            }
+
+            // Zoomer så langt inn det går med alle stedene synlige (zoomSnap slås av så vi ikke runder ned et helt nivå)
+            function zoomTilAlle() {
+                const b = gruppe.getBounds();
+                if (!b.isValid()) return;
+                const gammel = map.options.zoomSnap;
+                map.options.zoomSnap = 0;
+                map.invalidateSize({ animate: false });
+                map.fitBounds(b, { padding: isTouchDevice ? [50, 100] : [50, 50], maxZoom: map.getMaxZoom() });
+                map.options.zoomSnap = gammel;
+            }
+
+            function slaAv() {
+                aktiv = false;
+                knapp.classList.remove('active');
+                map.removeLayer(gruppe);
+            }
+
+            knapp.addEventListener('click', () => {
+                if (aktiv) { slaAv(); return; }
+                if (laster) return;
+                aktiv = true;
+                knapp.classList.add('active');
+                const vis = () => { gruppe.addTo(map); zoomTilAlle(); };
+                if (bygget) { vis(); return; }
+                laster = true;
+                visStatus('Henter klatrestedene', null, true, 'var(--ink)');
+                fetch(TRS_JSON)
+                    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                    .then(data => {
+                        bygg(data);
+                        skjultStatus(200);
+                        if (aktiv) vis();
+                    })
+                    .catch(err => {
+                        console.error('Top Rope Solo:', err);
+                        slaAv();
+                        visStatus('Kunne ikke hente klatrestedene', null, false, 'var(--second-hand)');
+                        skjultStatus(4000);
+                    })
+                    .finally(() => { laster = false; });
+            });
+        })();
+    </script>
+    <script>
 /* ===== SPRÅKBRYTER NO / EN (innebygd; ingen eksterne filer) =====
    Norsk er originalspråket. Engelsk legges på av denne modulen:
    - eksakte tekster slås opp i ORDBOK
@@ -2388,6 +2473,9 @@
         'Severdigheter:': 'Points of interest:',
         'Fjelltopper': 'Mountain peaks',
         'Fjelltopper:': 'Mountain peaks:',
+        'Vis klatrestedene fra Top Rope Solo': 'Show the climbing areas from Top Rope Solo',
+        'Henter klatrestedene': 'Fetching climbing areas',
+        'Kunne ikke hente klatrestedene': 'Could not fetch the climbing areas',
         'Marker': 'Select',
         'Marker et område du vil zoome til (dra en firkant med musen)': 'Select an area to zoom to (drag a rectangle with the mouse)',
         'Lagret': 'Saved',
