@@ -341,20 +341,21 @@
         /* Hvert skredlag får sin egen fargetone via samme filter som i kartet, så rutene stemmer med kartet */
         .color-box.skred-s3 { background: #dc3220; }
         .color-box.skred-s2 { background: #cc79a7; filter: hue-rotate(240deg); }
-        .color-box.skred-utlop { background: #ff0000; filter: hue-rotate(290deg); }
         .skred-valg .color-box { flex: none; margin: 1px 0 0; }
         .legend .skred-hint { color: var(--winter-ink); font-weight: 500; }
         [hidden] { display: none !important; }
 
-        /* Snøskred-meny under knapperaden */
-        #skredMeny { order: 6; width: 100%; max-width: 1100px; margin: 0 auto 15px; box-sizing: border-box; padding: 10px 14px 6px; border: 1px solid var(--ink); background: #fff; text-align: left; position: relative; z-index: 10; }
-        .skred-hode { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 14px; font-weight: 500; }
-        .skred-lukk { border: 0; background: none; padding: 0 4px; font-size: 22px; line-height: 1; color: var(--ink); cursor: pointer; }
+        /* Snøskred-meny: liten boks oppå kartet, til høyre */
+        #skredMeny { position: absolute; top: 10px; right: 10px; z-index: 1100; width: 230px; max-width: calc(100% - 20px); max-height: calc(100% - 20px); overflow-y: auto; box-sizing: border-box; padding: 8px 12px 4px; border: 1px solid var(--ink); background: rgba(255,255,255,.96); box-shadow: 0 4px 15px rgba(0,0,0,.15); text-align: left; }
+        /* Når en topp er valgt ligger knappepanelet øverst til høyre; da flyttes menyen til venstre for det */
+        @media (min-width: 761px) { #video-buttons-container:not(:empty) ~ #skredMeny { right: 316px; } }
+        .skred-hode { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 13px; font-weight: 500; }
+        .skred-lukk { border: 0; background: none; padding: 0 2px; font-size: 20px; line-height: 1; color: var(--ink); cursor: pointer; }
         .skred-lukk:hover { color: var(--winter-ink); }
-        .skred-valg { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-top: 1px solid #e4e4e4; font-size: 14px; font-weight: 400; cursor: pointer; }
-        .skred-valg input { flex: none; width: 16px; height: 16px; margin: 3px 0 0; accent-color: var(--winter-ink); cursor: pointer; }
+        .skred-valg { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-top: 1px solid #e4e4e4; font-size: 13px; font-weight: 400; cursor: pointer; }
+        .skred-valg input { flex: none; width: 15px; height: 15px; margin: 2px 0 0; accent-color: var(--winter-ink); cursor: pointer; }
         .skred-valg .tit { display: block; font-weight: 500; }
-        .skred-valg .besk { display: block; font-size: 12px; color: var(--muted); line-height: 1.35; }
+        .skred-valg .besk { display: block; font-size: 11px; color: var(--muted); line-height: 1.3; }
         #skredBtn[aria-expanded="true"]:not(.btn-toggle-active) { background: var(--winter-bg); }
         .ctl.ctl-summer:hover { background: var(--summer-bg); }
         .ctl.ctl-map:hover { background: var(--map-bg); }
@@ -464,7 +465,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l7-12 4 7 3-4 6 9z"/></svg> Bratthet
         </button>
 
-        <button id="skredBtn" type="button" class="ctl" aria-expanded="false" aria-controls="skredMeny" title="Snøskred: aktsomhetsområder, utløpssone og faregrad">
+        <button id="skredBtn" type="button" class="ctl" aria-expanded="false" aria-controls="skredMeny" title="Snøskred: aktsomhetsområder og faregrad">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l6-10 3 5 2-3 9 8z"/><path d="M13 5l2 2M16 3l2 2M17 8l1.5 1.5"/></svg> Snøskred
         </button>
 
@@ -480,31 +481,6 @@
         <button id="langBtn" type="button" class="ctl ctl-lang" title="Switch to English" aria-label="Switch to English"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg><span class="lang-code">EN</span></button>
     </div>
 
-    <div id="skredMeny" hidden>
-        <div class="skred-hode">
-            <span>Snøskred</span>
-            <button id="skredLukk" type="button" class="skred-lukk" aria-label="Lukk">×</button>
-        </div>
-        <label class="skred-valg">
-            <input type="checkbox" id="valgS3">
-            <span class="color-box skred-s3"></span>
-            <span><span class="tit">Aktsomhetsområde S3</span><span class="besk">Områder der snøskred kan løsne og gå (NVE, sikkerhetsklasse S3)</span></span>
-        </label>
-        <label class="skred-valg">
-            <input type="checkbox" id="valgS2">
-            <span class="color-box skred-s2"></span>
-            <span><span class="tit">Aktsomhetsområde S2</span><span class="besk">Som over, men for sikkerhetsklasse S2 uten skogeffekt (NVE)</span></span>
-        </label>
-        <label class="skred-valg">
-            <input type="checkbox" id="valgUtlop">
-            <span class="color-box skred-utlop"></span>
-            <span><span class="tit">Utløpssone</span><span class="besk">Beregnet utløp for snøskred (NVE). Vises når du zoomer inn.</span></span>
-        </label>
-        <label class="skred-valg">
-            <input type="checkbox" id="valgFare">
-            <span><span class="tit">Faregrad</span><span class="besk">Dagens varsel for Tromsø, Lyngen og Sør-Troms (Varsom)</span></span>
-        </label>
-    </div>
 
     <div id="map-container">
         <div id="map"></div>
@@ -513,6 +489,27 @@
             <span class="tp-label" id="tpLabel">Laster spor …</span>
         </div>
         <div id="video-buttons-container"></div>
+
+        <div id="skredMeny" hidden>
+            <div class="skred-hode">
+                <span>Snøskred</span>
+                <button id="skredLukk" type="button" class="skred-lukk" aria-label="Lukk">×</button>
+            </div>
+            <label class="skred-valg">
+                <input type="checkbox" id="valgS3">
+                <span class="color-box skred-s3"></span>
+                <span><span class="tit">Aktsomhetsområde S3</span><span class="besk">Der snøskred kan løsne og gå (NVE)</span></span>
+            </label>
+            <label class="skred-valg">
+                <input type="checkbox" id="valgS2">
+                <span class="color-box skred-s2"></span>
+                <span><span class="tit">Aktsomhetsområde S2</span><span class="besk">Uten skogeffekt (NVE)</span></span>
+            </label>
+            <label class="skred-valg">
+                <input type="checkbox" id="valgFare">
+                <span><span class="tit">Faregrad</span><span class="besk">Dagens varsel (Varsom)</span></span>
+            </label>
+        </div>
     </div>
 
     <div id="bottom-controls-row">
@@ -661,7 +658,7 @@
         }
         bratthetBtn.onclick = () => toggleBratthet();
 
-        /* ===== Snøskred: meny med aktsomhetsområde S3 / S2, utløpssone og faregrad ===== */
+        /* ===== Snøskred: meny med aktsomhetsområde S3 / S2 og faregrad ===== */
         // NVE-lagene hentes som bilder fra ArcGIS-tjenestene til NVE (export), én rute om gangen.
         // `urls` er en liste over adresser som prøves i rekkefølge dersom den første ikke svarer.
         const SkredLag = L.TileLayer.extend({
@@ -675,7 +672,7 @@
             }
         });
 
-        const skredFeil = { s3: false, s2: false, utlop: false };
+        const skredFeil = { s3: false, s2: false };
         function lagTilSkred(nokkel, opts, filter) {
             const lag = new SkredLag('', Object.assign({ maxZoom: 20, opacity: 0.7, attribution: '© NVE' }, opts));
             lag.on('add', () => { skredFeil[nokkel] = false; lag.getContainer().style.filter = filter || ''; });
@@ -691,21 +688,13 @@
         const skredLag = {
             // Lag 1 = S3, lag 2 = S2 uten skogeffekt (lag 3 = S2 med skogeffekt)
             s3: lagTilSkred('s3', { urls: [NVE_SNOSKRED], lagId: 1, zIndex: 5 }, ''),
-            s2: lagTilSkred('s2', { urls: [NVE_SNOSKRED], lagId: 2, zIndex: 4 }, 'hue-rotate(240deg)'),
-            // Utløpssone: NVEs eldre aktsomhetskart (SkredSnoAktR, lag 2 = Utlopsomrade). Tegnes bare i 1:500–1:40 000.
-            utlop: lagTilSkred('utlop', {
-                urls: ['https://nve.geodataonline.no/arcgis/rest/services/SkredSnoAktR/MapServer',
-                       'https://gis3.nve.no/map/rest/services/SkredSnoAktR/MapServer'],
-                lagId: 2, zIndex: 6
-            }, 'hue-rotate(290deg)')
+            s2: lagTilSkred('s2', { urls: [NVE_SNOSKRED], lagId: 2, zIndex: 4 }, 'hue-rotate(240deg)')
         };
 
-        // Fra hvilket zoomnivå lagene vises. 12.5 tilsvarer ca. 1:40 000 ved Tromsø (NVEs grense for utløpssonen).
-        // Grensen for S3/S2 er et anslag; juster hvis lagene dukker opp tidligere eller senere.
-        const SKRED_MIN_ZOOM = { s3: 12, s2: 12, utlop: 12.5 };
-        const SKRED_NAVN = { s3: 'aktsomhetsområder', s2: 'aktsomhetsområder', utlop: 'utløpssone' };
+        // Fra hvilket zoomnivå lagene vises. Grensen er et anslag; juster hvis lagene dukker opp tidligere eller senere.
+        const SKRED_MIN_ZOOM = { s3: 12, s2: 12 };
 
-        const skred = { s3: false, s2: false, utlop: false, fare: false };
+        const skred = { s3: false, s2: false, fare: false };
         const skredBtn = document.getElementById('skredBtn');
         const skredMeny = document.getElementById('skredMeny');
 
@@ -717,11 +706,8 @@
                 <h4>Snøskred</h4>
                 <div class="legend-item sl-s3"><span class="color-box skred-s3"></span> Aktsomhetsområde S3</div>
                 <div class="legend-item sl-s2"><span class="color-box skred-s2"></span> Aktsomhetsområde S2</div>
-                <div class="legend-item sl-utlop"><span class="color-box skred-utlop"></span> Utløpssone</div>
                 <p class="fg-merk skred-hint sl-hint-akt">Zoom inn for å se aktsomhetsområder</p>
-                <p class="fg-merk skred-hint sl-hint-utlop">Zoom inn for å se utløpssone</p>
                 <p class="fg-merk skred-hint sl-feil-akt">Aktsomhetsområde kunne ikke hentes fra NVE</p>
-                <p class="fg-merk skred-hint sl-feil-utlop">Utløpssone kunne ikke hentes fra NVE</p>
                 <div class="fg-kilde">Grov oversikt, ikke et varsel. Kilde: NVE</div>
             `;
             return skredLegendDiv;
@@ -732,18 +718,15 @@
             const z = map.getZoom(), q = sel => skredLegendDiv.querySelector(sel);
             q('.sl-s3').hidden = !skred.s3;
             q('.sl-s2').hidden = !skred.s2;
-            q('.sl-utlop').hidden = !skred.utlop;
             const aktForLavt = (skred.s3 && z < SKRED_MIN_ZOOM.s3) || (skred.s2 && z < SKRED_MIN_ZOOM.s2);
             q('.sl-hint-akt').hidden = !aktForLavt;
-            q('.sl-hint-utlop').hidden = !(skred.utlop && z < SKRED_MIN_ZOOM.utlop);
             q('.sl-feil-akt').hidden = !((skred.s3 && skredFeil.s3) || (skred.s2 && skredFeil.s2));
-            q('.sl-feil-utlop').hidden = !(skred.utlop && skredFeil.utlop);
         }
         map.on('zoomend', oppdaterSkredLegend);
 
         function oppdaterSkredUI() {
-            skredBtn.classList.toggle('btn-toggle-active', skred.s3 || skred.s2 || skred.utlop || skred.fare);
-            const trengerLegend = skred.s3 || skred.s2 || skred.utlop;
+            skredBtn.classList.toggle('btn-toggle-active', skred.s3 || skred.s2 || skred.fare);
+            const trengerLegend = skred.s3 || skred.s2;
             if (trengerLegend && !skredLegendPaa) { skredLegend.addTo(map); skredLegendPaa = true; }
             if (!trengerLegend && skredLegendPaa) { map.removeControl(skredLegend); skredLegendPaa = false; skredLegendDiv = null; }
             oppdaterSkredLegend();
@@ -763,7 +746,7 @@
         }
         skredBtn.onclick = () => visSkredMeny(skredMeny.hidden);
         document.getElementById('skredLukk').onclick = () => visSkredMeny(false);
-        [['valgS3', 's3'], ['valgS2', 's2'], ['valgUtlop', 'utlop'], ['valgFare', 'fare']].forEach(([id, nokkel]) => {
+        [['valgS3', 's3'], ['valgS2', 's2'], ['valgFare', 'fare']].forEach(([id, nokkel]) => {
             const el = document.getElementById(id);
             el.onchange = () => settSkred(nokkel, el.checked);
         });
@@ -1555,22 +1538,18 @@
         'Snøskredvarsel fra Varsom.no': 'Avalanche forecast from Varsom.no',
         'Skredterreng': 'Avalanche terrain',
         'Snøskred': 'Avalanches',
-        'Snøskred: aktsomhetsområder, utløpssone og faregrad': 'Avalanches: attention areas, runout zone and danger level',
+        'Snøskred: aktsomhetsområder og faregrad': 'Avalanches: attention areas and danger level',
         'Lukk': 'Close',
-        'Områder der snøskred kan løsne og gå (NVE, sikkerhetsklasse S3)': 'Areas where avalanches can start and run (NVE, safety class S3)',
-        'Som over, men for sikkerhetsklasse S2 uten skogeffekt (NVE)': 'As above, but for safety class S2 without forest effect (NVE)',
         'Aktsomhetsområde kunne ikke hentes fra NVE': 'Attention areas could not be fetched from NVE',
-        'Utløpssone kunne ikke hentes fra NVE': 'Runout zone could not be fetched from NVE',
-        'Utløpssone': 'Runout zone',
         'Områder der snøskred kan løsne og gå (NVE)': 'Areas where avalanches can start and run (NVE)',
-        'Beregnet utløp for snøskred (NVE). Vises når du zoomer inn.': 'Calculated avalanche runout (NVE). Shown when you zoom in.',
-        'Dagens varsel for Tromsø, Lyngen og Sør-Troms (Varsom)': "Today's forecast for Tromsø, Lyngen and Sør-Troms (Varsom)",
         'Zoom inn for å se aktsomhetsområder': 'Zoom in to see attention areas',
-        'Zoom inn for å se utløpssone': 'Zoom in to see the runout zone',
         'Faregrad': 'Danger level',
         'Vis områder der snøskred kan løsne og gå (NVE aktsomhetskart)': 'Show areas where avalanches can start and run (NVE attention map)',
         'Vis faregrad for snøskred i Tromsø-området': 'Show avalanche danger level for the Tromsø area',
         'Aktsomhetsområde S3': 'Attention area S3',
+        'Der snøskred kan løsne og gå (NVE)': 'Where avalanches can start and run (NVE)',
+        'Uten skogeffekt (NVE)': 'Without forest effect (NVE)',
+        'Dagens varsel (Varsom)': "Today's forecast (Varsom)",
         'Aktsomhetsområde S2': 'Attention area S2',
         'Grov oversikt, ikke et varsel. Kilde: NVE': 'Rough overview, not a forecast. Source: NVE',
         'I dag': 'Today',
