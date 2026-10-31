@@ -338,9 +338,11 @@
         .fg-badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin-right: 6px; border: 1px solid var(--ink); font-size: 12px; font-weight: 500; vertical-align: middle; }
         .fg-merk, .fg-kilde { margin: 6px 0 0; font-size: 11px; line-height: 1.35; color: var(--muted); }
         .fg-lenke { display: inline-block; margin-top: 6px; color: var(--winter-ink); font-weight: 500; text-decoration: underline; }
-        .legend .color-box.skred-s3 { background: #dc3220; }
-        .legend .color-box.skred-s2 { background: #cc79a7; }
-        .legend .color-box.skred-utlop { background: #ff0000; }
+        /* Hvert skredlag får sin egen fargetone via samme filter som i kartet, så rutene stemmer med kartet */
+        .color-box.skred-s3 { background: #dc3220; }
+        .color-box.skred-s2 { background: #cc79a7; filter: hue-rotate(240deg); }
+        .color-box.skred-utlop { background: #ff0000; filter: hue-rotate(290deg); }
+        .skred-valg .color-box { flex: none; margin: 1px 0 0; }
         .legend .skred-hint { color: var(--winter-ink); font-weight: 500; }
         [hidden] { display: none !important; }
 
@@ -484,11 +486,18 @@
             <button id="skredLukk" type="button" class="skred-lukk" aria-label="Lukk">×</button>
         </div>
         <label class="skred-valg">
-            <input type="checkbox" id="valgAkt">
-            <span><span class="tit">Aktsomhetsområde</span><span class="besk">Områder der snøskred kan løsne og gå (NVE)</span></span>
+            <input type="checkbox" id="valgS3">
+            <span class="color-box skred-s3"></span>
+            <span><span class="tit">Aktsomhetsområde S3</span><span class="besk">Områder der snøskred kan løsne og gå (NVE, sikkerhetsklasse S3)</span></span>
+        </label>
+        <label class="skred-valg">
+            <input type="checkbox" id="valgS2">
+            <span class="color-box skred-s2"></span>
+            <span><span class="tit">Aktsomhetsområde S2</span><span class="besk">Som over, men for sikkerhetsklasse S2 uten skogeffekt (NVE)</span></span>
         </label>
         <label class="skred-valg">
             <input type="checkbox" id="valgUtlop">
+            <span class="color-box skred-utlop"></span>
             <span><span class="tit">Utløpssone</span><span class="besk">Beregnet utløp for snøskred (NVE). Vises når du zoomer inn.</span></span>
         </label>
         <label class="skred-valg">
@@ -652,32 +661,51 @@
         }
         bratthetBtn.onclick = () => toggleBratthet();
 
-        /* ===== Snøskred: meny med aktsomhetsområde, utløpssone og faregrad ===== */
-        // Aktsomhetsområde: NVE aktsomhetskart for snøskred (2023). Hentes som bilder fra NVEs ArcGIS-tjeneste.
-        // Lag 1 = S3, lag 2 = S2 uten skogeffekt. Endre «show:1,2» for å vise andre lag (3 = S2 med skogeffekt).
-        const SKRED_URL = 'https://gis3.nve.no/map/rest/services/SnoskredAktsomhet/MapServer/export';
-        const SkredAktLag = L.TileLayer.extend({
+        /* ===== Snøskred: meny med aktsomhetsområde S3 / S2, utløpssone og faregrad ===== */
+        // NVE-lagene hentes som bilder fra ArcGIS-tjenestene til NVE (export), én rute om gangen.
+        // `urls` er en liste over adresser som prøves i rekkefølge dersom den første ikke svarer.
+        const SkredLag = L.TileLayer.extend({
             getTileUrl: function (c) {
                 const R = 20037508.342789244, rute = (2 * R) / Math.pow(2, c.z);
                 const xmin = -R + c.x * rute, ymax = R - c.y * rute;
                 const bbox = [xmin, ymax - rute, xmin + rute, ymax].join(',');
-                return SKRED_URL + '?bbox=' + bbox + '&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&layers=show:1,2&f=image';
+                return this.options.urls[this._vert || 0] + '/export?bbox=' + bbox +
+                    '&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&layers=show:' +
+                    this.options.lagId + '&f=image';
             }
         });
-        const skredAktLag = new SkredAktLag('', { maxZoom: 20, opacity: 0.65, zIndex: 5, attribution: '© NVE' });
 
-        // Utløpssone: NVEs eldre aktsomhetskart (WMS-lag «Utlopsomrade»). NVE tegner det bare i målestokk 1:500–1:40 000.
-        const skredUtlopLag = L.tileLayer.wms('https://gis3.nve.no/map/services/SkredSnoAktR/MapServer/WmsServer?', {
-            layers: 'Utlopsomrade', format: 'image/png', transparent: true, version: '1.3.0',
-            maxZoom: 20, opacity: 0.65, zIndex: 6, attribution: '© NVE'
-        });
+        const skredFeil = { s3: false, s2: false, utlop: false };
+        function lagTilSkred(nokkel, opts, filter) {
+            const lag = new SkredLag('', Object.assign({ maxZoom: 20, opacity: 0.7, attribution: '© NVE' }, opts));
+            lag.on('add', () => { skredFeil[nokkel] = false; lag.getContainer().style.filter = filter || ''; });
+            lag.on('tileerror', e => {
+                const n = lag.options.urls.length, v = lag._vert || 0;
+                if (v < n - 1 && String(e.tile.src).indexOf(lag.options.urls[v]) === 0) { lag._vert = v + 1; lag.redraw(); }
+                else if (v >= n - 1) { skredFeil[nokkel] = true; oppdaterSkredLegend(); }
+            });
+            return lag;
+        }
 
-        // Fra hvilket zoomnivå lagene vises. 12.5 tilsvarer ca. 1:40 000 ved Tromsø (kjent grense for utløpssonen).
-        // Grensen for aktsomhetsområdet er et anslag; juster hvis laget dukker opp tidligere eller senere.
-        const SKRED_AKT_MIN_ZOOM = 12;
-        const SKRED_UTLOP_MIN_ZOOM = 12.5;
+        const NVE_SNOSKRED = 'https://gis3.nve.no/map/rest/services/SnoskredAktsomhet/MapServer';
+        const skredLag = {
+            // Lag 1 = S3, lag 2 = S2 uten skogeffekt (lag 3 = S2 med skogeffekt)
+            s3: lagTilSkred('s3', { urls: [NVE_SNOSKRED], lagId: 1, zIndex: 5 }, ''),
+            s2: lagTilSkred('s2', { urls: [NVE_SNOSKRED], lagId: 2, zIndex: 4 }, 'hue-rotate(240deg)'),
+            // Utløpssone: NVEs eldre aktsomhetskart (SkredSnoAktR, lag 2 = Utlopsomrade). Tegnes bare i 1:500–1:40 000.
+            utlop: lagTilSkred('utlop', {
+                urls: ['https://nve.geodataonline.no/arcgis/rest/services/SkredSnoAktR/MapServer',
+                       'https://gis3.nve.no/map/rest/services/SkredSnoAktR/MapServer'],
+                lagId: 2, zIndex: 6
+            }, 'hue-rotate(290deg)')
+        };
 
-        const skred = { akt: false, utlop: false, fare: false };
+        // Fra hvilket zoomnivå lagene vises. 12.5 tilsvarer ca. 1:40 000 ved Tromsø (NVEs grense for utløpssonen).
+        // Grensen for S3/S2 er et anslag; juster hvis lagene dukker opp tidligere eller senere.
+        const SKRED_MIN_ZOOM = { s3: 12, s2: 12, utlop: 12.5 };
+        const SKRED_NAVN = { s3: 'aktsomhetsområder', s2: 'aktsomhetsområder', utlop: 'utløpssone' };
+
+        const skred = { s3: false, s2: false, utlop: false, fare: false };
         const skredBtn = document.getElementById('skredBtn');
         const skredMeny = document.getElementById('skredMeny');
 
@@ -687,13 +715,13 @@
             skredLegendDiv = L.DomUtil.create('div', 'legend');
             skredLegendDiv.innerHTML = `
                 <h4>Snøskred</h4>
-                <div class="sl-akt">
-                    <div class="legend-item"><span class="color-box skred-s3"></span> Aktsomhetsområde S3</div>
-                    <div class="legend-item"><span class="color-box skred-s2"></span> Aktsomhetsområde S2</div>
-                </div>
+                <div class="legend-item sl-s3"><span class="color-box skred-s3"></span> Aktsomhetsområde S3</div>
+                <div class="legend-item sl-s2"><span class="color-box skred-s2"></span> Aktsomhetsområde S2</div>
                 <div class="legend-item sl-utlop"><span class="color-box skred-utlop"></span> Utløpssone</div>
                 <p class="fg-merk skred-hint sl-hint-akt">Zoom inn for å se aktsomhetsområder</p>
                 <p class="fg-merk skred-hint sl-hint-utlop">Zoom inn for å se utløpssone</p>
+                <p class="fg-merk skred-hint sl-feil-akt">Aktsomhetsområde kunne ikke hentes fra NVE</p>
+                <p class="fg-merk skred-hint sl-feil-utlop">Utløpssone kunne ikke hentes fra NVE</p>
                 <div class="fg-kilde">Grov oversikt, ikke et varsel. Kilde: NVE</div>
             `;
             return skredLegendDiv;
@@ -702,16 +730,20 @@
         function oppdaterSkredLegend() {
             if (!skredLegendDiv) return;
             const z = map.getZoom(), q = sel => skredLegendDiv.querySelector(sel);
-            q('.sl-akt').hidden = !skred.akt;
+            q('.sl-s3').hidden = !skred.s3;
+            q('.sl-s2').hidden = !skred.s2;
             q('.sl-utlop').hidden = !skred.utlop;
-            q('.sl-hint-akt').hidden = !(skred.akt && z < SKRED_AKT_MIN_ZOOM);
-            q('.sl-hint-utlop').hidden = !(skred.utlop && z < SKRED_UTLOP_MIN_ZOOM);
+            const aktForLavt = (skred.s3 && z < SKRED_MIN_ZOOM.s3) || (skred.s2 && z < SKRED_MIN_ZOOM.s2);
+            q('.sl-hint-akt').hidden = !aktForLavt;
+            q('.sl-hint-utlop').hidden = !(skred.utlop && z < SKRED_MIN_ZOOM.utlop);
+            q('.sl-feil-akt').hidden = !((skred.s3 && skredFeil.s3) || (skred.s2 && skredFeil.s2));
+            q('.sl-feil-utlop').hidden = !(skred.utlop && skredFeil.utlop);
         }
         map.on('zoomend', oppdaterSkredLegend);
 
         function oppdaterSkredUI() {
-            skredBtn.classList.toggle('btn-toggle-active', skred.akt || skred.utlop || skred.fare);
-            const trengerLegend = skred.akt || skred.utlop;
+            skredBtn.classList.toggle('btn-toggle-active', skred.s3 || skred.s2 || skred.utlop || skred.fare);
+            const trengerLegend = skred.s3 || skred.s2 || skred.utlop;
             if (trengerLegend && !skredLegendPaa) { skredLegend.addTo(map); skredLegendPaa = true; }
             if (!trengerLegend && skredLegendPaa) { map.removeControl(skredLegend); skredLegendPaa = false; skredLegendDiv = null; }
             oppdaterSkredLegend();
@@ -719,8 +751,7 @@
 
         function settSkred(nokkel, paa) {
             skred[nokkel] = paa;
-            if (nokkel === 'akt') { paa ? map.addLayer(skredAktLag) : map.removeLayer(skredAktLag); }
-            if (nokkel === 'utlop') { paa ? map.addLayer(skredUtlopLag) : map.removeLayer(skredUtlopLag); }
+            if (skredLag[nokkel]) { paa ? map.addLayer(skredLag[nokkel]) : map.removeLayer(skredLag[nokkel]); }
             if (nokkel === 'fare' && typeof window.settFaregrad === 'function') window.settFaregrad(paa);
             oppdaterSkredUI();
         }
@@ -732,7 +763,7 @@
         }
         skredBtn.onclick = () => visSkredMeny(skredMeny.hidden);
         document.getElementById('skredLukk').onclick = () => visSkredMeny(false);
-        [['valgAkt', 'akt'], ['valgUtlop', 'utlop'], ['valgFare', 'fare']].forEach(([id, nokkel]) => {
+        [['valgS3', 's3'], ['valgS2', 's2'], ['valgUtlop', 'utlop'], ['valgFare', 'fare']].forEach(([id, nokkel]) => {
             const el = document.getElementById(id);
             el.onchange = () => settSkred(nokkel, el.checked);
         });
@@ -834,7 +865,7 @@
                 document.getElementById('map').classList.remove('oversikt-modus');
             }
             if (bratthetMap && map.hasLayer(bratthetMap)) bratthetMap.bringToFront();
-            if (typeof skredAktLag !== 'undefined' && map.hasLayer(skredAktLag)) skredAktLag.bringToFront();
+            if (typeof skredLag !== 'undefined') Object.values(skredLag).forEach(l => { if (map.hasLayer(l)) l.bringToFront(); });
         }
 
         settKartModus('oversikt');
@@ -1526,7 +1557,10 @@
         'Snøskred': 'Avalanches',
         'Snøskred: aktsomhetsområder, utløpssone og faregrad': 'Avalanches: attention areas, runout zone and danger level',
         'Lukk': 'Close',
-        'Aktsomhetsområde': 'Attention area',
+        'Områder der snøskred kan løsne og gå (NVE, sikkerhetsklasse S3)': 'Areas where avalanches can start and run (NVE, safety class S3)',
+        'Som over, men for sikkerhetsklasse S2 uten skogeffekt (NVE)': 'As above, but for safety class S2 without forest effect (NVE)',
+        'Aktsomhetsområde kunne ikke hentes fra NVE': 'Attention areas could not be fetched from NVE',
+        'Utløpssone kunne ikke hentes fra NVE': 'Runout zone could not be fetched from NVE',
         'Utløpssone': 'Runout zone',
         'Områder der snøskred kan løsne og gå (NVE)': 'Areas where avalanches can start and run (NVE)',
         'Beregnet utløp for snøskred (NVE). Vises når du zoomer inn.': 'Calculated avalanche runout (NVE). Shown when you zoom in.',
