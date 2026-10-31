@@ -340,6 +340,20 @@
         .fg-lenke { display: inline-block; margin-top: 6px; color: var(--winter-ink); font-weight: 500; text-decoration: underline; }
         .legend .color-box.skred-s3 { background: #dc3220; }
         .legend .color-box.skred-s2 { background: #cc79a7; }
+        .legend .color-box.skred-utlop { background: #ff0000; }
+        .legend .skred-hint { color: var(--winter-ink); font-weight: 500; }
+        [hidden] { display: none !important; }
+
+        /* Snøskred-meny under knapperaden */
+        #skredMeny { order: 6; width: 100%; max-width: 1100px; margin: 0 auto 15px; box-sizing: border-box; padding: 10px 14px 6px; border: 1px solid var(--ink); background: #fff; text-align: left; position: relative; z-index: 10; }
+        .skred-hode { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 14px; font-weight: 500; }
+        .skred-lukk { border: 0; background: none; padding: 0 4px; font-size: 22px; line-height: 1; color: var(--ink); cursor: pointer; }
+        .skred-lukk:hover { color: var(--winter-ink); }
+        .skred-valg { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-top: 1px solid #e4e4e4; font-size: 14px; font-weight: 400; cursor: pointer; }
+        .skred-valg input { flex: none; width: 16px; height: 16px; margin: 3px 0 0; accent-color: var(--winter-ink); cursor: pointer; }
+        .skred-valg .tit { display: block; font-weight: 500; }
+        .skred-valg .besk { display: block; font-size: 12px; color: var(--muted); line-height: 1.35; }
+        #skredBtn[aria-expanded="true"]:not(.btn-toggle-active) { background: var(--winter-bg); }
         .ctl.ctl-summer:hover { background: var(--summer-bg); }
         .ctl.ctl-map:hover { background: var(--map-bg); }
         body .btn-toggle-active { background-color: var(--winter-ink) !important; color: #fff !important; border-color: var(--winter-ink) !important; }
@@ -448,12 +462,8 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l7-12 4 7 3-4 6 9z"/></svg> Bratthet
         </button>
 
-        <button id="skredBtn" type="button" class="ctl" title="Vis områder der snøskred kan løsne og gå (NVE aktsomhetskart)">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l6-10 3 5 2-3 9 8z"/><path d="M13 5l2 2M16 3l2 2M17 8l1.5 1.5"/></svg> Skredterreng
-        </button>
-
-        <button id="faregradBtn" type="button" class="ctl" title="Vis faregrad for snøskred i Tromsø-området">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5L21.5 20h-19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg> Faregrad
+        <button id="skredBtn" type="button" class="ctl" aria-expanded="false" aria-controls="skredMeny" title="Snøskred: aktsomhetsområder, utløpssone og faregrad">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l6-10 3 5 2-3 9 8z"/><path d="M13 5l2 2M16 3l2 2M17 8l1.5 1.5"/></svg> Snøskred
         </button>
 
         <button id="markerBtn" type="button" class="ctl ctl-marker" title="Marker et område du vil zoome til (dra en firkant med musen)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5"/><circle cx="11" cy="11" r="3.5"/><path d="M13.6 13.6L17 17"/></svg> Marker</button>
@@ -466,6 +476,25 @@
 
         <button id="resetBtn" class="ctl">Nullstill kart</button>
         <button id="langBtn" type="button" class="ctl ctl-lang" title="Switch to English" aria-label="Switch to English"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg><span class="lang-code">EN</span></button>
+    </div>
+
+    <div id="skredMeny" hidden>
+        <div class="skred-hode">
+            <span>Snøskred</span>
+            <button id="skredLukk" type="button" class="skred-lukk" aria-label="Lukk">×</button>
+        </div>
+        <label class="skred-valg">
+            <input type="checkbox" id="valgAkt">
+            <span><span class="tit">Aktsomhetsområde</span><span class="besk">Områder der snøskred kan løsne og gå (NVE)</span></span>
+        </label>
+        <label class="skred-valg">
+            <input type="checkbox" id="valgUtlop">
+            <span><span class="tit">Utløpssone</span><span class="besk">Beregnet utløp for snøskred (NVE). Vises når du zoomer inn.</span></span>
+        </label>
+        <label class="skred-valg">
+            <input type="checkbox" id="valgFare">
+            <span><span class="tit">Faregrad</span><span class="besk">Dagens varsel for Tromsø, Lyngen og Sør-Troms (Varsom)</span></span>
+        </label>
     </div>
 
     <div id="map-container">
@@ -623,7 +652,8 @@
         }
         bratthetBtn.onclick = () => toggleBratthet();
 
-        // NVE aktsomhetskart for snøskred (2023). Hentes som bilder fra NVEs ArcGIS-tjeneste for hver rute i kartet.
+        /* ===== Snøskred: meny med aktsomhetsområde, utløpssone og faregrad ===== */
+        // Aktsomhetsområde: NVE aktsomhetskart for snøskred (2023). Hentes som bilder fra NVEs ArcGIS-tjeneste.
         // Lag 1 = S3, lag 2 = S2 uten skogeffekt. Endre «show:1,2» for å vise andre lag (3 = S2 med skogeffekt).
         const SKRED_URL = 'https://gis3.nve.no/map/rest/services/SnoskredAktsomhet/MapServer/export';
         const SkredAktLag = L.TileLayer.extend({
@@ -636,32 +666,76 @@
         });
         const skredAktLag = new SkredAktLag('', { maxZoom: 20, opacity: 0.65, zIndex: 5, attribution: '© NVE' });
 
+        // Utløpssone: NVEs eldre aktsomhetskart (WMS-lag «Utlopsomrade»). NVE tegner det bare i målestokk 1:500–1:40 000.
+        const skredUtlopLag = L.tileLayer.wms('https://gis3.nve.no/map/services/SkredSnoAktR/MapServer/WmsServer?', {
+            layers: 'Utlopsomrade', format: 'image/png', transparent: true, version: '1.3.0',
+            maxZoom: 20, opacity: 0.65, zIndex: 6, attribution: '© NVE'
+        });
+
+        // Fra hvilket zoomnivå lagene vises. 12.5 tilsvarer ca. 1:40 000 ved Tromsø (kjent grense for utløpssonen).
+        // Grensen for aktsomhetsområdet er et anslag; juster hvis laget dukker opp tidligere eller senere.
+        const SKRED_AKT_MIN_ZOOM = 12;
+        const SKRED_UTLOP_MIN_ZOOM = 12.5;
+
+        const skred = { akt: false, utlop: false, fare: false };
+        const skredBtn = document.getElementById('skredBtn');
+        const skredMeny = document.getElementById('skredMeny');
+
         const skredLegend = L.control({ position: 'bottomleft' });
+        let skredLegendDiv = null, skredLegendPaa = false;
         skredLegend.onAdd = function () {
-            const div = L.DomUtil.create('div', 'legend');
-            div.innerHTML = `
-                <h4>Skredterreng</h4>
-                <div class="legend-item"><span class="color-box skred-s3"></span> Aktsomhetsområde S3</div>
-                <div class="legend-item"><span class="color-box skred-s2"></span> Aktsomhetsområde S2</div>
+            skredLegendDiv = L.DomUtil.create('div', 'legend');
+            skredLegendDiv.innerHTML = `
+                <h4>Snøskred</h4>
+                <div class="sl-akt">
+                    <div class="legend-item"><span class="color-box skred-s3"></span> Aktsomhetsområde S3</div>
+                    <div class="legend-item"><span class="color-box skred-s2"></span> Aktsomhetsområde S2</div>
+                </div>
+                <div class="legend-item sl-utlop"><span class="color-box skred-utlop"></span> Utløpssone</div>
+                <p class="fg-merk skred-hint sl-hint-akt">Zoom inn for å se aktsomhetsområder</p>
+                <p class="fg-merk skred-hint sl-hint-utlop">Zoom inn for å se utløpssone</p>
                 <div class="fg-kilde">Grov oversikt, ikke et varsel. Kilde: NVE</div>
             `;
-            return div;
+            return skredLegendDiv;
         };
 
-        const skredBtn = document.getElementById('skredBtn');
-        let isSkredActive = false;
-        function toggleSkredTerreng(state) {
-            isSkredActive = (typeof state === 'boolean') ? state : !isSkredActive;
-            if (isSkredActive) {
-                map.addLayer(skredAktLag);
-                skredLegend.addTo(map);
-            } else {
-                map.removeLayer(skredAktLag);
-                map.removeControl(skredLegend);
-            }
-            skredBtn.classList.toggle('btn-toggle-active', isSkredActive);
+        function oppdaterSkredLegend() {
+            if (!skredLegendDiv) return;
+            const z = map.getZoom(), q = sel => skredLegendDiv.querySelector(sel);
+            q('.sl-akt').hidden = !skred.akt;
+            q('.sl-utlop').hidden = !skred.utlop;
+            q('.sl-hint-akt').hidden = !(skred.akt && z < SKRED_AKT_MIN_ZOOM);
+            q('.sl-hint-utlop').hidden = !(skred.utlop && z < SKRED_UTLOP_MIN_ZOOM);
         }
-        skredBtn.onclick = () => toggleSkredTerreng();
+        map.on('zoomend', oppdaterSkredLegend);
+
+        function oppdaterSkredUI() {
+            skredBtn.classList.toggle('btn-toggle-active', skred.akt || skred.utlop || skred.fare);
+            const trengerLegend = skred.akt || skred.utlop;
+            if (trengerLegend && !skredLegendPaa) { skredLegend.addTo(map); skredLegendPaa = true; }
+            if (!trengerLegend && skredLegendPaa) { map.removeControl(skredLegend); skredLegendPaa = false; skredLegendDiv = null; }
+            oppdaterSkredLegend();
+        }
+
+        function settSkred(nokkel, paa) {
+            skred[nokkel] = paa;
+            if (nokkel === 'akt') { paa ? map.addLayer(skredAktLag) : map.removeLayer(skredAktLag); }
+            if (nokkel === 'utlop') { paa ? map.addLayer(skredUtlopLag) : map.removeLayer(skredUtlopLag); }
+            if (nokkel === 'fare' && typeof window.settFaregrad === 'function') window.settFaregrad(paa);
+            oppdaterSkredUI();
+        }
+
+        // Menyen kan åpnes og lukkes uten at valgene forsvinner. Knappen er markert så lenge noe er på.
+        function visSkredMeny(vis) {
+            skredMeny.hidden = !vis;
+            skredBtn.setAttribute('aria-expanded', vis ? 'true' : 'false');
+        }
+        skredBtn.onclick = () => visSkredMeny(skredMeny.hidden);
+        document.getElementById('skredLukk').onclick = () => visSkredMeny(false);
+        [['valgAkt', 'akt'], ['valgUtlop', 'utlop'], ['valgFare', 'fare']].forEach(([id, nokkel]) => {
+            const el = document.getElementById(id);
+            el.onchange = () => settSkred(nokkel, el.checked);
+        });
 
         /* ==========================================================================
            OVERSIKTSKART (som oversikt.html): grått land, hvitt hav, blå innsjøer og blå spor.
@@ -1449,6 +1523,16 @@
         'Snøskredvarsel': 'Avalanche forecast',
         'Snøskredvarsel fra Varsom.no': 'Avalanche forecast from Varsom.no',
         'Skredterreng': 'Avalanche terrain',
+        'Snøskred': 'Avalanches',
+        'Snøskred: aktsomhetsområder, utløpssone og faregrad': 'Avalanches: attention areas, runout zone and danger level',
+        'Lukk': 'Close',
+        'Aktsomhetsområde': 'Attention area',
+        'Utløpssone': 'Runout zone',
+        'Områder der snøskred kan løsne og gå (NVE)': 'Areas where avalanches can start and run (NVE)',
+        'Beregnet utløp for snøskred (NVE). Vises når du zoomer inn.': 'Calculated avalanche runout (NVE). Shown when you zoom in.',
+        'Dagens varsel for Tromsø, Lyngen og Sør-Troms (Varsom)': "Today's forecast for Tromsø, Lyngen and Sør-Troms (Varsom)",
+        'Zoom inn for å se aktsomhetsområder': 'Zoom in to see attention areas',
+        'Zoom inn for å se utløpssone': 'Zoom in to see the runout zone',
         'Faregrad': 'Danger level',
         'Vis områder der snøskred kan løsne og gå (NVE aktsomhetskart)': 'Show areas where avalanches can start and run (NVE attention map)',
         'Vis faregrad for snøskred i Tromsø-området': 'Show avalanche danger level for the Tromsø area',
@@ -1776,8 +1860,7 @@
     <script>
     /* ===== Faregrad-knapp: snøskredvarsel fra NVE/Varsom for regionene rundt Tromsø ===== */
     (function () {
-        const knapp = document.getElementById('faregradBtn');
-        if (!knapp || typeof map === 'undefined') return;
+        if (typeof map === 'undefined') return;
 
         // NVEs snøskredvarsel-API. Versjonen står i adressen; bytt ved behov (se api.nve.no/doc/snoeskredvarsel).
         const API = 'https://api01.nve.no/hydrology/forecast/avalanche/v6.2.1/api/AvalancheWarningByRegion/Simple/';
@@ -1872,12 +1955,10 @@
             });
         }
 
-        let aktiv = false;
-        knapp.onclick = () => {
-            aktiv = !aktiv;
-            knapp.classList.toggle('btn-toggle-active', aktiv);
-            if (aktiv) { panel.addTo(map); last(); }
-            else { map.removeControl(panel); }
+        // Kalles fra Snøskred-menyen (avkrysningsboksen «Faregrad»)
+        window.settFaregrad = function (paa) {
+            if (paa) { panel.addTo(map); last(); }
+            else { map.removeControl(panel); boks = null; }
         };
 
         document.addEventListener('langchange', () => { if (lenke) lenke.href = varsomUrl(); });
