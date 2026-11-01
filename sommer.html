@@ -465,6 +465,10 @@
         body .letter-btn { background: #fff; color: var(--ink); border: 1px solid var(--ink); border-radius: 0; box-shadow: none; font-weight: 400; transition: background .3s ease, color .3s ease; }
         body .letter-btn:hover { background: var(--summer-bg); transform: none; box-shadow: none; }
         body .letter-btn.active { background: var(--summer-ink); border-color: var(--summer-ink); color: #fff; transform: none; box-shadow: none; }
+        /* Bokstaver med sykkelturer får sykkelknappens farge når sykkelturer er på; av = alle hvite */
+        body.sykkel-pa .letter-btn.har-sykkel { background: var(--summer-ink); border-color: var(--summer-ink); color: #fff; }
+        body.sykkel-pa .letter-btn.har-sykkel:hover { background: var(--summer-ink); }
+        body.sykkel-pa .letter-btn.har-sykkel.active { box-shadow: inset 0 0 0 2px #fff; }
         body .dropdown-menu { border: 1px solid var(--ink); border-radius: 0; box-shadow: 0 10px 30px rgba(0,0,0,.12); }
         body .dropdown-item { font-weight: 400; color: var(--ink); }
         body .dropdown-item:hover, body .dropdown-item.active { background-color: var(--summer-bg); }
@@ -958,6 +962,7 @@
 
         let visSykkelturer = true;
         const erSykkel = (t) => !!(t && t.sykkeltur);
+        document.body.classList.add('sykkel-pa');
         const sykkelSvg = '🚴';
         const hovedFarge = (t) => erSykkel(t) ? 'var(--sykkel-blue)' : (t && t.navn === "Nordfjellet - Tromsø geografiske midtpunkt" ? 'var(--strava-green)' : 'var(--summer-green)');
 
@@ -965,6 +970,7 @@
             const btn = document.getElementById('sykkelBtn');
             btn.classList.toggle('active', visSykkelturer);
             btn.setAttribute('aria-pressed', visSykkelturer);
+            document.body.classList.toggle('sykkel-pa', visSykkelturer);
             document.getElementById('sykkelStatus').innerText = visSykkelturer ? 'På' : 'Av';
 
             Object.keys(knapperMap).forEach(k => {
@@ -1303,6 +1309,7 @@
                     const btn = document.createElement('button');
                     btn.className = 'letter-btn';
                     btn.innerText = bokstav;
+                    if (bokstavMap[bokstav].some(e => erSykkel(e.topp))) btn.classList.add('har-sykkel');
 
                     const menu = document.createElement('div');
                     menu.className = 'dropdown-menu';
