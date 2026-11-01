@@ -1143,7 +1143,7 @@
             gpxLayer.openPopup();
         }
 
-        function skapKontrollRad(label, badgeFil, startOn, onSporToggle, onProfilToggle) {
+        function skapKontrollRad(label, badgeFil, startOn, onSporToggle, onProfilToggle, onZoomToggle) {
             const container = document.createElement('div');
             container.className = 'control-row-container';
             const lb = document.createElement('div'); lb.className = 'control-label'; lb.innerText = label;
@@ -1164,6 +1164,14 @@
             profilGroup.innerHTML = `<span class="toggle-text">Profil</span><div class="switch-track"><div class="switch-thumb"></div></div>`;
             profilGroup.onclick = () => onProfilToggle(profilGroup.classList.toggle('active'));
             container.appendChild(profilGroup);
+
+            if (onZoomToggle) {
+                const zoomGroup = document.createElement('div');
+                zoomGroup.className = 'toggle-group zoom-group';
+                zoomGroup.innerHTML = `<span class="toggle-text">Zoom</span><div class="switch-track"><div class="switch-thumb"></div></div>`;
+                zoomGroup.onclick = () => onZoomToggle(zoomGroup.classList.toggle('active'));
+                container.appendChild(zoomGroup);
+            }
 
             return container;
         }
@@ -1487,6 +1495,7 @@
 
                             // Legg til kontroll for Brattskala inne på den enkelte topp
 
+                            let aktivZoomGroup = null;   // kun ett ekstra spor kan være zoomet om gangen
                             if (topp.ekstraSpor) {
                                 topp.ekstraSpor.forEach(ekstra => {
                                     // Fast plass i menyen (rett etter hovedsporet), selv om GPX lastes asynkront
@@ -1540,7 +1549,25 @@
                                                     aktiveEkstraSporLayers = aktiveEkstraSporLayers.filter(lyr => lyr !== eLayer); 
                                                 }
                                             },
-                                            (on) => visProfil(eLayer, topp.navn + " (" + ekstra.tittel + ")", ekstra.fil, on)
+                                            (on) => visProfil(eLayer, topp.navn + " (" + ekstra.tittel + ")", ekstra.fil, on),
+                                            !erSykkel(topp) ? null : (on) => {
+                                                const zGroup = eRad.querySelector('.zoom-group');
+                                                if (on) {
+                                                    // skru av zoom på et annet ekstra spor
+                                                    if (aktivZoomGroup && aktivZoomGroup !== zGroup) aktivZoomGroup.classList.remove('active');
+                                                    aktivZoomGroup = zGroup;
+                                                    // sørg for at sporet vises når man zoomer til det
+                                                    if (!map.hasLayer(eLayer)) {
+                                                        eLayer.addTo(map).bringToFront();
+                                                        aktiveEkstraSporLayers.push(eLayer);
+                                                        eRad.querySelector('.toggle-group').classList.add('active');
+                                                    }
+                                                    map.flyToBounds(eLayer.getBounds(), { padding: [60, 60], duration: 0.6 });
+                                                } else {
+                                                    aktivZoomGroup = null;
+                                                    map.flyToBounds(l.getBounds(), { padding: [60, 60], duration: 0.6 });
+                                                }
+                                            }
                                         );
                                         ekstraSlot.appendChild(eRad);
                                     });
