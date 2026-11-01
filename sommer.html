@@ -1543,8 +1543,9 @@
                             if (topp.beskrivelse) {
                                 const descBox = document.createElement('div');
                                 descBox.className = 'desc-box';
-                                descBox.innerHTML = `<div class="desc-box-title"><span>📝</span> Turbeskrivelse<span class="chev">▼</span></div><div class="desc-box-body">${topp.beskrivelse}</div>`;
+                                descBox.innerHTML = `<div class="desc-box-title"><span>📝</span> Gimses turbeskrivelse<span class="chev">▼</span></div><div class="desc-box-body">${topp.beskrivelse}</div>`;
                                 gjørSammenleggbar(descBox);
+                                descBox.classList.add('collapsed');   // lukket som standard
                                 videoContainer.appendChild(descBox);
                             }
 
@@ -1890,6 +1891,7 @@
         'Del': 'Share',
         'Kopiert!': 'Copied!',
         'Turbeskrivelse': 'Trip description',
+        'Gimses turbeskrivelse': "Gimse's trip description",
         'Veibeskrivelse': 'Driving directions',
         'Last ned GPX': 'Download GPX',
         'Hovedspor': 'Main track',
