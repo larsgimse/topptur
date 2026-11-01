@@ -117,6 +117,12 @@
             color: white;
         }
 
+        .skala-toggle { display: inline-flex; align-items: center; gap: 6px; margin-left: 4px; padding-left: 10px; border-left: 1px solid rgba(255,255,255,.5); cursor: pointer; }
+        .skala-toggle[hidden] { display: none !important; }
+        .skala-tekst { font-size: 12px; font-weight: 400; }
+        .skala-toggle .switch-track { background: rgba(255,255,255,.35); }
+        .skala-toggle.active .switch-track { background: #fff; }
+        .skala-toggle.active .switch-thumb { background: var(--winter-ink); transform: translateX(14px); }
         .btn-toggle-active {
             background-color: #0284c7 !important;
             color: white !important;
@@ -463,6 +469,7 @@
 
         <button id="bratthetBtn" class="ctl">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l7-12 4 7 3-4 6 9z"/></svg> Bratthet
+            <span id="skalaToggle" class="skala-toggle" role="switch" aria-checked="false" aria-label="Brattskala" title="Brattskala" hidden><span class="skala-tekst">Skala</span><span class="switch-track"><span class="switch-thumb"></span></span></span>
         </button>
 
         <button id="skredBtn" type="button" class="ctl" aria-expanded="false" aria-controls="skredMeny" title="Snøskred: aktsomhetsområder og faregrad">
@@ -644,6 +651,7 @@
 
         // Håndtere toggling av Bratthetskart
         const bratthetBtn = document.getElementById('bratthetBtn');
+        const skalaToggle = document.getElementById('skalaToggle');
         let isBratthetActive = false;
 
         function toggleBratthet(state) {
@@ -654,9 +662,12 @@
             } else {
                 map.removeLayer(bratthetMap);
                 bratthetBtn.classList.remove('btn-toggle-active');
+                toggleLegend(false);
             }
+            skalaToggle.hidden = !isBratthetActive;   // bryteren vises bare når bratthet er på
         }
         bratthetBtn.onclick = () => toggleBratthet();
+        skalaToggle.onclick = e => { e.stopPropagation(); toggleLegend(); };
 
         /* ===== Snøskred: meny med aktsomhetsområde S3 / S2 og faregrad ===== */
         // NVE-lagene hentes som bilder fra ArcGIS-tjenestene til NVE (export), én rute om gangen.
@@ -857,12 +868,16 @@
         let isLegendActive = false;
 
         function toggleLegend(state) {
-            isLegendActive = (typeof state === 'boolean') ? state : !isLegendActive;
+            const ny = (typeof state === 'boolean') ? state : !isLegendActive;
+            if (ny === isLegendActive) return;
+            isLegendActive = ny;
             if (isLegendActive) {
                 legend.addTo(map);
             } else {
                 map.removeControl(legend);
             }
+            skalaToggle.classList.toggle('active', isLegendActive);
+            skalaToggle.setAttribute('aria-checked', String(isLegendActive));
         }
 
         document.getElementById('mapSelect').onchange = (e) => {
@@ -1307,25 +1322,6 @@
                                 videoContainer.appendChild(suuntoBtn);
                             }
 
-                            // Legg til kontrollrad for Brattskala inne på den enkelte topp
-                            const legendRow = document.createElement('div');
-                            legendRow.className = 'control-row-container brattskala-rad';
-                            legendRow.innerHTML = `
-                                <div class="control-label" style="display:flex; align-items:center; gap:5px;">
-                                    <span>🏔️</span> Brattskala
-                                </div>
-                                <div class="toggle-group ${isLegendActive ? 'active' : ''}">
-                                    <span class="toggle-text">Vis</span>
-                                    <div class="switch-track"><div class="switch-thumb"></div></div>
-                                </div>
-                            `;
-                            const legendToggleGroup = legendRow.querySelector('.toggle-group');
-                            legendToggleGroup.onclick = () => {
-                                const state = legendToggleGroup.classList.toggle('active');
-                                toggleLegend(state);
-                            };
-                            videoContainer.appendChild(legendRow);
-
                             videoContainer.appendChild(skapKontrollRad(topp.navn, null, true, 
                                 (on) => on ? map.addLayer(l) : map.removeLayer(l),
                                 (on) => on ? visProfil(l, topp.navn, topp.fil) : map.closePopup()
@@ -1659,6 +1655,7 @@
         'Profil': 'Profile',
         'Vis': 'Show',
         'Brattskala': 'Steepness scale',
+        'Skala': 'Scale',
         '3D visualisering': '3D visualization',
         'Sykkeltur': 'Bike trip',
         'Nordfjellet - Tromsø geografiske midtpunkt': 'Nordfjellet - geographical midpoint of Tromsø',

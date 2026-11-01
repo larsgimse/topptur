@@ -68,6 +68,12 @@
             transform: scale(1.02);
         }
 
+        .skala-toggle { display: inline-flex; align-items: center; gap: 6px; margin-left: 4px; padding-left: 10px; border-left: 1px solid rgba(255,255,255,.5); cursor: pointer; }
+        .skala-toggle[hidden] { display: none !important; }
+        .skala-tekst { font-size: 12px; font-weight: 400; }
+        .skala-toggle .switch-track { background: rgba(255,255,255,.35); }
+        .skala-toggle.active .switch-track { background: #fff; }
+        .skala-toggle.active .switch-thumb { background: var(--summer-ink); transform: translateX(14px); }
         .btn-toggle-active {
             background-color: #0284c7 !important;
             color: white !important;
@@ -563,6 +569,7 @@
 
         <button id="bratthetBtn" class="ctl">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l7-12 4 7 3-4 6 9z"/></svg> Bratthet
+            <span id="skalaToggle" class="skala-toggle" role="switch" aria-checked="false" aria-label="Brattskala" title="Brattskala" hidden><span class="skala-tekst">Skala</span><span class="switch-track"><span class="switch-thumb"></span></span></span>
         </button>
         
         <button id="sykkelBtn" class="active ctl" aria-pressed="true">
@@ -775,6 +782,7 @@
 
         // Handtere toggling av Bratthetskart
         const bratthetBtn = document.getElementById('bratthetBtn');
+        const skalaToggle = document.getElementById('skalaToggle');
         let isBratthetActive = false;
 
         function toggleBratthet(state) {
@@ -785,9 +793,12 @@
             } else {
                 map.removeLayer(bratthetMap);
                 bratthetBtn.classList.remove('btn-toggle-active');
+                toggleLegend(false);
             }
+            skalaToggle.hidden = !isBratthetActive;   // bryteren vises bare når bratthet er på
         }
         bratthetBtn.onclick = () => toggleBratthet();
+        skalaToggle.onclick = e => { e.stopPropagation(); toggleLegend(); };
 
         /* ==========================================================================
            OVERSIKTSKART (som oversikt.html): grått land, hvitt hav, blå innsjøer og blå spor.
@@ -896,15 +907,16 @@
         let isLegendActive = false;
 
         function toggleLegend(state) {
-            isLegendActive = (typeof state === 'boolean') ? state : !isLegendActive;
-            const legendToggle = document.getElementById('legendToggle');
+            const ny = (typeof state === 'boolean') ? state : !isLegendActive;
+            if (ny === isLegendActive) return;
+            isLegendActive = ny;
             if (isLegendActive) {
                 legend.addTo(map);
-                if (legendToggle) legendToggle.classList.add('active');
             } else {
                 map.removeControl(legend);
-                if (legendToggle) legendToggle.classList.remove('active');
             }
+            skalaToggle.classList.toggle('active', isLegendActive);
+            skalaToggle.setAttribute('aria-checked', String(isLegendActive));
         }
 
         document.getElementById('mapSelect').onchange = (e) => {
@@ -1467,7 +1479,6 @@
                             ));
 
                             // Legg til kontroll for Brattskala inne på den enkelte topp
-                            videoContainer.appendChild(skapBrattskalaKontroll());
 
                             if (topp.ekstraSpor) {
                                 topp.ekstraSpor.forEach(ekstra => {
@@ -1886,6 +1897,7 @@
         'Profil': 'Profile',
         'Vis': 'Show',
         'Brattskala': 'Steepness scale',
+        'Skala': 'Scale',
         '3D visualisering': '3D visualization',
         'Sykkeltur': 'Bike trip',
         'Nordfjellet - Tromsø geografiske midtpunkt': 'Nordfjellet - geographical midpoint of Tromsø',
