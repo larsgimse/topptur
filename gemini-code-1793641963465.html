@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toppturer og Fjellturer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+:root {
+    --ink: #000;
+    --paper: #fff;
+    --muted: #6b6b6b;
+    --line: #000;
+    --winter-bg: #dde9f2;
+    --winter-ink: #3f6f93;
+    --summer-bg: #e6efd8;
+    --summer-ink: #5f7f3b;
+    --map-bg: #ededeb;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+    min-height: 100vh;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Jost", "Helvetica Neue", Arial, sans-serif;
+    font-weight: 300;
+    position: relative;
+    overflow-x: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 0;
+}
+svg { fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Omriss av Tromsøya: egen plass til høyre, aldri bak tekst */
+.outline {
+    position: absolute;
+    top: -16px;
+    right: 0;
+    height: calc(100% + 32px);
+    aspect-ratio: 800 / 1546;
+    color: var(--ink);
+    opacity: .55;
+    pointer-events: none;
+    z-index: 2;
+    transition: color .5s ease, opacity .5s ease;
+}
+body:has(.winter:hover) .outline, body:has(.winter:focus-visible) .outline { color: var(--winter-ink); opacity: .9; }
+body:has(.summer:hover) .outline, body:has(.summer:focus-visible) .outline { color: var(--summer-ink); opacity: .9; }
+
+main {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    padding: 0 28px;
+    display: flex;
+    flex-direction: column;
+}
+
+h1 {
+    position: relative;
+    z-index: 1;
+    margin: 0 0 10px;
+    font-size: clamp(40px, 9vw, 60px);
+    font-weight: 200;
+    letter-spacing: -.02em;
+    line-height: 1;
+}
+.sub { position: relative; z-index: 1; margin: 0 0 56px; color: var(--muted); font-size: 16px; }
+
+nav { position: relative; z-index: 1; border-top: 1px solid var(--ink); }
+
+.row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 26px 4px;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--ink);
+    transition: background .35s ease, padding .35s ease;
+}
+.row .ico { flex: none; width: 44px; height: 44px; transition: color .35s ease; }
+.row .ico.tall { width: 23px; margin: 0 10px; }
+.row .txt { display: flex; flex-direction: column; gap: 2px; }
+.row .name { font-size: 22px; letter-spacing: -.005em; }
+.row .desc { font-size: 14px; color: var(--muted); }
+
+.row:hover, .row:focus-visible { padding-left: 20px; outline: none; }
+.row:focus-visible { box-shadow: inset 0 0 0 1px var(--ink); }
+.winter:hover, .winter:focus-visible { background: var(--winter-bg); }
+.winter:hover .ico, .winter:focus-visible .ico { color: var(--winter-ink); }
+.summer:hover, .summer:focus-visible { background: var(--summer-bg); }
+.summer:hover .ico, .summer:focus-visible .ico { color: var(--summer-ink); }
+.map:hover, .map:focus-visible { background: var(--map-bg); }
+
+/* Minimalistisk Beta-knapp i øvre høyre hjørne av vintermenyen */
+.beta-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 3;
+    padding: 4px 9px;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--winter-ink);
+    border: 1px solid var(--winter-ink);
+    border-radius: 4px;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(2px);
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+.beta-btn:hover, .beta-btn:focus-visible {
+    background: var(--winter-ink);
+    color: #fff;
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.sun-rays, .flake { transform-origin: 22px 22px; transition: transform 1.4s ease; }
+.summer:hover .sun-rays { transform: rotate(45deg); }
+.winter:hover .flake { transform: rotate(60deg); }
+
+.foot {
+    position: relative;
+    z-index: 1;
+    padding-top: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--muted);
+}
+.counter b { font-weight: 400; color: var(--ink); }
+.bmc {
+    transform: scale(.62);
+    transform-origin: left center;
+    opacity: .75;
+    transition: opacity .2s;
+    height: 28px;
+    display: flex;
+    align-items: center;
+}
+.bmc:hover { opacity: 1; }
+
+@media (max-width: 560px) {
+    .row .name { font-size: 19px; }
+    .row { gap: 16px; }
+    .row .ico { width: 38px; height: 38px; }
+    .row .ico.tall { width: 20px; margin: 0 9px; }
+    .outline { right: -190px; opacity: .45; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.lang {
+    position: relative; z-index: 3; align-self: flex-start; margin: 0 0 28px;
+    display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px;
+    border: 1px solid var(--ink); border-radius: 0; background: var(--paper); color: var(--ink);
+    font: inherit; font-size: 14px; font-weight: 400; cursor: pointer; transition: background .3s ease;
+}
+.lang svg { width: 17px; height: 17px; flex: none; }
+.lang:hover, .lang:focus-visible { background: var(--map-bg); outline: none; }
+.lang-code { letter-spacing: .04em; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs><path id="arm" d="M22 22V3.5M22 9.5l-4.3-2.5M22 9.5l4.3-2.5M22 15l-3.2-1.9M22 15l3.2-1.9M22 6.5l-1.6-2M22 6.5l1.6-2"/></defs>
+    <symbol id="tromso" viewBox="0 0 800 1546">
+        <path vector-effect="non-scaling-stroke" d="M 665.31 588.99 652.46 602.95 652.38 603.03 651.55 603.69 650.9 603.59 646.91 599.92 644.26 597.74 643.68 597.35 642.95 597.08 642.22 596.89 641.25 596.79 640.64 597.01 637.58 599.67 634.07 602.73 633.75 603.34 633.53 603.92 633.63 604.34 637.24 608.46 638.17 609.72 638.21 610.07 638.63 610.53 638.91 610.28 639.53 609.73 639.96 611.47 640.08 611.95 640.15 612.21 631.84 619.52 622.57 627.87 622.26 627.93 621.12 627.63 620.17 626.71 616.61 622.76 606.32 631.91 578.47 656.88 558.79 674.53 557.98 674.13 554.84 672.55 554.63 672.44 540.82 698.93 540.74 699.09 538.67 697.95 535.37 704.6 534.04 708.48 531.61 714.67 533.96 714.75 523.1 738.95 523.05 739.06 522.49 738.83 520.03 743.88 518.29 746.8 518.01 747.13 517.72 747.23 516 746.6 515.89 746.58 515.74 746.59 515.67 746.59 515.59 746.56 515.55 746.51 515.5 746.39 515.38 746.29 514.97 746.12 514.82 746.08 514.66 746.15 514.55 746.2 513.82 745.88 513.48 746.5 514.13 746.88 514.32 747.39 514.49 748.01 514.34 748.2 514.08 748.25 513.66 748.41 512.9 749.3 511.82 750.41 511.19 750.55 508.56 749.5 509.23 751.07 509.09 752.71 506.28 759.54 504.78 764.6 504.28 765.44 506.25 766.31 508.36 762.55 508.89 762.73 506.04 774.6 505.92 774.6 505.16 774.45 505.1 774.44 505.37 770.13 505.4 769.73 502 769.06 500.33 775.65 508.68 783.4 508.27 783.7 507.72 784.1 500.2 777.17 499.58 779.75 499.58 780.87 500.32 781.98 501.33 785.49 502.26 786.9 503.29 787.99 505.62 788.59 506.53 789.16 507.03 790.31 507.84 794.27 507.86 794.9 507.51 797.01 506.82 800.07 506.03 802.44 505.5 805.12 505.75 806.27 505.94 807.18 506.09 809.85 506.08 810.84 505.77 811.61 505.69 813.1 506.54 815.38 506.89 818.53 507.14 823.43 508.16 827.85 507.51 830.56 507.1 831.71 505.59 833.74 505.14 834.75 505.08 837.28 503.93 842.45 503.71 844.07 503.67 845.55 502.99 847.47 502.63 849.06 502.32 850.43 501.93 855.14 500.19 856.84 498.7 855.52 497.33 855.8 495.77 857 487.26 855.01 487.23 854.8 485.3 854.53 485.23 854.99 483.56 854.61 483.46 854.37 475.65 852.66 475.44 853.59 475.3 855.9 475.55 856.98 485.8 859.12 486.5 859.79 481.48 877.55 479.53 885.39 469.79 883.42 464.87 882.37 461.23 883.27 461.5 886.2 463.24 886.08 467.98 885.99 468.52 886.69 468.82 887.08 471.48 887.17 471.78 899.15 471.43 899.14 469.03 898.92 468.59 899.23 468.35 899.67 466.97 904.05 465.41 910.45 465.19 911.93 465.1 913.78 465.41 914.72 466.75 916.65 467.44 917.36 467.35 919.87 467.03 920.82 465.76 928.13 465.74 928.27 468.35 930.2 468.87 930.58 469.7 938.03 469.71 943.63 469.57 946.99 469.96 952.7 469.71 954.65 468.4 956.42 469.32 961.35 470.85 969.28 471.36 969.41 471.83 969.52 474.42 972.69 473.26 973.63 472.92 973.91 475.63 977 476.91 975.82 479.13 978.3 479.27 978.46 478.52 979.18 477.99 979.69 478.09 979.8 479.25 981.13 480.47 982.53 480.57 982.44 481.12 981.94 481.78 981.35 484.43 984.41 484.61 984.62 483.21 985.85 482.8 986.21 485.6 989.31 487.33 987.76 489.93 990.72 488.65 992.13 488.5 992.3 493.08 997.5 493.15 999.39 492.89 999.84 492.39 1000.03 490.71 999.56 487.93 1000.98 485.97 1001.98 485.28 1002.72 484.57 1003.46 483.77 1003.3 479.74 998.67 477.54 996.14 477.25 996.46 476.49 997.31 467.1 1007.83 466.79 1008.17 464.81 1005.27 464.49 1004.78 463.3 1005.56 465.44 1008.85 465.73 1009.31 465.67 1009.38 458.6 1017.3 458.11 1017.39 453.51 1014.04 452.04 1012.97 450.38 1016.77 450.3 1016.95 448.05 1016.31 447.58 1017.47 445.43 1022.76 444.82 1024.28 446.46 1026.5 447.48 1027.33 447.98 1027.61 449.3 1027.52 452.22 1026.76 452.52 1027.85 457.1 1026.1 457.44 1027.11 457.58 1027.54 454.41 1028.77 454.02 1028.92 454.63 1029.45 455.21 1030.68 456.43 1033.95 463.79 1033.24 464.59 1033.39 465.45 1033.76 466.06 1034.19 466.8 1035.05 467.2 1041.21 466.89 1041.85 466.81 1042.84 467.61 1049.88 467.9 1051.97 468.15 1052.07 468.97 1052.38 470.77 1052.36 470.6 1068.98 470.59 1069.31 463.62 1067.24 460.48 1066.31 460.23 1066.23 460.52 1065.55 460.61 1065.34 460.53 1065.31 451.32 1061.83 451.2 1061.79 447.79 1068.22 447.09 1069.95 446.92 1071.01 451.08 1074.08 452.2 1072.4 465.36 1080.87 464.69 1081.93 464.22 1082.66 464.61 1082.99 463.59 1084.32 465.11 1085.86 472.66 1092.1 473.23 1093.3 474.08 1093.1 474.97 1095.11 476.77 1098.26 479.79 1103.95 480.55 1105.63 480.57 1106.26 480.39 1106.72 467.54 1113.19 466.63 1113.44 468.08 1124.12 468.84 1129.74 469.32 1132.49 469.38 1133.55 469.05 1133.86 467.5 1134.56 462.79 1136.28 458.07 1138.29 453.11 1140.13 453.02 1140.32 450.54 1141.41 449.98 1141.38 449.75 1141.1 449.8 1140.44 450.13 1140.29 450.29 1139.86 450.17 1139.52 451.39 1139.02 451.5 1139.38 452.22 1139.7 452.06 1139.25 453.04 1138.9 453.18 1139.24 460.45 1136.5 460.23 1136.05 460.64 1135.78 461.01 1136.26 464.98 1134.62 464.75 1133.9 465.09 1133.77 465.37 1134.47 468.36 1133.31 468.51 1133.03 467.63 1126.8 466.67 1119.55 466.66 1119.17 465.88 1113.89 465.64 1114.01 465.54 1113.67 465.84 1113.47 465.81 1113.26 465.31 1113.38 463.91 1107.57 449.72 1099.47 448.17 1095.43 445.98 1089.74 445.33 1089.89 444.55 1090.27 444.55 1090.62 445.06 1091.87 445.47 1093.15 444.94 1093.35 444.3 1092.4 443.93 1091.53 443.63 1091.72 442.53 1092.05 442.02 1092.38 443.03 1094.72 443.34 1095.41 444.03 1098.49 444.8 1100.46 447.13 1106.59 446.95 1106.81 446.84 1106.53 444.53 1100.6 443.79 1100.81 434.06 1103.56 435.04 1097.38 434.75 1097.18 433.87 1097.08 432.46 1097.17 431.32 1097.43 430.75 1097.67 430.24 1102.02 430.97 1102.95 433.54 1103.13 433.5 1103.68 429.34 1104.83 429.55 1102.88 429.02 1102.81 429 1103.01 428.53 1102.95 428.56 1102.74 428.08 1102.68 427.71 1105.3 424.79 1106.1 424.12 1106.28 418.36 1107.87 418.2 1107.91 415.69 1112.3 413.43 1116.75 406.91 1115.44 406.64 1116.71 406.1 1116.62 406.07 1116.71 406.01 1117.03 405.95 1117.35 405.92 1117.45 406.12 1117.49 405.84 1119.01 408.77 1119.48 410.9 1120.13 411.01 1120.36 411 1122.23 411 1122.47 410.64 1132.44 410.61 1133.33 410.59 1134.06 413.63 1138.65 413.68 1138.73 418.13 1145.46 418.91 1144.91 425.76 1140.04 425.93 1139.92 429.53 1140.27 430.5 1140.36 431.17 1141.4 427.94 1156.16 424.3 1172.81 421.09 1187.47 418.95 1190 417.3 1191.94 411.3 1199.03 410.63 1199.81 401.69 1210.37 400.8 1210.53 399.95 1209.88 399.81 1202.61 398.15 1198.54 398.09 1198.4 394.69 1189.85 388.66 1195.97 388.23 1196.3 387.98 1196.43 387.65 1196.41 387.36 1196.32 386.88 1196.03 386.65 1195.87 385.24 1194.03 385.05 1193.89 384.8 1193.8 384.54 1193.77 383.83 1192.75 383.6 1192.91 383.15 1193.25 382.95 1193.38 383.67 1194.38 382.51 1195.16 385.48 1199.14 385.4 1199.51 377.04 1208.08 368.34 1219.88 360.89 1230.74 374.26 1235.48 374.63 1235.61 373.35 1238.71 381 me 1245.78 397.93 1246.59 295.44 1406.84 254.38 1407.68 253.27 1457.03 209.25 1461.45 1541.7 126.98 1539.99 127.04 1538.94 123.3 1475.99 104.36 1471.04 101.2 865.84 95.54 759.9 94.94 768.14 96.54 781.76 94.52 784.7 94.08 786.77 95.54 788.66 97.46 789.91 99.93 790.76 106.9 790.54 110.92 788.75 115.25 790.68 117.58 792.99 118.1 794.24 120.04 794.98 124.45 793.21 128.61 792.38 129.24 792.19 130.19 792.87 130.69 793.64 132.37 793.55 133.64 794.79 151.17 796.8 170.07 796.98 171.35 797.38 172.26 797.83 172.97 798.01 173.36 797.96 173.55 797.88 173.86 798.04 174.7 798.18 175.32 797.97 175.64 797.76 175.91 797.33 176.04 796.81 175.93 796.48 175.71 796.18 175.67 795.78 175.69 783.96 178.45 773.46 180.83 772.91 180.96 772.43 181.26 771.77 181.58 771.51 181.85 771.37 182.18 771.27 182.4 771.1 182.54 770.79 182.73 764.8 184.75 764.07 183.88 763.71 182.48 763.17 181.21 762.89 181.28 762.77 181.44 762.63 181.67 761.51 182.45 760.85 183.05 760.09 184.61 759.78 185.24 759.17 185.52 758.4 185.8 758.32 185.92 758.28 186.09 758.53 186.34 759.08 186.47 759.32 186.87 759.41 187.61 759.46 189.43 759.66 190.31 759.91 190.71 760.29 191.01 761.14 191.32 762.32 192.21 763.93 192.87 764.86 193.18 765.39 193.19 766.74 192.86 767.66 192.45 768.71 192.19 775.45 190.66 775.14 189.55 777.98 188.82 778.11 188.85 778.2 188.95 781.8 203.5 780.53 203.79 780.62 204.24 780.52 204.72 780.2 205.28 780.03 205.88 779.83 207.59 781.15 217.78 782.17 227.6 782.24 228.71 782.24 229.59 782.27 231.49 782.2 232.92 782.23 233.67 781.39 243.09 781.78 244.68 781.98 246.6 781.72 249.48 783.18 249.68 782.4 255.45 781.15 255.44 781.15 255.48 781.38 255.52 781.34 255.72 781.42 255.74 780.9 256.93 781.11 257.03 781.96 258.12 782.71 259.05 783.08 260.03 783.09 261.1 783.52 262.46 783.77 262.84 784.29 263.83 784.61 265 784.62 265.74 784.28 266.43 784.05 266.96 784.16 270.05 784.11 270.61 784 271.34 783.89 272.64 783.66 273.66 783.54 274.4 784.01 274.46 782.76 283.51 782.7 283.54 781.62 283.34 781.22 285.98 780.72 287.27 780.24 288.36 780.13 288.88 780.26 289.44 780.63 290.34 781.09 291.47 781.52 292.14 782.35 293.24 783.09 294.46 783.51 295.44 783.84 296.49 783.94 297.1 783.85 297.44 783.59 297.74 783.3 298.09 783.33 298.51 783.11 298.6 782.99 298.79 783.07 299.03 783.28 299.25 783.33 299.44 783.08 300.04 782.95 300.17 782.11 300.51 781.85 300.79 781.66 301.12 780.51 301.62 780.34 301.74 780.32 301.98 780.19 302.26 779.79 302.46 779.12 302.63 778.78 302.84 778.68 303.22 778.88 304.06 779.44 305.22 780.98 307.11 782.23 308.11 783.23 309.41 783.9 310.45 784.32 311.1 784.67 311.16 784.92 311.48 785.14 311.79 785.6 312.3 785.61 313.05 785.35 313.27 785.3 313.49 788.81 316.68 789.04 316.8 789.36 316.79 789.68 316.62 790.02 316.5 790.38 316.46 790.62 316.54 796.22 320.01 799 323.69 795.76 328.59 795.56 328.66 795.67 328.92 795.47 329 795.75 329.57 791.99 331.11 791.31 329.52 793.85 328.61 793.52 327.74 793.36 327.76 792.73 327.65 792.2 327.54 791.78 327.52 791.33 327.62 791.08 327.82 790.55 328.45 789.89 330.26 788.84 329.94 788.66 330.45 788.46 330.4 788.39 330.51 788.14 330.5 787.94 330.46 786.95 330.2 784.45 329.93 782.07 329.56 779.84 329.13 778.36 328.94 778.2 328.78 777.07 328.43 776.94 328.24 776.96 327.8 776.95 327.29 776.67 326.31 775.33 323.16 775.39 321.46 770.78 321.07 769 321.45 768.54 321.75 767.95 322.43 768.23 323.74 769.07 324.28 768.29 325.26 767.16 325.64 763.79 325.32 759.6 332.56 758.59 334.4 757.32 336.88 757.08 337.13 756.61 337.59 755.99 338.57 754.62 340.96 753.93 342.16 753.13 343.73 752.84 344.68 752.84 345.23 753.03 345.46 752.76 346.34 752.07 348.65 751.41 350.21 751.32 350.6 751.17 350.66 750.73 350.51 750.52 350.78 750.46 351.03 750.55 351.1 750.84 351.31 750.88 351.46 749.14 355.35 748.9 355.42 748.65 355.57 748.53 355.71 748.52 355.91 748.58 356.22 748.76 356.41 749.41 356.72 749.45 356.96 749.3 357.43 759.25 362.3 758.78 363.41 758.76 363.83 758.99 364.12 759.25 364.19 759.54 364.18 763.89 365.75 765.28 365.94 772.31 365.81 773.3 365.64 773.74 365.42 774.36 364.93 775.08 364.57 775.4 364.56 775.68 364.61 776.26 365.42 776.31 365.76 776.11 366.22 775.7 367.04 775.1 367.83 773.46 368.32 770.97 368.19 765.27 368.21 764.85 368.24 764.51 368.45 764.37 368.75 764.36 369.37 764.36 370.21 763.95 371.69 763.6 372.61 763.09 373 762.72 373.38 762.6 374.12 762.66 375.22 762.18 376.66 761.26 377.9 759.82 378.86 758.75 379.09 756.78 379.15 756.46 379.21 756.28 379.36 756.09 379.7 756.15 380.12 756.63 380.63 758.07 381.57 759.49 382.38 761.67 384.01 762.93 384.89 763.32 385.18 763.56 385.69 763.84 386.05 764.05 386.45 764.05 386.87 763.98 387.34 764 388.01 763.94 388.19 763.69 388.36 763.61 388.66 763.59 389.03 762.95 390.63 762.6 391.39 762.58 392.22 762.28 393.95 761.48 396.84 761.04 397.89 760.83 398.1 760.49 398.22 760.37 398.36 760.38 398.54 760.42 398.8 760.46 399.46 760.34 400.08 759.95 401.21 759.49 402.19 759.39 402.94 759.39 403.49 759.2 404.25 753.25 417.31 752.82 417.81 752.55 418.12 752.25 418.53 751.91 418.89 751.42 419.71 750.58 421.84 750.13 423.35 749.39 424.91 748.89 426.82 748.2 428.39 747.36 429.83 745.45 433.19 745.29 434.34 745.33 435.27 745.33 435.98 744.95 436.9 744.59 438.01 747.51 439.06 737.07 468.72 734.39 467.79 734.23 468.14 733.87 468.39 733.28 468.74 730.82 469.45 726.72 470.62 721.17 472.33 719.8 472.66 718.02 473.77 716.99 473.82 714.91 473.89 714.17 474.64 712.99 478.43 712.14 479.64 710.48 480.28 709.58 480.63 709.14 481.62 708.25 487.57 706.81 492.7 706.12 494.24 705.04 498.07 702.66 503.19 701.41 505.12 700.81 507.12 700.61 507.8 700.48 508.65 694.09 517.49 693.19 519.28 693.37 520.26 693.68 520.87 695.23 521.92 697.05 523.6 697.95 525.01 698.15 525.74 698.48 526.47 699.01 526.82 699.34 526.96 699.68 527.19 700.13 527.59 700.62 528.37 700.76 528.89 700.78 529.38 701 529.96 702.6 531.61 702.83 532.14 702.98 532.74 702.96 533.47 702.65 534.13 702.19 534.89 701.32 535.83 699.75 537.44 699.11 538.19 698.72 539.28 698.09 540.57 696.87 542.36 696.65 543 695.92 543.82 695.14 544.38 694.64 544.96 692.6 548 690.4 550.26 688.03 554.09 688.02 554.44 688.2 554.72 691.19 557.25 692.24 558.29 692.46 558.71 692.45 559.08 692.34 559.68 692.06 560.28 691.52 560.91 690.33 562.3 688.97 563.71 688.01 564.95 687.36 565.75 686.71 566.25 685.58 567.49 685.02 568.3 684.63 568.57 684.06 569.49 682.88 570.71 680.56 573.36 682.55 575.14 677.03 581.03 675.08 579.11 673.49 581.05 669.64 585.33 668.59 586.17 667.44 587.09 666.54 587.78 665.31 588.99 Z"/>
+    </symbol>
+</svg>
+
+<main>
+    <button id="langBtn" type="button" class="lang" title="Switch to English" aria-label="Switch to English"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg><span class="lang-code">EN</span></button>
+    <svg class="outline" viewBox="0 0 800 1546" aria-hidden="true"><use href="#tromso"/></svg>
+    <h1>Toppturer</h1>
+    <p class="sub">Vinter og sommer rundt Tromsø</p>
+
+    <nav>
+        <a href="vinter.html" class="row winter">
+            <svg class="ico" viewBox="0 0 44 44" aria-hidden="true">
+                <g class="flake">
+                    <use href="#arm"/><use href="#arm" transform="rotate(60 22 22)"/><use href="#arm" transform="rotate(120 22 22)"/>
+                    <use href="#arm" transform="rotate(180 22 22)"/><use href="#arm" transform="rotate(240 22 22)"/><use href="#arm" transform="rotate(300 22 22)"/>
+                </g>
+            </svg>
+            <span class="txt"><span class="name">Toppturer vinter</span><span class="desc">Ski og skredfare</span></span>
+            <a href="beta_vinter.html" class="beta-btn">Prøv 🧰 GPX-lab</a>
+        </a>
+
+        <a href="sommer.html" class="row summer">
+            <svg class="ico" viewBox="0 0 44 44" aria-hidden="true">
+                <circle cx="22" cy="22" r="7"/>
+                <g class="sun-rays"><path d="M22 4v6M22 34v6M4 22h6M34 22h6M9.3 9.3l4.2 4.2M30.5 30.5l4.2 4.2M9.3 34.7l4.2-4.2M30.5 13.5l4.2-4.2"/></g>
+            </svg>
+            <span class="txt"><span class="name">Fjellturer sommer</span><span class="desc">Stier og utsikt</span></span>
+        </a>
+
+        <a href="oversikt.html" class="row map">
+            <svg class="ico tall" viewBox="0 0 800 1546" aria-hidden="true"><use href="#tromso"/></svg>
+            <span class="txt"><span class="name">Oversikt turer</span><span class="desc">Alle turene på kartet</span></span>
+        </a>
+    </nav>
+
+    <div class="foot">
+        <span class="counter">Unike besøk <b id="count">…</b></span>
+        <div class="bmc">
+            <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="spJcAlD" data-color="#FFDD00" data-emoji="" data-font="Cookie" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff"></script>
+        </div>
+    </div>
+</main>
+
+<script>
+    const namespace = 'larsgimse-topptur-unike';
+    const storageKey = 'has_visited_topptur';
+    const el = document.getElementById('count');
+    let visited = false;
+    try { visited = !!localStorage.getItem(storageKey); } catch (e) {}
+
+    if (visited) {
+        fetch(`https://countapi.mileshilliard.com/api/v1/get/${namespace}`)
+            .then(r => r.json())
+            .then(d => { el.innerText = d.value || "1"; })
+            .catch(() => { el.innerText = "—"; });
+    } else {
+        fetch(`https://countapi.mileshilliard.com/api/v1/hit/${namespace}`)
+            .then(r => r.json())
+            .then(d => {
+                el.innerText = d.value || "1";
+                try { localStorage.setItem(storageKey, 'true'); } catch (e) {}
+            })
+            .catch(() => { el.innerText = "1"; });
+    }
+</script>
+    <script>
+/* ===== SPRÅKBRYTER NO / EN (innebygd; ingen eksterne filer) =====
+   Norsk er originalspråket. Engelsk legges på av denne modulen:
+   - eksakte tekster slås opp i ORDBOK
+   - tekster med tall/variabler oversettes av REGLER
+   - valgt språk huskes i localStorage («lang») og deles mellom sidene
+   Mangler en tekst i ORDBOK, vises den på norsk. Legg den til nedenfor. */
+(function () {
+    'use strict';
+
+    var ORDBOK = {
+        /* --- Felles / navigasjon --- */
+        'Toppturer - Oversiktskart': 'Summit trips - Overview map',
+        'Toppturer': 'Summit trips',
+        'Nullstill': 'Reset',
+        'Nullstill kart': 'Reset map',
+        'Vinter': 'Winter',
+        'Sommer': 'Summer',
+        'Stier': 'Trails',
+        'Stier:': 'Trails:',
+        'Severdigheter': 'Points of interest',
+        'Severdigheter:': 'Points of interest:',
+        'Fjelltopper': 'Mountain peaks',
+        'Fjelltopper:': 'Mountain peaks:',
+        'Marker': 'Select',
+        'Marker et område du vil zoome til (dra en firkant med musen)': 'Select an area to zoom to (drag a rectangle with the mouse)',
+        'Lagret': 'Saved',
+        'Lagret data': 'Saved data',
+        'Topografi': 'Topography',
+        'Bratthet': 'Steepness',
+        'Buss': 'Bus',
+        'Hellingsvinkel': 'Slope angle',
+        'Over 45°': 'Over 45°',
+        'Norgeskart': 'Norway map',
+        'Søk etter topp...': 'Search for a peak...',
+        'Søk etter topp': 'Search for a peak',
+        'Søk etter fjelltopp': 'Search for a mountain peak',
+        'Laster spor': 'Loading tracks',
+        'Laster spor …': 'Loading tracks …',
+        'Kunne ikke laste spor': 'Could not load tracks',
+        'Bilde': 'Image',
+
+        /* --- Forside (index.html) --- */
+        'Toppturer og Fjellturer': 'Summit trips and mountain hikes',
+        'Vinter og sommer rundt Tromsø': 'Winter and summer around Tromsø',
+        'Ski og skredfare': 'Skiing and avalanche danger',
+        'Stier og utsikt': 'Trails and views',
+        'Alle turene på kartet': 'All trips on the map',
+        'Unike besøk': 'Unique visits',
+        'Prøv 🧰 GPX-lab': 'Try 🧰 GPX Lab',
+
+        /* --- Oversikt: paneler --- */
+        'Linje:': 'Line:',
+        'Vinkel': 'Angle',
+        'Bue': 'Arc',
+        'Rett': 'Straight',
+        'Ramme:': 'Frame:',
+        'Dra navnene for å flytte dem': 'Drag the names to move them',
+        'Lagret i nettleseren (30 dager), slik at det ikke må lastes ned på nytt': 'Saved in the browser (30 days) so it does not have to be downloaded again',
+        'Tøm': 'Clear',
+        'Tøm alt': 'Clear all',
+        'Bare lagret data:': 'Saved data only:',
+        'Bratthetsskala:': 'Steepness scale:',
+        'Linjenr:': 'Line no.:',
+        'Destinasjon:': 'Destination:',
+        'Forsinkelse:': 'Delay:',
+        'Busser: Laster...': 'Buses: Loading...',
+        'Tilkoblingsfeil buss': 'Bus connection error',
+        'Leser inn spor...': 'Loading tracks...',
+        'Ingen spor funnet.': 'No tracks found.',
+        'Ukjent topp': 'Unknown peak',
+        'Fjern': 'Remove',
+        'Innstillinger': 'Settings',
+        'Ramme': 'Frame',
+        'Linje': 'Line',
+        'Vis ramme': 'Show frame',
+        'Skjul ramme': 'Hide frame',
+        'Feilsøking': 'Debugging',
+        'Test tilkobling': 'Test connection',
+        'Kopier': 'Copy',
+
+        /* --- Oversikt: popup og statusmeldinger --- */
+        'Sti / Tråkk': 'Path / Trail',
+        'Traktorvei': 'Tractor road',
+        'Gangvei': 'Footpath',
+        'Underlag:': 'Surface:',
+        'Gradering:': 'Grade:',
+        'Merking:': 'Marking:',
+        'Ja (Rød/Blå)': 'Yes (Red/Blue)',
+        'Høyde:': 'Elevation:',
+        'Severdighet': 'Point of interest',
+        'Fjellpass / Skard': 'Mountain pass / Gap',
+        'Utsiktspunkt': 'Viewpoint',
+        'Turisthytte / Koie': 'Mountain hut / Cabin',
+        'Gapahuk / Ly': 'Lean-to / Shelter',
+        'Se detaljer ➔': 'See details ➔',
+        'Vintertopp': 'Winter peak',
+        'Sommertopp': 'Summer peak',
+        'I rute': 'On time',
+        'Zoomer inn for å laste stier...': 'Zooming in to load trails...',
+        'Zoomer inn for å hente fjelltopper...': 'Zooming in to fetch peaks...',
+        'Zoom inn nærmere for å vise fjelltopper...': 'Zoom in closer to show peaks...',
+        'Zoom litt inn for å hente fjelltopper...': 'Zoom in a little to fetch peaks...',
+        'Dra en firkant over området du vil zoome til': 'Drag a rectangle over the area you want to zoom to',
+        'Esc avbryter': 'Esc to cancel',
+        'Vektorkart feilet, bruker Kartverket gråtone i stedet': 'Vector map failed, using Kartverket greyscale instead',
+
+        /* --- Sommer / vinter: sider --- */
+        'Fjellturer rundt Tromsø': 'Mountain hikes around Tromsø',
+        'Toppturer rundt Tromsø': 'Summit trips around Tromsø',
+        'Toppturer vinter': 'Winter summit trips',
+        'Fjellturer sommer': 'Summer mountain hikes',
+        'Oversikt turer': 'Trip overview',
+        'Sykkelturer:': 'Bike trips:',
+        'På': 'On',
+        'Av': 'Off',
+        'Informasjon om siden': 'Information about the site',
+        'Laster informasjon...': 'Loading information...',
+        'Klarte ikke å laste informasjonen (info.txt ble ikke funnet eller kunde ikke åpnes).': 'Could not load the information (info.txt was not found or could not be opened).',
+        'Skjul Meny': 'Hide menu',
+        'Skjul meny': 'Hide menu',
+        'Vis Meny': 'Show menu',
+        'Vis meny': 'Show menu',
+        'Del': 'Share',
+        'Kopiert!': 'Copied!',
+        'Turbeskrivelse': 'Trip description',
+        'Veibeskrivelse': 'Driving directions',
+        'Last ned GPX': 'Download GPX',
+        'Hovedspor': 'Main track',
+        'Spor': 'Track',
+        'Profil': 'Profile',
+        'Vis': 'Show',
+        'Brattskala': 'Steepness scale',
+        '3D visualisering': '3D visualization',
+        'Sykkeltur': 'Bike trip',
+        'Nordfjellet - Tromsø geografiske midtpunkt': 'Nordfjellet - geographical midpoint of Tromsø',
+
+        /* --- Data fra JSON-filene (titler, beskrivelser, pin-tekster) --- */
+        'Kommer mer info snart...': 'More info coming soon...',
+        'Se video': 'Watch video',
+        'Se bilder': 'View photos',
+        'Se bilder (Spor 2)': 'View photos (Track 2)',
+        'Se Strava-aktivitet': 'View Strava activity',
+        'Gjeste video': 'Guest video',
+        'Alternativ rute, som ikke er eksponert': 'Alternative route, not exposed',
+        'Spor 2 (kun gange)': 'Track 2 (walking only)',
+        'Spor kun til Nattmålsfjellet': 'Track to Nattmålsfjellet only',
+        'Syklet inn hit og gikk herfra til toppen': 'Cycled in to here and walked from here to the summit',
+        'Hovedspor er delvis eksponert til hit, velg alternativ rute opp': 'The main track is partly exposed up to here; choose the alternative route up',
+        'Fin tur med god utsikt over Ersfjorden.': 'Nice hike with great views over Ersfjorden.',
+        'Flott tur opp fra nedre Fjellheisstasjon.': 'Great hike up from the lower Fjellheisen cable car station.',
+        'Klassisk og luftig tur på Kvaløya.': 'Classic and airy hike on Kvaløya.',
+        'Sykkeltur til Linken er en fin tur fra byen der du får en nydelig utsikt over Tromsø': 'The bike trip to Linken is a nice trip from town with a lovely view over Tromsø.',
+        'Syklet inn og gikk herfra til toppen. Hovedsporet viser hele turen med sykling, spor 2 er kun gangen fra der sykkelen ble parkert.': 'Cycled in and walked from here to the summit. The main track shows the whole trip including the cycling; track 2 is only the walk from where the bike was parked.',
+        'Sykkeltur på litt over 6 mil med elsykkel, kjørt på assistanse 0 eller 1 for å spare strøm. Stien over til Kvaløyvågen er litt grov og har en del klopper. Opp til Nordtinden lønner det seg å holde kanten mot sør for spektakulær utsikt. Hovedsporet viser hele turen med sykling, spor 2 er kun gangen fra der sykkelen ble parkert.': 'Bike trip of just over 60 km on an e-bike, ridden on assist level 0 or 1 to save battery. The trail across to Kvaløyvågen is a bit rough with quite a few boulders. On the way up to Nordtinden it pays off to keep to the southern edge for spectacular views. The main track shows the whole trip including the cycling; track 2 is only the walk from where the bike was parked.',
+        'TMC HalvUltra (25 km) er et krevende terreng- og toppturløp med start og mål ved TUIL Arena i Tromsdalen. Løpet er en del av Tromsø Mountain Challenge (arrangert av Midnight Sun Marathon).': 'TMC HalvUltra (25 km) is a demanding trail and mountain running race with start and finish at TUIL Arena in Tromsdalen. The race is part of the Tromsø Mountain Challenge (organized by Midnight Sun Marathon).'
+    };
+
+    var NOUN = { stier: 'trails', severdigheter: 'points of interest', fjelltopper: 'peaks' };
+    var N = function (w) { return NOUN[w] || w; };
+    var NN = '(stier|severdigheter|fjelltopper)';
+
+    /* Regler for tekst med tall. Brukes i rekkefølge på teksten som ikke fantes i ORDBOK. */
+    var REGLER = [
+        [/Sjekker hurtiglager for (\S+) \((\d+) fliser\)\.\.\./g, function (m, a, b) { return 'Checking cache for ' + N(a) + ' (' + b + ' tiles)...'; }],
+        [/Sjekker lagret for fjelltopper \((\d+) fliser\)\.\.\./g, 'Checking saved data for peaks ($1 tiles)...'],
+        [new RegExp('(\\d+) ' + NN + ' vist fra lagret', 'g'), function (m, n, w) { return n + ' ' + N(w) + ' shown from saved data'; }],
+        [/\(ingen nedlasting nødvendig\)/g, '(no download needed)'],
+        [/(\d+) fliser er ikke lagret \(«Bare lagret data» er på\)/g, '$1 tiles are not saved ("Saved data only" is on)'],
+        [/Henter stier og tråkk fra OpenStreetMap/g, 'Fetching trails from OpenStreetMap'],
+        [/Henter fjellpass og severdigheter/g, 'Fetching mountain passes and points of interest'],
+        [/Henter fjelltopper fra OpenStreetMap: (\d+) av (\d+) fliser/g, 'Fetching peaks from OpenStreetMap: $1 of $2 tiles'],
+        [/\(kan ta opptil ett minutt\)/g, '(may take up to a minute)'],
+        [/(\d+) av (\d+) fliser ferdig/g, '$1 of $2 tiles done'],
+        [/(\d+) spørringer venter på Overpass/g, '$1 requests waiting for Overpass'],
+        [/(\d+) spørring venter på Overpass/g, '$1 request waiting for Overpass'],
+        [new RegExp('(\\d+) ' + NN + ' så langt', 'g'), function (m, n, w) { return n + ' ' + N(w) + ' so far'; }],
+        [new RegExp('Ferdig: (\\d+) ' + NN, 'g'), function (m, n, w) { return 'Done: ' + n + ' ' + N(w); }],
+        [/(\d+) fliser hentet på/g, '$1 tiles fetched in'],
+        [/, (\d+) fra hurtiglager/g, ', $1 from cache'],
+        [/, (\d+) fra lagret/g, ', $1 from saved data'],
+        [/(\d+) fra lagret/g, '$1 from saved data'],
+        [/lagret i nettleseren/g, 'saved in the browser'],
+        [/(\d+) nye fjelltopper lagt til/g, '$1 new peaks added'],
+        [/Ingen nye fjelltopper her/g, 'No new peaks here'],
+        [new RegExp('Feil ved henting av ' + NN + ':', 'g'), function (m, w) { return 'Error fetching ' + N(w) + ':'; }],
+        [/Fant ikke flere fjelltopper\./g, 'Could not find more peaks.'],
+        [/Overpass svarer ikke/g, 'Overpass is not responding'],
+        [/tidsavbrudd på serveren/g, 'server timeout'],
+        [/det som er hentet er lagret, trykk igjen for å fortsette/g, 'what has been fetched is saved, press again to continue'],
+        [/Dra en firkant over området du vil zoome til/g, 'Drag a rectangle over the area you want to zoom to'],
+        [/Esc avbryter/g, 'Esc to cancel'],
+        [/Zoom inn nærmere \(nivå (\d+)\) for å laste stier\.\.\./g, 'Zoom in closer (level $1) to load trails...'],
+        [/Laster inn spor\.\.\. (\d+)\/(\d+)/g, 'Loading tracks... $1/$2'],
+        [/Alle (\d+) spor er lastet inn!/g, 'All $1 tracks loaded!'],
+        [/Laster spor (\d+) \/ (\d+)/g, 'Loading tracks $1 / $2'],
+        [/^(\d+) spor lastet$/g, '$1 tracks loaded'],
+        [/^(\d+) fliser$/g, '$1 tiles'],
+        [/(\d+),(\d) s\b/g, '$1.$2 s'],
+        [/^Rute (.+)$/g, 'Route $1'],
+        [/^Busser synlige: (\d+)$/g, 'Buses visible: $1'],
+        [/^Busser: (\d+)$/g, 'Buses: $1'],
+        [/^Linje (\S+)$/g, 'Line $1'],
+        [/Forsinkelse: I rute/g, 'Delay: On time'],
+        [/^Forsinkelse:/g, 'Delay:'],
+        [/^(\d+) m\.o\.h\.$/g, '$1 m a.s.l.'],
+        [/^Ekstra bilder \((\d+)\)$/g, 'Extra photos ($1)'],
+        [/^Se video \((\d{4})\)$/g, 'Watch video ($1)'],
+        [/^Spor (\d+)$/g, 'Track $1'],
+        [/^Tur (\d+) \((\d{4})\)$/g, 'Trip $1 ($2)'],
+        [/Lenke for (.+) er kopiert til utklippstavlen!/g, 'Link for $1 copied to the clipboard!'],
+        [/Kopier denne lenken:/g, 'Copy this link:'],
+        /* Høydeprofil-popup */
+        [/Distanse T\/R:/g, 'Distance round trip:'],
+        [/Stigning:/g, 'Ascent:'],
+        [/Tid til topp:/g, 'Time to summit:'],
+        [/Tid T\/R:/g, 'Time round trip:'],
+        [/Til topp:/g, 'To summit:'],
+        [/⌛ T\/R:/g, '⌛ Round trip:'],
+        [/(\u{1F3D4}\uFE0F?\s*)Topp:/gu, '$1Summit:'],
+        [/(\d+)t (\d+)min/g, '$1h $2min'],
+        [/(\d+) moh\b/g, '$1 m a.s.l.']
+    ];
+
+    function oversett(tekst) {
+        if (!tekst) return tekst;
+        var m = /^(\s*)([\s\S]*?)(\s*)$/.exec(tekst);
+        var kjerne = m[2];
+        if (!kjerne) return tekst;
+        if (Object.prototype.hasOwnProperty.call(ORDBOK, kjerne)) return m[1] + ORDBOK[kjerne] + m[3];
+        var ut = kjerne;
+        for (var i = 0; i < REGLER.length; i++) ut = ut.replace(REGLER[i][0], REGLER[i][1]);
+        return ut === kjerne ? tekst : m[1] + ut + m[3];
+    }
+
+    var lang = 'no';
+    try {
+        var url = new URLSearchParams(location.search).get('lang');
+        var lagret = localStorage.getItem('lang');
+        lang = (url === 'en' || url === 'no') ? url : (lagret === 'en' ? 'en' : 'no');
+    } catch (_) { var u2 = /[?&]lang=en/.test(location.search); lang = u2 ? 'en' : 'no'; }
+
+    var tekstMinne = new WeakMap();   // tekstnode  -> {no, en}
+    var attrMinne = new WeakMap();    // element    -> { attr: {no, en} }
+    var ATTR = ['title', 'placeholder', 'aria-label', 'alt'];
+    var hopp = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, NOSCRIPT: 1 };
+    var observer = null;
+
+    function tekstNode(n) {
+        var p = n.parentNode;
+        if (p && hopp[p.nodeName]) return;
+        var rec = tekstMinne.get(n), cur = n.nodeValue;
+        if (rec && cur === rec.en) { if (lang === 'no') n.nodeValue = rec.no; return; }
+        if (lang === 'en') {
+            var en = oversett(cur);
+            if (en !== cur) { tekstMinne.set(n, { no: cur, en: en }); n.nodeValue = en; }
+            else tekstMinne.delete(n);
+        } else tekstMinne.delete(n);
+    }
+
+    function attributter(el) {
+        if (!el.getAttribute) return;
+        var rek = attrMinne.get(el);
+        for (var i = 0; i < ATTR.length; i++) {
+            var a = ATTR[i];
+            if (!el.hasAttribute(a)) continue;
+            var cur = el.getAttribute(a), r = rek && rek[a];
+            if (r && cur === r.en) { if (lang === 'no') el.setAttribute(a, r.no); continue; }
+            if (lang === 'en') {
+                var en = oversett(cur);
+                if (en !== cur) {
+                    if (!rek) { rek = {}; attrMinne.set(el, rek); }
+                    rek[a] = { no: cur, en: en };
+                    el.setAttribute(a, en);
+                } else if (rek) delete rek[a];
+            } else if (rek) delete rek[a];
+        }
+    }
+
+    function gjennom(rot) {
+        if (!rot) return;
+        if (rot.nodeType === 3) { tekstNode(rot); return; }
+        if (rot.nodeType !== 1 && rot.nodeType !== 9 && rot.nodeType !== 11) return;
+        if (rot.nodeType === 1) { if (hopp[rot.nodeName]) return; attributter(rot); }
+        var tw = document.createTreeWalker(rot, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null);
+        var n;
+        while ((n = tw.nextNode())) {
+            if (n.nodeType === 3) tekstNode(n); else if (!hopp[n.nodeName]) attributter(n);
+        }
+    }
+
+    function start() {
+        if (observer) return;
+        observer = new MutationObserver(function (muts) {
+            for (var i = 0; i < muts.length; i++) {
+                var m = muts[i];
+                if (m.type === 'characterData') tekstNode(m.target);
+                else if (m.type === 'attributes') attributter(m.target);
+                else for (var j = 0; j < m.addedNodes.length; j++) gjennom(m.addedNodes[j]);
+            }
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTR });
+    }
+
+    /* alert() og prompt() er ikke DOM, så de pakkes inn */
+    var _alert = window.alert, _prompt = window.prompt;
+    window.alert = function (m) { return _alert.call(window, lang === 'en' ? oversett(String(m)) : m); };
+    window.prompt = function (m, d) { return _prompt.call(window, lang === 'en' ? oversett(String(m)) : m, d); };
+
+    function oppdaterKnapp() {
+        var b = document.getElementById('langBtn');
+        if (!b) return;
+        var kode = b.querySelector('.lang-code');
+        if (kode) kode.textContent = lang === 'en' ? 'NO' : 'EN';
+        b.setAttribute('aria-label', lang === 'en' ? 'Bytt til norsk' : 'Switch to English');
+        b.setAttribute('title', lang === 'en' ? 'Bytt til norsk' : 'Switch to English');
+    }
+
+    function sett(nytt) {
+        lang = nytt;
+        try { localStorage.setItem('lang', lang); } catch (_) {}
+        document.documentElement.lang = lang === 'en' ? 'en' : 'no';
+        if (observer) observer.disconnect();
+        gjennom(document.documentElement);
+        observer = null; start();
+        oppdaterKnapp();
+        try { document.dispatchEvent(new CustomEvent('langchange', { detail: lang })); } catch (_) {}
+    }
+
+    window.__lang = function () { return lang; };
+    window.__oversett = oversett;
+    window.__setLang = sett;
+
+    function init() {
+        var b = document.getElementById('langBtn');
+        if (b) b.addEventListener('click', function () { sett(lang === 'en' ? 'no' : 'en'); });
+        document.documentElement.lang = lang === 'en' ? 'en' : 'no';
+        if (lang === 'en') gjennom(document.documentElement);
+        start();
+        oppdaterKnapp();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+    </script>
+</body>
+</html>
