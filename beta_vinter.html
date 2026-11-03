@@ -1211,10 +1211,24 @@
                             aktiveMarkører.forEach(m => map.removeLayer(m));
                             aktiveMarkører = [];
                             allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.1, weight: 1, color: 'var(--strava-orange)'}));
+                            if (!map.hasLayer(l)) map.addLayer(l); // Valgt hovedspor skal starte som synlig.
                             l.setStyle({opacity: 1, weight: 2.5, color: 'var(--strava-orange)'}).bringToFront(); 
 
                             videoContainer.innerHTML = '';
                             videoContainer.classList.remove('ui-hidden');
+                            // Hovedmeny og GPX-lab skal bruke de samme Leaflet-lagene.
+                            const delteSpor = window.aktiveSporKontrollere = { toppNavn: topp.navn, spor: [] };
+                            const registrerSpor = (kontroll, rad) => {
+                                kontroll.rad = rad;
+                                const sett = kontroll.setVisible;
+                                kontroll.setVisible = synlig => {
+                                    sett(Boolean(synlig));
+                                    rad.querySelector('.toggle-group')?.classList.toggle('active', kontroll.isVisible());
+                                    if (typeof window.synkLabSporKnapper === 'function') window.synkLabSporKnapper();
+                                };
+                                delteSpor.spor.push(kontroll);
+                                videoContainer.appendChild(rad);
+                            };
 
                             const menuTopRow = document.createElement('div');
                             menuTopRow.className = 'menu-top-row';
@@ -1268,13 +1282,19 @@
                                 videoContainer.appendChild(suuntoBtn);
                             }
 
-                            videoContainer.appendChild(skapKontrollRad(topp.navn, null, true, 
-                                (on) => on ? map.addLayer(l) : map.removeLayer(l),
-                                (on) => on ? visProfil(l, topp.navn, topp.fil) : map.closePopup()
+                            const hovedKontroll = {
+                                fil: topp.fil,
+                                getLayer: () => l,
+                                isVisible: () => map.hasLayer(l),
+                                setVisible: on => on ? map.addLayer(l) : map.removeLayer(l)
+                            };
+                            registrerSpor(hovedKontroll, skapKontrollRad(topp.navn, null, hovedKontroll.isVisible(),
+                                on => hovedKontroll.setVisible(on),
+                                on => on ? visProfil(l, topp.navn, topp.fil) : map.closePopup()
                             ));
 
                             topp.ekstraSpor?.forEach(es => {
-                                let esL = null;
+                                let esL = null, esPin = null;
 
                                 const visEkstraSpor = () => {
                                     if (!esL) {
@@ -1282,29 +1302,38 @@
                                             async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null},
                                             polyline_options: {color: es.farge || 'var(--strava-orange)', weight: es.defaultActive ? 3 : 1.5, opacity: es.defaultActive ? 0.9 : 1, dashArray:'4,6'}
                                         }).on('loaded', (eEvt) => {
-                                            if (!es.popupTekst) return;
+                                            if (!es.popupTekst || !map.hasLayer(eEvt.target)) return;
                                             const punkter = eEvt.target.getLayers()[0].getLatLngs();
                                             if (punkter && punkter.length > 0) {
-                                                const pin = L.marker(punkter[punkter.length - 1], { icon: smallIcon }).addTo(map);
-                                                pin.bindPopup(`<b>${es.tittel}</b><br>${es.popupTekst}`);
-                                                pin.openPopup();
-                                                aktiveMarkører.push(pin);
+                                                esPin = L.marker(punkter[punkter.length - 1], { icon: smallIcon }).addTo(map);
+                                                esPin.bindPopup(`<b>${es.tittel}</b><br>${es.popupTekst}`);
+                                                esPin.openPopup();
+                                                aktiveMarkører.push(esPin);
                                             }
                                         });
                                     }
                                     esL.addTo(map).bringToFront();
+                                    if (esPin) esPin.addTo(map);
                                     if (!aktiveEkstraSporLayers.includes(esL)) aktiveEkstraSporLayers.push(esL);
                                 };
-
-                                videoContainer.appendChild(skapKontrollRad(es.tittel, es.fil, es.defaultActive || false,
-                                    (on) => {
-                                        if (on) { visEkstraSpor(); }
-                                        else if (esL) { map.removeLayer(esL); aktiveEkstraSporLayers = aktiveEkstraSporLayers.filter(x => x !== esL); }
-                                    },
-                                    (on) => { if (on && esL) visProfil(esL, es.tittel, es.fil); else map.closePopup(); }
+                                const ekstraKontroll = {
+                                    fil: es.fil,
+                                    getLayer: () => esL,
+                                    isVisible: () => !!esL && map.hasLayer(esL),
+                                    setVisible: on => {
+                                        if (on) visEkstraSpor();
+                                        else if (esL) {
+                                            map.removeLayer(esL);
+                                            if (esPin) map.removeLayer(esPin);
+                                            aktiveEkstraSporLayers = aktiveEkstraSporLayers.filter(x => x !== esL);
+                                        }
+                                    }
+                                };
+                                registrerSpor(ekstraKontroll, skapKontrollRad(es.tittel, es.fil, !!es.defaultActive,
+                                    on => ekstraKontroll.setVisible(on),
+                                    on => { if (on && esL && esL.getLayers().length) visProfil(esL, es.tittel, es.fil); else map.closePopup(); }
                                 ));
-
-                                if (es.defaultActive) visEkstraSpor();
+                                if (es.defaultActive) ekstraKontroll.setVisible(true);
                             });
 
                             if (topp.beskrivelse) {
@@ -1427,7 +1456,8 @@
         searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') utførSøk(); });
 
         document.getElementById('resetBtn').onclick = () => {
-            isReseting = true; aktivToppNavn = null; videoContainer.innerHTML = ''; settKartModus('oversikt');
+            isReseting = true; aktivToppNavn = null; window.aktiveSporKontrollere = null;
+            videoContainer.innerHTML = ''; settKartModus('oversikt');
             searchInput.value = '';
 
             const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
@@ -1566,6 +1596,12 @@
 }
 #statWindow.minimized #statHeader { margin-bottom: 0; border-bottom: none; border-radius: 12px; }
 #statWindow.minimized #statBody { display: none; }
+#labPanel, #statWindow { box-sizing: border-box; max-width: calc(100vw - 20px); }
+#labHeader, #statHeader { touch-action: none; -webkit-user-select: none; user-select: none; }
+@media (max-width: 768px) {
+  #labPanel { right: 10px; width: min(320px, calc(100vw - 20px)); max-height: calc(100dvh - 20px); }
+  #statWindow { left: 10px; width: min(380px, calc(100vw - 20px)); max-height: calc(100dvh - 20px); }
+}
 #statHeaderControls button {
   background: transparent; border: none; font-size: 14px; cursor: pointer; padding: 0 4px; font-weight: bold; color: #64748b;
 }
@@ -1663,20 +1699,34 @@ statMinBtn.onclick = () => {
 };
 
 function gjørFlyttbar(vinduHode, vinduEl) {
-    let isDragging = false, dragX = 0, dragY = 0;
-    vinduHode.onmousedown = (e) => {
-        if (e.target.tagName === 'BUTTON') return;
-        isDragging = true;
-        dragX = e.clientX - vinduEl.offsetLeft;
-        dragY = e.clientY - vinduEl.offsetTop;
-        document.onmousemove = (ev) => {
-            if (!isDragging) return;
-            vinduEl.style.left = Math.max(10, Math.min(window.innerWidth - vinduEl.offsetWidth - 10, ev.clientX - dragX)) + 'px';
-            vinduEl.style.top = Math.max(10, Math.min(window.innerHeight - vinduEl.offsetHeight - 10, ev.clientY - dragY)) + 'px';
-            vinduEl.style.right = 'auto';
-        };
-        document.onmouseup = () => { isDragging = false; document.onmousemove = null; };
-    };
+    // Pointer Events dekker mus, finger og penn – også iOS/Android.
+    let drag = null;
+    const begrens = (v, storrelse, skjerm) => Math.max(8, Math.min(Math.max(8, skjerm - storrelse - 8), v));
+    vinduHode.addEventListener('pointerdown', e => {
+        if (e.target.closest('button') || (e.pointerType === 'mouse' && e.button !== 0)) return;
+        const b = vinduEl.getBoundingClientRect();
+        drag = { id: e.pointerId, x: e.clientX - b.left, y: e.clientY - b.top };
+        vinduHode.setPointerCapture(e.pointerId);
+        e.preventDefault();
+    });
+    vinduHode.addEventListener('pointermove', e => {
+        if (!drag || drag.id !== e.pointerId) return;
+        vinduEl.style.left = begrens(e.clientX - drag.x, vinduEl.offsetWidth, window.innerWidth) + 'px';
+        vinduEl.style.top = begrens(e.clientY - drag.y, vinduEl.offsetHeight, window.innerHeight) + 'px';
+        vinduEl.style.right = 'auto';
+        e.preventDefault();
+    });
+    const ferdig = e => { if (drag && drag.id === e.pointerId) drag = null; };
+    vinduHode.addEventListener('pointerup', ferdig);
+    vinduHode.addEventListener('pointercancel', ferdig);
+    vinduHode.addEventListener('lostpointercapture', ferdig);
+    window.addEventListener('resize', () => {
+        if (vinduEl.style.display === 'none') return;
+        const b = vinduEl.getBoundingClientRect();
+        vinduEl.style.left = begrens(b.left, vinduEl.offsetWidth, window.innerWidth) + 'px';
+        vinduEl.style.top = begrens(b.top, vinduEl.offsetHeight, window.innerHeight) + 'px';
+        vinduEl.style.right = 'auto';
+    });
 }
 gjørFlyttbar(document.getElementById('labHeader'), panel);
 gjørFlyttbar(document.getElementById('statHeader'), statWin);
@@ -1693,7 +1743,8 @@ let TR_ALL = [];
 let src = '';
 let rp = null, heatOn = false;
 let valgteSporIndekser = [];
-let kartLagMap = {}; 
+let kartLagMap = {};
+let labLastingSekvens = 0;
 const grp = L.featureGroup().addTo(map);
 
 function parse(txt,navn){
@@ -1735,15 +1786,39 @@ function getTR() {
   return TR_ALL.filter((_, idx) => valgteSporIndekser.includes(idx));
 }
 
+function hentDeltKontroll(index) {
+  const delt = window.aktiveSporKontrollere;
+  return src === 'topp' && delt && delt.toppNavn === aktivToppNavn ? delt.spor[index] : null;
+}
+function erSporSynlig(index) {
+  const kontroll = hentDeltKontroll(index);
+  return kontroll ? kontroll.isVisible() : !!(kartLagMap[index] && map.hasLayer(kartLagMap[index]));
+}
 function oppdaterKartVisningForSpor(index, synlig) {
+  const kontroll = hentDeltKontroll(index);
+  if (kontroll) {
+    // Samme handling og samme lag som av/på-knappen for sporet i hovedmenyen.
+    kontroll.setVisible(synlig);
+    return;
+  }
   const layer = kartLagMap[index];
   if (!layer) return;
-  if (synlig) {
-    if (!map.hasLayer(layer)) layer.addTo(map);
-  } else {
-    if (map.hasLayer(layer)) map.removeLayer(layer);
-  }
+  if (synlig && !map.hasLayer(layer)) layer.addTo(map);
+  if (!synlig && map.hasLayer(layer)) map.removeLayer(layer);
+  synkLabSporKnapper();
 }
+function synkLabSporKnapper() {
+  document.querySelectorAll('#labTrackList .lab-track-item').forEach((row, i) => {
+    const synlig = erSporSynlig(i);
+    const knapp = row.querySelector('.map-toggle-btn');
+    if (knapp) {
+      knapp.textContent = synlig ? '👁️ På kart' : '🙈 Skjult';
+      knapp.style.background = synlig ? '#e0f2fe' : '#f1f5f9';
+      knapp.setAttribute('aria-pressed', String(synlig));
+    }
+  });
+}
+window.synkLabSporKnapper = synkLabSporKnapper;
 
 function byggLabSporVelger() {
   const container = document.getElementById('labTrackSelector');
@@ -1768,26 +1843,17 @@ function byggLabSporVelger() {
       chk.checked = valgteSporIndekser.includes(i);
       chk.title = 'Bruk i GPX-lab analyse';
       chk.onchange = () => {
+          // Sjekkboksen velger bare analysemateriale. Kartvisning styres av kartknappen.
           if (chk.checked) {
               if (!valgteSporIndekser.includes(i)) valgteSporIndekser.push(i);
-              oppdaterKartVisningForSpor(i, true);
           } else {
               valgteSporIndekser = valgteSporIndekser.filter(x => x !== i);
-              oppdaterKartVisningForSpor(i, false);
-              // Hvis ingen spor er valgt lenger, tøm laben/statistikk
-              if (valgteSporIndekser.length === 0) {
-                  msg('');
-                  statWin.style.display = 'none';
-              } else if (statWin.style.display === 'block') {
-                  stats();
-              }
           }
-          // Oppdater knappeteksten på radens kartvisningsknapp
-          const mapToggleBtn = row.querySelector('.map-toggle-btn');
-          if (mapToggleBtn) {
-              const erSynligPaaKart = kartLagMap[i] && map.hasLayer(kartLagMap[i]);
-              mapToggleBtn.textContent = erSynligPaaKart ? '👁️ På kart' : '🙈 Skjult';
-              mapToggleBtn.style.background = erSynligPaaKart ? '#e0f2fe' : '#f1f5f9';
+          if (!valgteSporIndekser.length) {
+              msg('');
+              statWin.style.display = 'none';
+          } else if (statWin.style.display === 'block') {
+              stats();
           }
       };
       leftDiv.appendChild(chk);
@@ -1798,31 +1864,18 @@ function byggLabSporVelger() {
 
       const mapToggleBtn = document.createElement('button');
       mapToggleBtn.className = 'map-toggle-btn';
-      const erSynligPaaKart = kartLagMap[i] && map.hasLayer(kartLagMap[i]);
+      const erSynligPaaKart = erSporSynlig(i);
       mapToggleBtn.textContent = erSynligPaaKart ? '👁️ På kart' : '🙈 Skjult';
       mapToggleBtn.style.cssText = `font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1; background: ${erSynligPaaKart ? '#e0f2fe' : '#f1f5f9'}; cursor: pointer;`;
       mapToggleBtn.title = 'Slå av/på synlighet for dette sporet på selve kartet';
       mapToggleBtn.onclick = () => {
-          const nySynlighet = !(kartLagMap[i] && map.hasLayer(kartLagMap[i]));
-          oppdaterKartVisningForSpor(i, nySynlighet);
-          chk.checked = nySynlighet;
-          if (nySynlighet) {
-              if (!valgteSporIndekser.includes(i)) valgteSporIndekser.push(i);
-          } else {
-              valgteSporIndekser = valgteSporIndekser.filter(x => x !== i);
-              if (valgteSporIndekser.length === 0) {
-                  msg('');
-                  statWin.style.display = 'none';
-              }
-          }
-          mapToggleBtn.textContent = nySynlighet ? '👁️ På kart' : '🙈 Skjult';
-          mapToggleBtn.style.background = nySynlighet ? '#e0f2fe' : '#f1f5f9';
-          if (statWin.style.display === 'block' && valgteSporIndekser.length > 0) stats();
+          oppdaterKartVisningForSpor(i, !erSporSynlig(i));
       };
       row.appendChild(mapToggleBtn);
 
       list.appendChild(row);
   });
+  synkLabSporKnapper();
 }
 
 window.oppdaterLabSporVelger = function(toppObj) {
@@ -1831,6 +1884,7 @@ window.oppdaterLabSporVelger = function(toppObj) {
 };
 
 async function hentValgt(){
+  const sekvens = ++labLastingSekvens;
   const t=typeof topper!=='undefined'&&topper.find(x=>x.navn===aktivToppNavn);
   if(!t){
     if (src !== 'upload') {
@@ -1839,6 +1893,8 @@ async function hentValgt(){
     return false;
   }
   const f=[{fil:t.fil,t:t.navn,c:COL[0]},...(t.ekstraSpor||[]).map(e=>({fil:e.fil,t:e.tittel,c:e.farge}))];
+  // Bare opplastede spor er selvstendige. Spor fra toppmenyen gjenbruker eksisterende kartlag.
+  if (src === 'upload') Object.values(kartLagMap).forEach(l => { if (l && map.hasLayer(l)) map.removeLayer(l); });
   TR_ALL=[]; kartLagMap={}; src='topp';
   
   for(let index = 0; index < f.length; index++){
@@ -1846,19 +1902,15 @@ async function hentValgt(){
     try{
       const r=await fetch('gpx/'+x.fil);
       const text = await r.text();
+      if (sekvens !== labLastingSekvens) return false;
       const tr=parse(text, x.t);
       if(tr){
         tr.farge=x.c || COL[index % COL.length]; tr.topp=t.navn; tr.navn=x.t; tr.dato=tr.dato||(x.fil.match(/(\d{4})_(\d{2})_(\d{2})/)||[]).slice(1).join('-');
         TR_ALL.push(tr);
         
-        const lObj = new L.GPX('gpx/'+x.fil, {
-            async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null},
-            polyline_options: {color: tr.farge, weight: index === 0 ? 2.5 : 2, opacity: 0.9}
-        });
-        kartLagMap[TR_ALL.length - 1] = lObj;
-        if (index === 0) {
-            lObj.addTo(map);
-        }
+        const kontroll = hentDeltKontroll(index);
+        kartLagMap[TR_ALL.length - 1] = kontroll ? kontroll.getLayer() : null;
+        // IKKE lag en ny L.GPX her: det ville tegnet det samme sporet dobbelt.
       }
     }catch(e){console.warn('Feil ved lasting av spor til lab:', e);}
   }
@@ -2049,7 +2101,11 @@ function png(){
 
 async function laste(files){
   if(!files || !files.length) return;
-  const T=[];
+  ++labLastingSekvens;
+  stopRp();
+  grp.clearLayers();
+  if (src === 'upload') Object.values(kartLagMap).forEach(l => { if (l && map.hasLayer(l)) map.removeLayer(l); });
+  const T=[], nyeLag={};
   for(const f of files){
     try{
       const txt = await f.text();
@@ -2062,7 +2118,7 @@ async function laste(files){
             async: true, marker_options: {startIconUrl:null, endIconUrl:null, shadowUrl:null},
             polyline_options: {color: tr.farge, weight: 3, opacity: 0.9}
         });
-        kartLagMap[TR_ALL.length + T.length - 1] = lObj;
+        nyeLag[T.length - 1] = lObj;
         lObj.addTo(map);
       }
     }catch(e){ console.error("Feil ved lesing av fil:", e); }
@@ -2071,6 +2127,7 @@ async function laste(files){
   
   stopRp();
   TR_ALL = T;
+  kartLagMap = nyeLag;
   valgteSporIndekser = TR_ALL.map((_, i) => i);
   src = 'upload';
   panel.style.display = 'block';
@@ -2087,9 +2144,10 @@ async function laste(files){
 }
 
 function nullstillLab() {
+  ++labLastingSekvens;
   stopRp();
   grp.clearLayers();
-  Object.values(kartLagMap).forEach(l => { if(map.hasLayer(l)) map.removeLayer(l); });
+  if (src === 'upload') Object.values(kartLagMap).forEach(l => { if(l && map.hasLayer(l)) map.removeLayer(l); });
   TR_ALL = [];
   valgteSporIndekser = [];
   kartLagMap = {};
@@ -2130,5 +2188,213 @@ document.getElementById('labBtns').onclick=async e=>{
 })();
 </script>
 <!-- ===== SLUTT GPX-LAB ===== -->
+<script>
+// UI-oversettelse: dynamiske knapper, paneler, statistikk og kartpopuper følger språkvalget.
+(function () {
+  const ordliste = [
+    ['Toppturer rundt Tromsø','Ski touring around Tromsø'],
+    ['Fjellturer sommer','Summer mountain hikes'],
+    ['Oversikt turer','Tour overview'],
+    ['Nullstill kart','Reset map'],
+    ['Søk etter topp','Search for summit'],
+    ['Snøskred: aktsomhetsområder og faregrad','Avalanches: caution areas and danger level'],
+    ['Snøskred','Avalanches'],
+    ['Aktsomhetsområde S3','Caution area S3'],
+    ['Aktsomhetsområde S2','Caution area S2'],
+    ['Aktsomhetsområde kunne ikke hentes fra NVE','Could not load caution areas from NVE'],
+    ['Der snøskred kan løsne og gå (NVE)','Where avalanches can start and travel (NVE)'],
+    ['Uten skogeffekt (NVE)','Without forest protection (NVE)'],
+    ['Dagens varsel (Varsom)',"Today's forecast (Varsom)"],
+    ['Zoom inn for å se aktsomhetsområder','Zoom in to see caution areas'],
+    ['Grov oversikt, ikke et varsel. Kilde: NVE','General overview, not a forecast. Source: NVE'],
+    ['Hellingsvinkel','Slope angle'],
+    ['Faregrad','Danger level'],
+    ['Brattskala','Slope scale'],
+    ['Bratthet','Slope'],
+    ['Skala','Scale'],
+    ['Topografi','Topography'],
+    ['Marker et område du vil zoome til (dra en firkant med musen)','Mark an area to zoom into (drag a rectangle with the mouse)'],
+    ['Dra en firkant over området du vil zoome til · Esc avbryter','Drag a rectangle over the area to zoom into · Esc cancels'],
+    ['Marker','Select area'],
+    ['Søk etter topp...','Search for a summit...'],
+    ['Laster spor','Loading tracks'],
+    ['spor lastet','tracks loaded'],
+    ['Kunne ikke laste spor','Could not load tracks'],
+    ['Gimses turbeskrivelse',"Gimse's trip description"],
+    ['Turbeskrivelse','Trip description'],
+    ['Veibeskrivelse','Directions'],
+    ['3D visualisering','3D visualization'],
+    ['Hovedspor','Main track'],
+    ['Last ned GPX','Download GPX'],
+    ['Skjul meny','Hide menu'],
+    ['Vis meny','Show menu'],
+    ['Kopiert!','Copied!'],
+    ['Del','Share'],
+    ['Minimer / Maksimer','Minimize / Maximize'],
+    ['Lukk 3D','Close 3D'],
+    ['Lukk','Close'],
+    ['Profil','Profile'],
+    ['Spor for valgt topp / egne spor:','Tracks for selected summit / uploaded tracks:'],
+    ['Huk av for analyse (lab) / bruk knapp for å vise/skjule på kartet:','Check tracks for analysis; use the button to show/hide them on the map:'],
+    ['Bruk i GPX-lab analyse','Include in GPX-lab analysis'],
+    ['Slå av/på synlighet for dette sporet på selve kartet','Toggle this track on the map'],
+    ['På kart','On map'],
+    ['Skjult','Hidden'],
+    ['Last opp egen GPX (flere = sammenlign)','Upload GPX files (multiple files for comparison)'],
+    ['…eller slipp filene hvor som helst på siden','…or drop files anywhere on this page'],
+    ['Slipp GPX-filen(e) her','Drop GPX file(s) here'],
+    ['Nullstill GPX-lab','Reset GPX-lab'],
+    ['Turstatistikk','Trip statistics'],
+    ['Statistikk','Statistics'],
+    ['Ingen statistikk å vise ennå.','No statistics to show yet.'],
+    ['Ingen farge','No color'],
+    ['Fart','Speed'],
+    ['Replay / race','Replay / race'],
+    ['3D-flyover','3D flyover'],
+    ['Vær & sol','Weather & sun'],
+    ['Sammenlign','Compare'],
+    ['Utsikt','View'],
+    ['Sesong','Season'],
+    ['Lag bilde','Create image'],
+    ['Distanse T/R:','Round-trip distance:'],
+    ['Stigning:','Elevation gain:'],
+    ['Høyeste punkt:','Highest point:'],
+    ['Laveste punkt:','Lowest point:'],
+    ['Tid til topp:','Time to summit:'],
+    ['Tid T/R:','Round-trip time:'],
+    ['Bevegelsestid:','Moving time:'],
+    ['Snittfart:','Average speed:'],
+    ['Terreng >30°:','Terrain >30°:'],
+    ['Bratteste parti:','Steepest section:'],
+    ['Nedkjøringsretning:','Descent direction:'],
+    ['Energi / Kalorier:','Energy / Calories:'],
+    ['Topp:','Summit:'],
+    ['Ingen spor er valgt i sporenes sjekkliste.','No tracks selected in the checklist.'],
+    ['Ingen spor valgt.','No tracks selected.'],
+    ['Velg minst ett spor for replay.','Select at least one track for replay.'],
+    ['Ingen spor valgt for 3D.','No tracks selected for 3D.'],
+    ['Velg en topp i menyen først, eller last opp en GPX-fil.','Select a summit from the menu first, or upload a GPX file.'],
+    ['Kunne ikke lese GPX for valgt topp.','Could not read GPX data for the selected summit.'],
+    ['Kunne ikke tolke gyldige GPX-data.','Could not parse valid GPX data.'],
+    ['Trenger minst to spor for å sammenligne. Velg en topp med flere spor, eller huk av for flere spor i sjekklisten.','At least two tracks are needed. Select a summit with multiple tracks or choose more tracks in the checklist.'],
+    ['Fra toppen ser du (nærmest først)','Visible from the summit (nearest first)'],
+    ['Ingen andre topper lastet ennå.','No other summits loaded yet.'],
+    ['Topper er ikke lastet.','Summits have not loaded.'],
+    ['Sesongen så langt','Season so far'],
+    ['Topper per måned','Summits per month'],
+    ['Høyeste topper','Highest summits'],
+    ['Mest stigning:','Most elevation gain:'],
+    ['Lengst:','Longest:'],
+    ['topper','summits'],
+    ['høydemeter','vertical metres'],
+    ['mot ','towards '],
+    ['Henter vær…','Loading weather…'],
+    ['Fant ingen dato i filen.','No date found in the file.'],
+    ['Kunne ikke hente vær.','Could not load weather.'],
+    ['Vind maks','Maximum wind'],
+    ['Nedbør','Precipitation'],
+    ['nysnø','new snow'],
+    ['Midnattssol eller mørketid denne dagen','Midnight sun or polar night on this date'],
+    ['Fargelegging av.','Coloring off.'],
+    ['Heatmap på – ofte brukte stier lyser sterkest. Trykk igjen for å slå av.','Heatmap on – frequently used trails appear strongest. Tap again to switch off.'],
+    ['Heatmap av.','Heatmap off.'],
+    ['Blå = sakte → rød = rask (0–6 km/t)','Blue = slow → red = fast (0–6 km/h)'],
+    ['Bildet lastes ned.','Downloading image.'],
+    ['N/A','N/A'],
+    ['jan','Jan'], ['feb','Feb'], ['mar','Mar'], ['apr','Apr'], ['mai','May'], ['jun','Jun'],
+    ['jul','Jul'], ['aug','Aug'], ['sep','Sep'], ['okt','Oct'], ['nov','Nov'], ['des','Dec'],
+    ['moh','m a.s.l.'], ['km/t','km/h'],
+    ['Spor','Track']
+  ].sort((a,b)=>b[0].length-a[0].length);
+  const sourceText = new WeakMap(), renderedText = new WeakMap();
+  const sourceAttrs = new WeakMap(), renderedAttrs = new WeakMap();
+  let english = false, queued = false;
+  const oversett = text => {
+    let result = text;
+    for (const [nb, en] of ordliste) result = result.split(nb).join(en);
+    return result;
+  };
+  function tekst(node) {
+    const current = node.nodeValue;
+    if (!sourceText.has(node) || (current !== renderedText.get(node) && current !== sourceText.get(node))) sourceText.set(node, current);
+    const target = english ? oversett(sourceText.get(node)) : sourceText.get(node);
+    if (current !== target) node.nodeValue = target;
+    renderedText.set(node, target);
+  }
+  function attributt(el, navn) {
+    const actual = el.getAttribute(navn);
+    if (actual === null) return;
+    let original = sourceAttrs.get(el), last = renderedAttrs.get(el);
+    if (!original) { original = {}; sourceAttrs.set(el, original); }
+    if (!last) { last = {}; renderedAttrs.set(el, last); }
+    if (!(navn in original) || (actual !== last[navn] && actual !== original[navn])) original[navn] = actual;
+    const target = english ? oversett(original[navn]) : original[navn];
+    if (actual !== target) el.setAttribute(navn, target);
+    last[navn] = target;
+  }
+  function lokaliser(root) {
+    if (!root) return;
+    const start = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    while (start.nextNode()) {
+      const p = start.currentNode.parentElement;
+      if (!p || p.closest('script,style,svg,textarea,[data-no-translate]')) continue;
+      tekst(start.currentNode);
+    }
+    if (root.nodeType === Node.ELEMENT_NODE) {
+      for (const el of [root,...root.querySelectorAll('[title],[placeholder],[aria-label]')]) {
+        for (const key of ['title','placeholder','aria-label']) attributt(el,key);
+      }
+    }
+  }
+  const uiRoots = [
+    document.querySelector('body > h1'), document.getElementById('controls-row'),
+    document.getElementById('bottom-controls-row'), document.getElementById('buttons'),
+    document.getElementById('video-buttons-container'), document.getElementById('skredMeny'),
+    document.getElementById('track-progress'), document.getElementById('labPanel'),
+    document.getElementById('statWindow'), document.getElementById('labDragOv')
+  ].filter(Boolean);
+  function oppdater() {
+    queued = false;
+    uiRoots.forEach(lokaliser);
+    document.querySelectorAll('#map .leaflet-popup').forEach(lokaliser);
+    const code = document.querySelector('#langBtn .lang-code');
+    const nextCode = english ? 'NO' : 'EN';
+    if (code && code.textContent !== nextCode) code.textContent = nextCode;
+    const langBtn = document.getElementById('langBtn');
+    if (langBtn) {
+      const title = english ? 'Switch to Norwegian' : 'Switch to English';
+      if (langBtn.title !== title) langBtn.title = title;
+      if (langBtn.getAttribute('aria-label') !== title) langBtn.setAttribute('aria-label', title);
+    }
+    document.documentElement.lang = english ? 'en' : 'no';
+    document.title = english ? 'Ski touring around Tromsø' : 'Toppturer rundt Tromsø';
+  }
+  function planlegg() {
+    if (queued) return;
+    queued = true;
+    Promise.resolve().then(oppdater);
+  }
+  function settSprak(en) {
+    english = !!en;
+    window.siteLanguage = english ? 'en' : 'no';
+    try { localStorage.setItem('tromso-sprak',window.siteLanguage); } catch (e) {}
+    oppdater();
+  }
+  document.getElementById('langBtn').addEventListener('click', () => settSprak(!english));
+  for (const root of uiRoots) {
+    new MutationObserver(planlegg).observe(root, {
+      subtree: true, childList: true, characterData: true, attributes: true,
+      attributeFilter: ['title','placeholder','aria-label']
+    });
+  }
+  new MutationObserver(mutations => {
+    if (mutations.some(m => (m.target.closest && m.target.closest('.leaflet-popup')) ||
+        [...m.addedNodes].some(n => n.nodeType === 1 && (n.matches('.leaflet-popup') || n.querySelector?.('.leaflet-popup'))))) planlegg();
+  }).observe(document.getElementById('map'), { subtree:true, childList:true, characterData:true });
+  let lagret = 'no';
+  try { lagret = localStorage.getItem('tromso-sprak') || 'no'; } catch (e) {}
+  settSprak(lagret === 'en');
+})();
+</script>
 </body>
 </html>
