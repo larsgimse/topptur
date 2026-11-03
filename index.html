@@ -72,7 +72,7 @@ h1 {
 }
 .sub { position: relative; z-index: 1; margin: 0 0 56px; color: var(--muted); font-size: 16px; }
 
-nav { position: relative; z-index: 1; border-top: 1px solid var(--ink); }
+nav { position: relative; border-top: 1px solid var(--ink); }  /* ingen z-index her: lar knappen ligge over kartomrisset */
 
 .row {
     display: flex;
@@ -98,6 +98,16 @@ nav { position: relative; z-index: 1; border-top: 1px solid var(--ink); }
 .summer:hover .ico, .summer:focus-visible .ico { color: var(--summer-ink); }
 .map:hover, .map:focus-visible { background: var(--map-bg); }
 
+/* Beta-knapp øverst til høyre på «Toppturer vinter»: heldekkende hvit, ligger over kartomrisset (z-index 2) */
+.wrap { position: relative; }
+.beta {
+    position: absolute; top: 9px; right: 6px; z-index: 3;
+    padding: 4px 11px; border: 1px solid var(--ink); border-radius: 999px;
+    background: #fff; opacity: 1; color: var(--ink); font-size: 12px; line-height: 1.3;
+    letter-spacing: .01em; text-decoration: none; white-space: nowrap;
+    transition: border-color .3s ease, color .3s ease, box-shadow .3s ease;
+}
+.beta:hover, .beta:focus-visible { border-color: var(--winter-ink); color: var(--winter-ink); box-shadow: 0 1px 6px rgba(0,0,0,.12); outline: none; }
 .sun-rays, .flake { transform-origin: 22px 22px; transition: transform 1.4s ease; }
 .summer:hover .sun-rays { transform: rotate(45deg); }
 .winter:hover .flake { transform: rotate(60deg); }
@@ -160,6 +170,7 @@ nav { position: relative; z-index: 1; border-top: 1px solid var(--ink); }
     <p class="sub">Vinter og sommer rundt Tromsø</p>
 
     <nav>
+        <div class="wrap">
         <a href="vinter.html" class="row winter">
             <svg class="ico" viewBox="0 0 44 44" aria-hidden="true">
                 <g class="flake">
@@ -169,6 +180,8 @@ nav { position: relative; z-index: 1; border-top: 1px solid var(--ink); }
             </svg>
             <span class="txt"><span class="name">Toppturer vinter</span><span class="desc">Ski og skredfare</span></span>
         </a>
+        <a href="beta_vinter.html" id="betaBtn" class="beta"><span>Prøv 🧰 GPX-lab</span></a>
+        </div>
 
         <a href="sommer.html" class="row summer">
             <svg class="ico" viewBox="0 0 44 44" aria-hidden="true">
@@ -324,6 +337,7 @@ nav { position: relative; z-index: 1; border-top: 1px solid var(--ink); }
         'Fjellturer rundt Tromsø': 'Mountain hikes around Tromsø',
         'Toppturer rundt Tromsø': 'Summit trips around Tromsø',
         'Toppturer vinter': 'Winter summit trips',
+        'Prøv 🧰 GPX-lab': 'Try 🧰 GPX-lab',
         'Fjellturer sommer': 'Summer mountain hikes',
         'Oversikt turer': 'Trip overview',
         'Sykkelturer:': 'Bike trips:',
@@ -557,5 +571,14 @@ nav { position: relative; z-index: 1; border-top: 1px solid var(--ink); }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
     </script>
+<script>
+    /* Beta-siden kan ligge på en annen server (egen localStorage): send valgt språk med i lenken */
+    (function () {
+        var b = document.getElementById('betaBtn');
+        if (b) b.addEventListener('click', function () {
+            try { b.href = 'beta_vinter.html?lang=' + (window.__lang ? window.__lang() : 'no'); } catch (e) {}
+        });
+    })();
+</script>
 </body>
 </html>
