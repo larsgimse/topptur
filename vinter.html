@@ -445,6 +445,50 @@
     #map-container.marker-modus, #map-container.marker-modus * { cursor: crosshair !important; }
     .marker-boks { position: absolute; z-index: 800; border: 1px solid var(--ink, #000); background: rgba(0, 0, 0, .07); pointer-events: none; }
     .marker-hint { position: absolute; z-index: 801; left: 10px; top: 10px; background: #fff; border: 1px solid var(--ink, #000); padding: 4px 10px; font-size: 12px; font-weight: 400; color: var(--ink, #000); pointer-events: none; }
+
+        /* Bildegalleri hentet fra sommer.html – behold vinterdesign og øvrige knapper */
+        #video-buttons-container > .gallery-link-btn { grid-column: auto; order: 4; }
+        #video-buttons-container > .gallery-link-btn.btn-full { grid-column: 1 / -1; }
+        .gallery-link-btn {
+            background: rgba(255,255,255,.95); padding: 5px 8px;
+            border: 2px solid var(--strava-blue); border-radius: 8px;
+            font-family: inherit; font-size: 11px; line-height: 1.2; font-weight: 700; color: var(--strava-blue);
+            display: flex; align-items: center; gap: 4px; text-align: left;
+            width: 100%; box-sizing: border-box; cursor: pointer; min-height: 32px;
+            backdrop-filter: blur(4px);
+        }
+        .gallery-link-btn .badge-label { position: static; margin-left: auto; }
+        .ui-hidden .gallery-link-btn { display: none !important; }
+        .gallery-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,.9);
+            z-index: 100000; display: none; flex-direction: column;
+            justify-content: center; align-items: center;
+        }
+        .gallery-modal.open { display: flex; }
+        .gallery-modal-close {
+            position: absolute; top: 20px; right: 25px; color: #fff;
+            font-size: 35px; cursor: pointer; font-weight: 200;
+            z-index: 100001; user-select: none;
+        }
+        .gallery-content {
+            position: relative; max-width: 90vw; max-height: 80vh;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .gallery-image {
+            max-width: 100%; max-height: 80vh; object-fit: contain;
+            border-radius: 0; box-shadow: none;
+        }
+        .gallery-nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: transparent; border: 1px solid rgba(255,255,255,.7);
+            color: #fff; padding: 15px 12px; font-size: 24px;
+            cursor: pointer; border-radius: 0; user-select: none;
+            z-index: 100001;
+        }
+        .gallery-nav-btn:hover { background: rgba(255,255,255,.18); }
+        .gallery-nav-prev { left: 15px; }
+        .gallery-nav-next { right: 15px; }
+        .gallery-counter { color: #fff; margin-top: 15px; font-size: 14px; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -530,6 +574,18 @@
     </div>
 
 
+
+    <!-- Bildegalleri: samme navigasjon som i sommer.html -->
+    <div class="gallery-modal" id="galleryModal" role="dialog" aria-modal="true" aria-label="Bildegalleri">
+        <button class="gallery-modal-close" id="closeGalleryBtn" type="button" aria-label="Lukk bildegalleri">&times;</button>
+        <button class="gallery-nav-btn gallery-nav-prev" id="prevImgBtn" type="button" aria-label="Forrige bilde">&#10094;</button>
+        <div class="gallery-content">
+            <img src="" alt="Bilde" class="gallery-image" id="galleryImg" />
+        </div>
+        <button class="gallery-nav-btn gallery-nav-next" id="nextImgBtn" type="button" aria-label="Neste bilde">&#10095;</button>
+        <div class="gallery-counter" id="galleryCounter"></div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
@@ -564,6 +620,100 @@
         let aktiveMarkører = [];
         let aktivToppNavn = null;
         let isReseting = false;
+
+
+        // ---- Bildegalleri, basert på sommer.html ----
+        let gjeldendeGalleriBilder = [];
+        let aktivBildeIndex = 0;
+        let galleriForespørsel = 0;
+        const galleryModal = document.getElementById('galleryModal');
+        const galleryImg = document.getElementById('galleryImg');
+        const galleryCounter = document.getElementById('galleryCounter');
+
+        function visBilde(index) {
+            if (!gjeldendeGalleriBilder.length) return;
+            aktivBildeIndex = (index + gjeldendeGalleriBilder.length) % gjeldendeGalleriBilder.length;
+            galleryImg.src = gjeldendeGalleriBilder[aktivBildeIndex];
+            galleryCounter.textContent = `${aktivBildeIndex + 1} / ${gjeldendeGalleriBilder.length}`;
+        }
+        function åpneGalleri(bilder) {
+            gjeldendeGalleriBilder = bilder;
+            aktivBildeIndex = 0;
+            visBilde(0);
+            galleryModal.classList.add('open');
+        }
+        function lukkGalleri() {
+            galleryModal.classList.remove('open');
+        }
+        document.getElementById('closeGalleryBtn').onclick = lukkGalleri;
+        document.getElementById('prevImgBtn').onclick = () => visBilde(aktivBildeIndex - 1);
+        document.getElementById('nextImgBtn').onclick = () => visBilde(aktivBildeIndex + 1);
+        galleryModal.onclick = e => { if (e.target === galleryModal) lukkGalleri(); };
+        document.addEventListener('keydown', e => {
+            if (!galleryModal.classList.contains('open')) return;
+            if (e.key === 'ArrowLeft') visBilde(aktivBildeIndex - 1);
+            if (e.key === 'ArrowRight') visBilde(aktivBildeIndex + 1);
+            if (e.key === 'Escape') lukkGalleri();
+        });
+
+        function bildeMappeNavn(v) {
+            const s = typeof v === 'string' ? v :
+                (v && (v.mediaMappe || v.bildeMappe || v.mappe || v.mediaJson || v.json || v.navn || v.dato || v.fil)) || '';
+            return String(s).trim().replace(/\\/g, '/').replace(/\/+$/, '').split('/').pop().replace(/\.json$/i, '');
+        }
+        function mediaMappeSti(mappe) {
+            const m = String(mappe || '').trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+            return (/^media\//i.test(m) || /^https?:\/\//i.test(m)) ? m : `media/${m}`;
+        }
+        // Les JSON fra media/<mappe>/<fil>.json, også når mappenavnet og JSON-filnavnet er ulike.
+        // Støtter ekstraBilder (sommer.html) samt mediaMappe/mediaJson (Storsteinnestinden).
+        async function hentBildeSamling(ref, besøkt = new Set(), dybde = 0) {
+            if (Array.isArray(ref)) {
+                const lister = await Promise.all(ref.map(r => hentBildeSamling(r, besøkt, dybde)));
+                return [...new Set(lister.flat())];
+            }
+            const navn = bildeMappeNavn(ref);
+            if (!navn || dybde > 3) return [];
+            const mappe = (typeof ref === 'object' && ref)
+                ? (ref.mediaMappe || ref.bildeMappe || ref.mappe || navn)
+                : navn;
+            const jsonFil = (typeof ref === 'object' && ref)
+                ? (ref.mediaJson || ref.json || `${navn}.json`)
+                : `${navn}.json`;
+            const sti = mediaMappeSti(mappe);
+            const fil = String(jsonFil).replace(/\\/g, '/').split('/').pop();
+            const nøkkel = `${sti}/${fil}`;
+            if (besøkt.has(nøkkel)) return [];
+            besøkt.add(nøkkel);
+            const res = await fetch(nøkkel);
+            if (!res.ok) throw new Error(`Kunne ikke laste bilde-JSON: ${nøkkel} (${res.status})`);
+            const data = await res.json();
+            const bildeMappe = mediaMappeSti(data.bildeMappe || sti);
+            const bilder = (Array.isArray(data.bilder) ? data.bilder : []).map(b => {
+                const bildeFil = typeof b === 'string' ? b : (b && (b.fil || b.src || b.url || b.navn));
+                if (!bildeFil) return null;
+                const navn = String(bildeFil).replace(/\\/g, '/');
+                if (/^(https?:\/\/|data:|\/|media\/)/i.test(navn)) return navn;
+                return `${bildeMappe}/${navn.replace(/^\.\//, '')}`;
+            }).filter(Boolean);
+
+            // Undermapper / flere samlinger, slik som i sommer.html
+            const nøkler = ['mapper','bildeMapper','bildemapper','ekstraMapper','inkluderMapper','inkluder','tilleggsMapper','folders'];
+            let andre = [];
+            nøkler.forEach(k => { if (Array.isArray(data[k])) andre.push(...data[k]); });
+            if (!andre.length) {
+                Object.keys(data).forEach(k => {
+                    const v = data[k];
+                    if (k !== 'bilder' && Array.isArray(v) && v.length &&
+                        v.every(x => /^\d{4}_\d{2}[_.]\d{2}/.test(bildeMappeNavn(x)))) andre.push(...v);
+                });
+            }
+            for (const a of andre) {
+                try { bilder.push(...await hentBildeSamling(a, besøkt, dybde + 1)); }
+                catch (err) { console.warn('Hopper over bildemappe:', a, err); }
+            }
+            return [...new Set(bilder)];
+        }
 
         // Topper lastes fra vinter_topper.json
         let topper = [];
@@ -1249,7 +1399,7 @@
                         registrerLading();
                 
                         const aktiver = () => {
-                            isReseting = false; aktivToppNavn = topp.navn; settKartModus('topp');
+                            isReseting = false; aktivToppNavn = topp.navn; settKartModus('topp'); galleriForespørsel++;
                             document.getElementById('topSearchInput').value = topp.navn;
                         avbrytHover();
                         lukkAlleDropdowns();
@@ -1370,6 +1520,24 @@
                                 videoContainer.appendChild(descBox);
                             }
 
+                            // Ekstra bilder: last bilder fra media-mappen uten å påvirke spor eller øvrige knapper.
+                            const bildeKilde = topp.ekstraBilder || ((topp.mediaMappe || topp.mediaJson)
+                                ? { mediaMappe: topp.mediaMappe, mediaJson: topp.mediaJson }
+                                : null);
+                            if (bildeKilde) {
+                                const forespørsel = ++galleriForespørsel;
+                                hentBildeSamling(bildeKilde).then(alleBilder => {
+                                    if (forespørsel !== galleriForespørsel || aktivToppNavn !== topp.navn || !alleBilder.length) return;
+                                    const galleryBtn = document.createElement('button');
+                                    galleryBtn.type = 'button';
+                                    galleryBtn.className = 'gallery-link-btn';
+                                    galleryBtn.innerHTML = `<span>🖼️</span> Ekstra bilder (${alleBilder.length})`;
+                                    galleryBtn.onclick = () => åpneGalleri(alleBilder);
+                                    videoContainer.appendChild(galleryBtn);
+                                    justerLenkeKnapper();
+                                }).catch(err => console.warn('Fant ikke eller kunne ikke laste ekstraBilder:', err));
+                            }
+
                             videoContainer.appendChild(Object.assign(document.createElement('a'), {
                                 href: `https://www.google.no/search?q=${encodeURIComponent(topp.navn + ' topptursbeskrivelse')}`,
                                 target: "_blank", className: 'search-link-btn', innerHTML: `<span>🔍</span> Turbeskrivelse`
@@ -1451,7 +1619,7 @@
             const hent = sel => Array.from(videoContainer.querySelectorAll(':scope > ' + sel));
             // Samme rekkefølge som i CSS (order)
             const celler = [
-                ...hent('.video-link-btn, .search-link-btn'),
+                ...hent('.video-link-btn, .search-link-btn, .gallery-link-btn'),
                 ...hent('.brattskala-rad'),
                 ...hent('.download-area:not(.open)')
             ];
@@ -1666,6 +1834,10 @@
         'Kommer mer info snart...': 'More info coming soon...',
         'Se video': 'Watch video',
         'Se bilder': 'View photos',
+        'Bildegalleri': 'Photo gallery',
+        'Lukk bildegalleri': 'Close photo gallery',
+        'Forrige bilde': 'Previous photo',
+        'Neste bilde': 'Next photo',
         'Se bilder (Spor 2)': 'View photos (Track 2)',
         'Se Strava-aktivitet': 'View Strava activity',
         'Gjeste video': 'Guest video',
