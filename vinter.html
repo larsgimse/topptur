@@ -622,28 +622,42 @@
         let isReseting = false;
 
 
-        // ---- Bildegalleri, basert på sommer.html ----
+        // ---- Bildegalleri: støtter sommerformat og automatisk oppslag på GPX-dato ----
         let gjeldendeGalleriBilder = [];
         let aktivBildeIndex = 0;
         let galleriForespørsel = 0;
         const galleryModal = document.getElementById('galleryModal');
         const galleryImg = document.getElementById('galleryImg');
         const galleryCounter = document.getElementById('galleryCounter');
+        const bildeJsonCache = new Map();
 
         function visBilde(index) {
             if (!gjeldendeGalleriBilder.length) return;
             aktivBildeIndex = (index + gjeldendeGalleriBilder.length) % gjeldendeGalleriBilder.length;
-            galleryImg.src = gjeldendeGalleriBilder[aktivBildeIndex];
+            const bilde = gjeldendeGalleriBilder[aktivBildeIndex];
+            const stier = typeof bilde === 'string' ? [bilde] : bilde.stier;
+            let forsøk = 0;
+            galleryImg.onerror = () => {
+                forsøk++;
+                if (forsøk < stier.length) galleryImg.src = stier[forsøk];
+                else {
+                    galleryImg.onerror = null;
+                    galleryCounter.textContent = `${aktivBildeIndex + 1} / ${gjeldendeGalleriBilder.length} – bildet kunne ikke lastes`;
+                    console.warn('Kunne ikke laste bilde. Forsøkte:', stier);
+                }
+            };
             galleryCounter.textContent = `${aktivBildeIndex + 1} / ${gjeldendeGalleriBilder.length}`;
+            galleryImg.src = stier[0];
         }
         function åpneGalleri(bilder) {
             gjeldendeGalleriBilder = bilder;
             aktivBildeIndex = 0;
-            visBilde(0);
             galleryModal.classList.add('open');
+            visBilde(0);
         }
         function lukkGalleri() {
             galleryModal.classList.remove('open');
+            galleryImg.onerror = null;
         }
         document.getElementById('closeGalleryBtn').onclick = lukkGalleri;
         document.getElementById('prevImgBtn').onclick = () => visBilde(aktivBildeIndex - 1);
@@ -658,47 +672,84 @@
 
         function bildeMappeNavn(v) {
             const s = typeof v === 'string' ? v :
-                (v && (v.mediaMappe || v.bildeMappe || v.mappe || v.mediaJson || v.json || v.navn || v.dato || v.fil)) || '';
-            return String(s).trim().replace(/\\/g, '/').replace(/\/+$/, '').split('/').pop().replace(/\.json$/i, '');
+                (v && (v.mediaMappe || v.bildeMappe || v.mappe || v.mediaJson || v.json || v.dato || v.fil)) || '';
+            return String(s).trim().replace(/\\/g, '/').replace(/\/+$/, '').split('/').pop().replace(/\.(json|gpx)$/i, '');
+        }
+        function datoFraFil(v) {
+            const treff = String(bildeMappeNavn(v)).match(/\d{4}_\d{2}[_.]\d{2}/);
+            return treff ? treff[0].replace('.', '_') : null;
         }
         function mediaMappeSti(mappe) {
-            const m = String(mappe || '').trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
-            return (/^media\//i.test(m) || /^https?:\/\//i.test(m)) ? m : `media/${m}`;
+            const m = String(mappe || '').trim().replace(/\\/g, '/').replace(/\/+$/, '');
+            if (!m) return 'media';
+            if (/^(?:https?:\/\/|\/|media\/)/i.test(m)) return m;
+            return `media/${m.replace(/^\.\//, '')}`;
         }
-        // Les JSON fra media/<mappe>/<fil>.json, også når mappenavnet og JSON-filnavnet er ulike.
-        // Støtter ekstraBilder (sommer.html) samt mediaMappe/mediaJson (Storsteinnestinden).
-        async function hentBildeSamling(ref, besøkt = new Set(), dybde = 0) {
-            if (Array.isArray(ref)) {
-                const lister = await Promise.all(ref.map(r => hentBildeSamling(r, besøkt, dybde)));
-                return [...new Set(lister.flat())];
-            }
-            const navn = bildeMappeNavn(ref);
-            if (!navn || dybde > 3) return [];
-            const mappe = (typeof ref === 'object' && ref)
-                ? (ref.mediaMappe || ref.bildeMappe || ref.mappe || navn)
-                : navn;
-            const jsonFil = (typeof ref === 'object' && ref)
-                ? (ref.mediaJson || ref.json || `${navn}.json`)
-                : `${navn}.json`;
-            const sti = mediaMappeSti(mappe);
-            const fil = String(jsonFil).replace(/\\/g, '/').split('/').pop();
-            const nøkkel = `${sti}/${fil}`;
-            if (besøkt.has(nøkkel)) return [];
-            besøkt.add(nøkkel);
-            const res = await fetch(nøkkel);
-            if (!res.ok) throw new Error(`Kunne ikke laste bilde-JSON: ${nøkkel} (${res.status})`);
-            const data = await res.json();
-            const bildeMappe = mediaMappeSti(data.bildeMappe || sti);
-            const bilder = (Array.isArray(data.bilder) ? data.bilder : []).map(b => {
-                const bildeFil = typeof b === 'string' ? b : (b && (b.fil || b.src || b.url || b.navn));
-                if (!bildeFil) return null;
-                const navn = String(bildeFil).replace(/\\/g, '/');
-                if (/^(https?:\/\/|data:|\/|media\/)/i.test(navn)) return navn;
-                return `${bildeMappe}/${navn.replace(/^\.\//, '')}`;
-            }).filter(Boolean);
+        function unik(liste) { return [...new Set(liste.filter(Boolean))]; }
 
-            // Undermapper / flere samlinger, slik som i sommer.html
-            const nøkler = ['mapper','bildeMapper','bildemapper','ekstraMapper','inkluderMapper','inkluder','tilleggsMapper','folders'];
+        // Storsteinnestinden kan f.eks. ligge i media/2026_05.16/2026_05_16.json.
+        // Prøver både punktum og understrek samt JSON plassert direkte i media/.
+        function bildeJsonKandidater(ref) {
+            const r = ref && typeof ref === 'object' ? ref : {};
+            const tekst = typeof ref === 'string' ? ref.trim().replace(/\\/g, '/') : '';
+            const navn = bildeMappeNavn(ref);
+            const dato = datoFraFil(ref);
+            const punktumDato = dato && dato.replace(/_(\d{2})$/, '.$1');
+            const mappe = r.mediaMappe || r.bildeMappe || r.mappe;
+            const json = r.mediaJson || r.json;
+            const folderNames = unik([mappe, tekst && !/\.json$/i.test(tekst) ? tekst : '', navn, dato, punktumDato]);
+            const fileNames = unik([json && String(json).split('/').pop(),
+                tekst && /\.json$/i.test(tekst) ? tekst.split('/').pop() : '',
+                dato && `${dato}.json`, navn && `${navn}.json`,
+                mappe && `${String(mappe).split('/').pop()}.json`]);
+            const stier = [];
+            if (tekst && /\.json$/i.test(tekst)) stier.push(mediaMappeSti(tekst));
+            if (json && /\//.test(json)) stier.push(mediaMappeSti(json));
+            if (mappe && json) stier.push(`${mediaMappeSti(mappe)}/${String(json).split('/').pop()}`);
+            folderNames.forEach(f => fileNames.forEach(n => stier.push(`${mediaMappeSti(f)}/${n}`)));
+            if (dato) stier.push(`media/${dato}.json`);
+            if (punktumDato) stier.push(`media/${punktumDato}.json`);
+            return unik(stier);
+        }
+        async function lesBildeJson(sti) {
+            if (!bildeJsonCache.has(sti)) {
+                bildeJsonCache.set(sti, fetch(sti)
+                    .then(r => r.ok ? r.json() : null)
+                    .catch(() => null));
+            }
+            return bildeJsonCache.get(sti);
+        }
+        async function hentBildeSamling(ref, besøkt = new Set(), dybde = 0) {
+            if (dybde > 4) return [];
+            if (Array.isArray(ref)) {
+                const samling = [];
+                for (const r of ref) samling.push(...await hentBildeSamling(r, besøkt, dybde));
+                return samling;
+            }
+            let data = null, jsonSti = '';
+            const kandidatstier = bildeJsonKandidater(ref);
+            for (const sti of kandidatstier) {
+                if (besøkt.has(sti)) continue;
+                const lest = await lesBildeJson(sti);
+                if (lest !== null) { data = lest; jsonSti = sti; besøkt.add(sti); break; }
+            }
+            if (data === null) return [];
+            const r = ref && typeof ref === 'object' ? ref : {};
+            const jsonMappe = jsonSti.substring(0, jsonSti.lastIndexOf('/'));
+            const dato = datoFraFil(ref) || datoFraFil(jsonSti);
+            const bildemapper = unik([data.bildeMappe, r.mediaMappe, r.bildeMappe, jsonMappe,
+                dato, dato && dato.replace(/_(\d{2})$/, '.$1')]).map(mediaMappeSti);
+            const bildefiler = Array.isArray(data) ? data :
+                (Array.isArray(data.bilder) ? data.bilder : Array.isArray(data.images) ? data.images : []);
+            const bilder = bildefiler.map(b => {
+                const fil = typeof b === 'string' ? b : b && (b.fil || b.src || b.url || b.navn || b.filename);
+                if (!fil) return null;
+                const navn = String(fil).trim().replace(/\\/g, '/').replace(/^\.\//, '');
+                if (/^(https?:\/\/|data:|\/|media\/)/i.test(navn)) return { stier: [navn] };
+                return { stier: unik(bildemapper.map(m => `${m}/${navn}`)) };
+            }).filter(Boolean);
+            const nøkler = ['mapper', 'bildeMapper', 'bildemapper', 'ekstraMapper',
+                            'inkluderMapper', 'inkluder', 'tilleggsMapper', 'folders'];
             let andre = [];
             nøkler.forEach(k => { if (Array.isArray(data[k])) andre.push(...data[k]); });
             if (!andre.length) {
@@ -712,10 +763,34 @@
                 try { bilder.push(...await hentBildeSamling(a, besøkt, dybde + 1)); }
                 catch (err) { console.warn('Hopper over bildemappe:', a, err); }
             }
-            return [...new Set(bilder)];
+            return bilder;
+        }
+        async function hentToppBilder(topp) {
+            const besøkt = new Set();
+            const bilder = [];
+            const eksplisitt = topp.ekstraBilder ||
+                ((topp.mediaMappe || topp.mediaJson) ?
+                  { mediaMappe: topp.mediaMappe, mediaJson: topp.mediaJson, fil: topp.fil } : null);
+            if (eksplisitt) bilder.push(...await hentBildeSamling(eksplisitt, besøkt));
+
+            // Bildefelt er valgfritt: dato fra hovedspor og ekstraspor er tilstrekkelig.
+            const datofiler = [topp.fil, ...(topp.ekstraSpor || []).map(s => s.fil),
+                ...(topp.video || []).map(v => v.dato)];
+            const datoer = unik(datofiler.map(datoFraFil));
+            for (const dato of datoer) {
+                if (bilder.length && datoFraFil(eksplisitt) === dato) continue;
+                bilder.push(...await hentBildeSamling(dato, besøkt));
+            }
+            // Flere lenker til samme JSON eller dato skal ikke gi duplikater.
+            const sett = new Set();
+            return bilder.filter(b => {
+                const id = b.stier[0];
+                if (sett.has(id)) return false;
+                sett.add(id);
+                return true;
+            });
         }
 
-        // Topper lastes fra vinter_topper.json
         let topper = [];
         let totalTracksCount = 0;
         let loadedTracksCount = 0;
@@ -1451,7 +1526,7 @@
                                 const a = document.createElement('a'); a.href = v.url; a.target = "_blank";
                                 a.className = 'video-link-btn' + (lt === 'strava' ? ' strava-link-btn' : lt === 'suunto' ? ' suunto-link-btn' : '');
                                 const ikonHtml = lt === 'strava' ? '<span>🏃</span>' : lt === 'suunto' ? '<span class="suunto-icon">▲</span>' : `<span>${lt === 'photo' ? '📷' : '🎥'}</span>`;
-                                a.innerHTML = `${ikonHtml} ${v.tittel}`;
+                                a.innerHTML = `${ikonHtml} ${lt === 'suunto' ? '3D visualisering' : v.tittel}`;
                                 const filRef = v.dato ? v.dato : ((topp.ekstraSpor && topp.ekstraSpor[i-1]) ? topp.ekstraSpor[i-1].fil : topp.fil);
                                 const vBadge = lagBadge(filRef, (filRef === topp.fil) ? topp.overrideAar : null);
                                 if (vBadge) a.appendChild(vBadge);
@@ -1520,23 +1595,18 @@
                                 videoContainer.appendChild(descBox);
                             }
 
-                            // Ekstra bilder: last bilder fra media-mappen uten å påvirke spor eller øvrige knapper.
-                            const bildeKilde = topp.ekstraBilder || ((topp.mediaMappe || topp.mediaJson)
-                                ? { mediaMappe: topp.mediaMappe, mediaJson: topp.mediaJson }
-                                : null);
-                            if (bildeKilde) {
-                                const forespørsel = ++galleriForespørsel;
-                                hentBildeSamling(bildeKilde).then(alleBilder => {
-                                    if (forespørsel !== galleriForespørsel || aktivToppNavn !== topp.navn || !alleBilder.length) return;
-                                    const galleryBtn = document.createElement('button');
-                                    galleryBtn.type = 'button';
-                                    galleryBtn.className = 'gallery-link-btn';
-                                    galleryBtn.innerHTML = `<span>🖼️</span> Ekstra bilder (${alleBilder.length})`;
-                                    galleryBtn.onclick = () => åpneGalleri(alleBilder);
-                                    videoContainer.appendChild(galleryBtn);
-                                    justerLenkeKnapper();
-                                }).catch(err => console.warn('Fant ikke eller kunne ikke laste ekstraBilder:', err));
-                            }
+                            // Hent galleri for valgt topp fra eksplisitt mappe eller GPX-dato.
+                            const forespørsel = ++galleriForespørsel;
+                            hentToppBilder(topp).then(alleBilder => {
+                                if (forespørsel !== galleriForespørsel || aktivToppNavn !== topp.navn || !alleBilder.length) return;
+                                const galleryBtn = document.createElement('button');
+                                galleryBtn.type = 'button';
+                                galleryBtn.className = 'gallery-link-btn';
+                                galleryBtn.innerHTML = `<span>🖼️</span> Ekstra bilder (${alleBilder.length})`;
+                                galleryBtn.onclick = () => åpneGalleri(alleBilder);
+                                videoContainer.appendChild(galleryBtn);
+                                justerLenkeKnapper();
+                            }).catch(err => console.warn('Kunne ikke laste ekstra bilder for', topp.navn, err));
 
                             videoContainer.appendChild(Object.assign(document.createElement('a'), {
                                 href: `https://www.google.no/search?q=${encodeURIComponent(topp.navn + ' topptursbeskrivelse')}`,
