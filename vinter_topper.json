@@ -372,6 +372,24 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
+    "id": "storsteinnestinden",
+    "navn": "Storsteinnestinden",
+    "fil": "2026_05_16.gpx",
+    "mediaMappe": "2026_05.16",
+    "mediaJson": "2026_05_16.json",
+    "video": [
+      {
+        "url": "https://www.strava.com/activities/18531888915",
+        "tittel": "Se Strava-aktivitet"
+      },
+      {
+        "url": "https://maps.suunto.com/move/larsgimse/6a08977cca014861dc783bef",
+        "tittel": "Se Suunto-aktivitet"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "storstolpan",
     "navn": "Storstolpan",
     "fil": "2025_05_08.gpx",

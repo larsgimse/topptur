@@ -1,0 +1,13 @@
+{
+  "bildeMappe": "/media/2026_05_16",
+  "bilderMappejson": "2026_05_16.json",
+  "gpxFil": "2026_05_16.gpx",
+  "antallBilder": 5,
+  "bilder": [
+    "A1E0BCF8-4943-405A-AF79-573CDFBBD12C.jpg",
+    "C825BA41-5692-4C0A-BA98-41991DFB1AC9.jpg",
+    "447B8342-FB8D-40DC-ACFF-B286C11304D6.jpg",
+    "42A53CBF-775B-41F8-8A93-B988B16C1790.jpg",
+    "1D55DF4D-1B55-49AE-AE1D-12CB7024EFBE.jpg"
+  ]
+}
