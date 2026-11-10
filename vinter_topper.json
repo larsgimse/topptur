@@ -64,6 +64,18 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
+    "id": "blaafjellet",
+    "navn": "Blåfjellet",
+    "fil": "2024_04_07.gpx",
+    "video": [
+      {
+        "url": "https://www.strava.com/activities/11126784012",
+        "tittel": "Se Strava-aktivitet"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "buren",
     "navn": "Buren",
     "fil": "2026_01_10.gpx",
@@ -130,18 +142,6 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
-    "id": "blaafjellet",
-    "navn": "Blåfjellet",
-    "fil": "2024_04_07.gpx",
-    "video": [
-      {
-        "url": "https://www.strava.com/activities/11126784012",
-        "tittel": "Se Strava-aktivitet"
-      }
-    ],
-    "beskrivelse": "Kommer mer info snart..."
-  },
-  {
     "id": "fagerfjellet",
     "navn": "Fagerfjellet",
     "fil": "2025_04_22.gpx",
@@ -160,6 +160,26 @@
         "tittel": "Spor 2",
         "fil": "2024_12_23.gpx",
         "farge": "#5c6bc0"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
+    "id": "finnlandsfjellet",
+    "navn": "Finnlandsfjellet",
+    "fil": "2026_11_10.gpx",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/Dfk1i9AKbCD/",
+        "tittel": "Se video"
+      },
+      {
+        "url": "https://www.strava.com/activities/20936774641",
+        "tittel": "Se Strava-aktivitet"
+      },
+      {
+        "url": "https://maps.suunto.com/move/larsgimse/6af3648d5e1ec71acf51f601",
+        "tittel": "Se Suunto-aktivitet"
       }
     ],
     "beskrivelse": "Kommer mer info snart..."
