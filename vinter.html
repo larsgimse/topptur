@@ -472,6 +472,8 @@
         /* ===== Snødybde (NVE seNorge) ===== */
         .legend.snolegend { width: 230px; max-width: calc(100vw - 40px); box-sizing: border-box; }
         /* Snødybde: menyen kan minimeres eller lukkes uten å slå av kartlaget. */
+        /* Hold kontrollen over Leaflet/OpenFreeMap-kildehenvisning på små skjermar. */
+        .leaflet-bottom.leaflet-left .snolegend { margin-bottom: 30px; }
         .snolegend .sno-panelhode { display: flex; align-items: center; gap: 8px; }
         .snolegend .sno-panelhode h4 { margin: 0; flex: 1; }
         .snolegend .sno-panelknapper { display: flex; align-items: center; gap: 3px; }
@@ -480,6 +482,7 @@
         .snolegend .sno-panelinnhold { margin-top: 8px; }
         .snolegend.sno-minimert .sno-panelinnhold, .snolegend.sno-lukket .sno-panelinnhold { display: none; }
         .snolegend.sno-lukket { width: auto; min-width: 0; padding: 4px; }
+        .snolegend.sno-lukket .sno-vis { font-size: 20px; width: 29px; height: 29px; }
         .snolegend.sno-lukket .sno-panelhode h4, .snolegend.sno-lukket .sno-minimer, .snolegend.sno-lukket .sno-lukk { display: none; }
         .snolegend:not(.sno-lukket) .sno-vis { display: none; }
         @media (max-width: 768px) { .legend.snolegend { max-width: min(230px, calc(100vw - 24px)); } }
@@ -1134,7 +1137,7 @@
                     <div class="sno-panelknapper">
                         <button type="button" class="sno-panelknapp sno-minimer" title="Minimer snødybdemenyen" aria-label="Minimer snødybdemenyen" aria-expanded="${sno.panelModus === 'apen'}">−</button>
                         <button type="button" class="sno-panelknapp sno-lukk" title="Lukk snødybdemenyen (behold kartlaget)" aria-label="Lukk snødybdemenyen (behold kartlaget)">×</button>
-                        <button type="button" class="sno-panelknapp sno-vis" title="Vis snødybdemenyen" aria-label="Vis snødybdemenyen">ⓘ</button>
+                        <button type="button" class="sno-panelknapp sno-vis" title="Vis snødybdemenyen" aria-label="Vis snødybdemenyen">❄️</button>
                     </div>
                 </div>
                 <div class="sno-panelinnhold">
