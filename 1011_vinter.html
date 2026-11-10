@@ -23,9 +23,9 @@
             --suunto-red: #ff3b30;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            text-align: center; margin: 0; padding: 10px 5px;
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            text-align: center; margin: 0; padding: 10px 5px; 
             background: #f1f5f9; color: var(--dark-grey);
             overflow-x: hidden; display: flex; flex-direction: column;
         }
@@ -37,20 +37,20 @@
         .buttons-wrapper { position: relative; width: 100%; order: 4; margin-bottom: 15px; z-index: 9999; }
         #buttons { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 5px; }
         #controls-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; order: 5; position: relative; z-index: 10; }
-
+        
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; width: 100%; order: 7; z-index: 1; }
         #bottom-controls-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; flex-wrap: wrap; order: 8; position: relative; z-index: 10; }
 
-        #map {
-            height: 65vh;
-            min-height: 450px;
-            width: 100%;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        #map { 
+            height: 65vh; 
+            min-height: 450px; 
+            width: 100%; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
         }
 
-        #video-buttons-container {
-            position: absolute; top: 2px; right: 2px; z-index: 1000;
+        #video-buttons-container { 
+            position: absolute; top: 2px; right: 2px; z-index: 1000; 
             display: grid; grid-template-columns: 1fr 1fr; gap: 6px; align-items: stretch;
             width: 300px; box-sizing: border-box;
             /* Aldri høyere enn kartet - scroller heller innenfor panelet */
@@ -129,8 +129,8 @@
             border-color: #0284c7 !important;
         }
 
-        .ui-hidden .video-link-btn,
-        .ui-hidden .control-row-container,
+        .ui-hidden .video-link-btn, 
+        .ui-hidden .control-row-container, 
         .ui-hidden .search-link-btn,
         .ui-hidden .download-area,
         .ui-hidden .desc-box {
@@ -210,16 +210,16 @@
         .badge-label {
             position: absolute; top: -6px; right: -6px; color: white; font-size: 8px;
             padding: 1px 4px; border-radius: 8px; border: 1.5px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; font-weight: bold; 
             pointer-events: none; transition: transform 0.2s;
         }
         .badge-year { background: var(--year-grey); }
         .badge-2026 { background: #d1fae5; color: #065f46; border-color: #065f46; }
 
         .video-link-btn, .search-link-btn {
-            background: rgba(255, 255, 255, 0.95); padding: 5px 8px; border-radius: 8px;
+            background: rgba(255, 255, 255, 0.95); padding: 5px 8px; border-radius: 8px; 
             font-weight: 700; text-decoration: none; font-size: 11px; line-height: 1.2; border: 2px solid var(--insta-pink);
-            display: flex; align-items: center; gap: 4px; color: var(--insta-pink);
+            display: flex; align-items: center; gap: 4px; color: var(--insta-pink); 
             width: 100%; box-sizing: border-box; backdrop-filter: blur(4px); cursor: pointer; min-height: 32px;
             font-family: inherit; text-align: left;
         }
@@ -243,14 +243,14 @@
         .brattskala-rad .control-label { font-size: 11px; line-height: 1.15; }
         .brattskala-rad .toggle-group { flex-direction: row; gap: 4px; }
         .brattskala-rad .toggle-text { display: none; }
-
+        
         .download-area {
-            width: 100%; background: rgba(255, 255, 255, 0.95); border-radius: 8px;
-            border: 2px solid var(--download-blue); padding: 5px 8px;
+            width: 100%; background: rgba(255, 255, 255, 0.95); border-radius: 8px; 
+            border: 2px solid var(--download-blue); padding: 5px 8px; 
             box-sizing: border-box; backdrop-filter: blur(4px); text-align: left;
         }
-        .download-header {
-            font-size: 10px; font-weight: 800; color: var(--download-blue);
+        .download-header { 
+            font-size: 10px; font-weight: 800; color: var(--download-blue); 
             margin-bottom: 3px; display: flex; align-items: center; gap: 4px;
             text-transform: uppercase; letter-spacing: 0.3px; cursor: pointer; user-select: none; line-height: 1.2;
         }
@@ -258,8 +258,8 @@
         .download-area:not(.open) .download-header { margin-bottom: 0; width: 100%; }
         .download-area:not(.open) .download-links-container { display: none; }
         .download-links-container { display: flex; flex-wrap: wrap; gap: 3px 10px; }
-        .dl-link {
-            font-size: 11px; font-weight: 700; color: var(--download-blue);
+        .dl-link { 
+            font-size: 11px; font-weight: 700; color: var(--download-blue); 
             text-decoration: underline; cursor: pointer;
         }
         .dl-link:hover { color: var(--dark-grey); }
@@ -267,11 +267,11 @@
         .control-row-container {
             display: flex; align-items: center; justify-content: space-between;
             background: rgba(255, 255, 255, 0.95); padding: 4px 8px;
-            border-radius: 8px; border: 1px solid #ccc; width: 100%;
+            border-radius: 8px; border: 1px solid #ccc; width: 100%; 
             box-sizing: border-box; backdrop-filter: blur(4px); gap: 6px;
         }
         .control-label { font-size: 11px; font-weight: 700; flex-grow: 1; text-align: left; position: relative; }
-
+        
         .toggle-group { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
         .toggle-text { font-size: 8px; color: #64748b; font-weight: 800; text-transform: uppercase; }
 
@@ -426,7 +426,7 @@
             .buttons-wrapper::after { background: linear-gradient(to left, rgba(255,255,255,.95), rgba(255,255,255,0)); }
         }
         @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
-
+    
         /* ===== Progresjonsbar for innlasting av spor ===== */
         #track-progress { position: absolute; top: 0; left: 0; right: 0; z-index: 1100; pointer-events: none; transition: opacity .5s ease; }
         #track-progress.done { opacity: 0; }
@@ -445,26 +445,6 @@
     #map-container.marker-modus, #map-container.marker-modus * { cursor: crosshair !important; }
     .marker-boks { position: absolute; z-index: 800; border: 1px solid var(--ink, #000); background: rgba(0, 0, 0, .07); pointer-events: none; }
     .marker-hint { position: absolute; z-index: 801; left: 10px; top: 10px; background: #fff; border: 1px solid var(--ink, #000); padding: 4px 10px; font-size: 12px; font-weight: 400; color: var(--ink, #000); pointer-events: none; }
-
-
-        /* ===== Snødybde (NVE seNorge) ===== */
-        .legend.snolegend { width: 230px; max-width: calc(100vw - 40px); box-sizing: border-box; }
-        .sno-dato { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin: 0 0 6px; font-size: 13px; }
-        .sno-dato button { width: 26px; height: 26px; padding: 0; border: 1px solid var(--ink); border-radius: 0; background: #fff; color: var(--ink); font-size: 15px; line-height: 1; cursor: pointer; }
-        .sno-dato button:hover:not(:disabled) { background: var(--winter-bg); }
-        .sno-dato button:disabled { opacity: .35; cursor: default; }
-        .sno-dato .sno-dato-tekst { flex: 1; text-align: center; font-weight: 500; }
-        .snolegend .sno-skala { display: block; max-width: 100%; height: auto; margin: 2px 0 4px; }
-        .sno-topp { margin: 8px 0 0; padding-top: 6px; border-top: 1px solid #e4e4e4; font-size: 13px; }
-        .sno-topp b { font-weight: 500; }
-        .sno-topp .sno-merk { display: block; margin-top: 2px; font-size: 11px; line-height: 1.35; color: var(--muted); }
-        .sno-merke { background: none; border: 0; }
-        .yr-pkt { background: none; border: 0; }
-        .yr-pkt span { display: inline-block; transform: translate(-50%, -50%); min-width: 22px; padding: 1px 5px; box-sizing: border-box; text-align: center; background: #fff; border: 1px solid var(--winter-ink); border-radius: 11px; font: 500 12px/1.4 "Jost", Arial, sans-serif; color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.2); cursor: pointer; }
-        .yr-pkt.yr-gammel span { opacity: .6; border-style: dashed; }
-        .sno-yr { margin: 8px 0 0; padding-top: 6px; border-top: 1px solid #e4e4e4; }
-        .sno-yr button { padding: 0; border: 0; background: none; color: var(--winter-ink); font: inherit; text-decoration: underline; cursor: pointer; }
-        .sno-merke span { display: inline-block; transform: translate(-50%, -150%); padding: 2px 7px; background: #fff; border: 1px solid var(--ink); font: 500 12px/1.3 "Jost", Arial, sans-serif; white-space: nowrap; color: var(--ink); box-shadow: 0 2px 6px rgba(0,0,0,.18); }
 
         /* Bildegalleri hentet fra sommer.html – behold vinterdesign og øvrige knapper */
         #video-buttons-container > .gallery-link-btn { grid-column: auto; order: 4; }
@@ -538,11 +518,6 @@
 
         <button id="skredBtn" type="button" class="ctl" aria-expanded="false" aria-controls="skredMeny" title="Snøskred: aktsomhetsområder og faregrad">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20l6-10 3 5 2-3 9 8z"/><path d="M13 5l2 2M16 3l2 2M17 8l1.5 1.5"/></svg> Snøskred
-        </button>
-
-        <button id="snoBtn" type="button" class="ctl" aria-pressed="false" title="Snødybde fra NVE (seNorge). Vises på oversiktskartet og inne på hver topp">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M12 6H7M12 10H9M12 14H7M12 18H9M17 21H7"/><path d="M16 8l2-2 2 2M18 6v6"/></svg> Snødybde
-            <span id="yrToggle" class="skala-toggle" role="switch" aria-checked="false" aria-label="Målt snødybde fra Yr" title="Målte snødybder fra Yr (MET Norway)" hidden><span class="skala-tekst">Yr</span><span class="switch-track"><span class="switch-thumb"></span></span></span>
         </button>
 
         <button id="markerBtn" type="button" class="ctl ctl-marker" title="Marker et område du vil zoome til (dra en firkant med musen)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5"/><circle cx="11" cy="11" r="3.5"/><path d="M13.6 13.6L17 17"/></svg> Marker</button>
@@ -1012,323 +987,6 @@
             el.onchange = () => settSkred(nokkel, el.checked);
         });
 
-        /* ===== Snødybde: seNorge-kart fra NVE (modellert, 1 km), med verdi ved valgt topp ===== */
-        const SNO_WMS = 'https://kart.nve.no/enterprise/services/seNorgeGrid_png/ImageServer/WMSServer';
-        const SNO_PRODUKT = 'sd';   // lagnavn i NVEs seNorgeGrid_png (sd = snødybde)
-        const SNO_SKALA = 'https://nve-skytjenester-prod-imagemanager.s3.eu-north-1.amazonaws.com/static/seNorgeGridLegend/sd.png';
-        const SNO_PUNKT = 'https://gts.nve.no/api/GridTimeSeries/';   // verdi for ett punkt (UTM33)
-        const SNO_DAGER_FREM = 3;   // hvor mange dager frem i tid (prognose) man kan bla
-
-        const dagStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-        const flyttDag = (str, n) => { const [y, m, d] = str.split('-').map(Number); return dagStr(new Date(y, m - 1, d + n)); };
-        const idag = () => dagStr(new Date());
-
-        // NVEs WMS støtter bare UTM (EPSG:32633), ikke Web Mercator. Hver flis hentes derfor i UTM og tegnes
-        // inn i riktig vinkel og skala på flisa (lokalt er forskjellen en ren rotasjon og skalering).
-        const SnoLag = L.GridLayer.extend({
-            createTile: function (c, done) {
-                const tile = L.DomUtil.create('canvas', 'leaflet-tile');
-                const sz = this.getTileSize(); tile.width = sz.x; tile.height = sz.y;
-                const hjorne = (dx, dy) => { const ll = this._map.unproject(L.point((c.x + dx) * sz.x, (c.y + dy) * sz.y), c.z); return tilUTM33(ll.lat, ll.lng); };
-                const tl = hjorne(0, 0), tr = hjorne(1, 0), bl = hjorne(0, 1), br = hjorne(1, 1);
-                const pad = 1000;   // én rute ekstra rundt, så kantene blir hele
-                const minE = Math.min(tl.x, tr.x, bl.x, br.x) - pad, maxE = Math.max(tl.x, tr.x, bl.x, br.x) + pad;
-                const minN = Math.min(tl.y, tr.y, bl.y, br.y) - pad, maxN = Math.max(tl.y, tr.y, bl.y, br.y) + pad;
-                const mPerPx = Math.max(Math.hypot(tr.x - tl.x, tr.y - tl.y) / sz.x, 250);   // rutenettet er 1 km, så finere enn 250 m gir ingenting
-                const w = Math.min(1024, Math.max(8, Math.ceil((maxE - minE) / mPerPx))), h = Math.min(1024, Math.max(8, Math.ceil((maxN - minN) / mPerPx)));
-                const sx = (maxE - minE) / w, sy = (maxN - minN) / h;
-                // UTM (E,N) -> flisepiksel: inverter matrisen [vE/256 | vS/256]
-                const e1 = (tr.x - tl.x) / sz.x, n1 = (tr.y - tl.y) / sz.x, e2 = (bl.x - tl.x) / sz.y, n2 = (bl.y - tl.y) / sz.y;
-                const det = e1 * n2 - e2 * n1;
-                const m11 = n2 / det, m12 = -e2 / det, m21 = -n1 / det, m22 = e1 / det;
-                const url = SNO_WMS + '?service=WMS&version=1.3.0&request=GetMap&layers=' + SNO_PRODUKT + '&styles=&crs=EPSG:32633' +
-                    '&bbox=' + [minE, minN, maxE, maxN].join(',') + '&width=' + w + '&height=' + h +
-                    '&format=image/png&transparent=true&time=' + this.options.dato;
-                const img = new Image();
-                img.onload = () => {
-                    const ctx = tile.getContext('2d');
-                    ctx.imageSmoothingEnabled = false;
-                    ctx.setTransform(m11 * sx, m21 * sx, -m12 * sy, -m22 * sy,
-                        m11 * (minE - tl.x) + m12 * (maxN - tl.y), m21 * (minE - tl.x) + m22 * (maxN - tl.y));
-                    ctx.drawImage(img, 0, 0);
-                    done(null, tile);
-                };
-                img.onerror = () => done(new Error('Fant ikke snødybdekart'), tile);
-                img.src = url;
-                return tile;
-            }
-        });
-        // Dataene har 1 km rutenett; over zoom 13 forstørres rutene i stedet for å hente nye fliser
-        const snoLag = new SnoLag({ maxZoom: 20, maxNativeZoom: 13, opacity: 0.65, zIndex: 3, attribution: '© NVE / seNorge', dato: idag() });
-
-        // UTM sone 33 (EPSG:25833) fra lengde- og breddegrad, brukt mot NVEs punkt-API
-        function tilUTM33(lat, lon) {
-            const f = 1 / 298.257222101, a = 6378137, k0 = 0.9996, n = f / (2 - f);
-            const A = a / (1 + n) * (1 + n * n / 4 + Math.pow(n, 4) / 64);
-            const al = [n / 2 - 2 * n * n / 3 + 5 * Math.pow(n, 3) / 16, 13 * n * n / 48 - 3 * Math.pow(n, 3) / 5, 61 * Math.pow(n, 3) / 240];
-            const phi = lat * Math.PI / 180, lam = (lon - 15) * Math.PI / 180, q = 2 * Math.sqrt(n) / (1 + n);
-            const t = Math.sinh(Math.atanh(Math.sin(phi)) - q * Math.atanh(q * Math.sin(phi)));
-            const xi = Math.atan(t / Math.cos(lam)), eta = Math.atanh(Math.sin(lam) / Math.sqrt(1 + t * t));
-            let E = eta, N = xi;
-            al.forEach((c, j) => { const k = 2 * (j + 1); E += c * Math.cos(k * xi) * Math.sinh(k * eta); N += c * Math.sin(k * xi) * Math.cosh(k * eta); });
-            return { x: Math.round(500000 + k0 * A * E), y: Math.round(k0 * A * N) };
-        }
-
-        async function hentSnoVerdi(ll, dato) {
-            const p = tilUTM33(ll.lat, ll.lng);
-            const r = await fetch(SNO_PUNKT + p.x + '/' + p.y + '/' + flyttDag(dato, -1) + '/' + dato + '/sd.json');
-            if (!r.ok) throw new Error('NVE svarte ' + r.status);
-            const j = await r.json();
-            const v = Array.isArray(j.Data) && j.Data.length ? j.Data[j.Data.length - 1] : null;
-            if (v === null || v === undefined || v === j.NoDataValue || Number(v) >= 65535) return null;
-            return { verdi: Math.round(Number(v)), enhet: j.Unit || 'cm', hoyde: j.Altitude };
-        }
-
-        const sno = { paa: false, dato: idag(), datoSjekket: false, topp: null, merke: null, forespoersel: 0 };
-        const snoBtn = document.getElementById('snoBtn');
-        const snoLegend = L.control({ position: 'bottomleft' });
-        let snoLegendDiv = null;
-
-        snoLegend.onAdd = function () {
-            snoLegendDiv = L.DomUtil.create('div', 'legend snolegend');
-            snoLegendDiv.innerHTML = `
-                <h4>Snødybde</h4>
-                <div class="sno-dato">
-                    <button type="button" class="sno-forrige" aria-label="Dagen før" title="Dagen før">‹</button>
-                    <span class="sno-dato-tekst"></span>
-                    <button type="button" class="sno-neste" aria-label="Dagen etter" title="Dagen etter">›</button>
-                </div>
-                <img class="sno-skala" src="${SNO_SKALA}" alt="Fargeskala for snødybde i cm" loading="lazy" />
-                <div class="sno-topp" hidden></div>
-                <p class="fg-merk sno-yr" hidden></p>
-                <div class="fg-kilde">Modellert snødybde, 1 km rutenett. Kilde: NVE / seNorge</div>
-            `;
-            L.DomEvent.disableClickPropagation(snoLegendDiv);
-            snoLegendDiv.querySelector('.sno-forrige').onclick = () => settSnoDato(flyttDag(sno.dato, -1));
-            snoLegendDiv.querySelector('.sno-neste').onclick = () => settSnoDato(flyttDag(sno.dato, 1));
-            return snoLegendDiv;
-        };
-
-        function visSnoDato() {
-            if (!snoLegendDiv) return;
-            const [y, m, d] = sno.dato.split('-').map(Number);
-            const tekst = new Date(y, m - 1, d).toLocaleDateString((typeof window.__lang === 'function' && window.__lang() === 'en') ? 'en-GB' : 'nb-NO', { weekday: 'short', day: 'numeric', month: 'short' });
-            const frem = sno.dato > idag();
-            snoLegendDiv.querySelector('.sno-dato-tekst').textContent = tekst + (frem ? ' (prognose)' : '');
-            snoLegendDiv.querySelector('.sno-neste').disabled = sno.dato >= flyttDag(idag(), SNO_DAGER_FREM);
-        }
-
-        function settSnoDato(ny) {
-            sno.dato = ny;
-            snoLag.options.dato = ny;
-            if (sno.paa) snoLag.redraw();
-            visSnoDato();
-            oppdaterSnoTopp();
-            if (typeof yr !== 'undefined' && yr.paa) oppdaterYr();
-        }
-
-        // Finn nyeste dag NVE har data for (dagens kart er av og til ikke ferdig tidlig på morgenen)
-        async function finnSnoDato() {
-            sno.datoSjekket = true;
-            const sentrum = map.getCenter();
-            for (let i = 0; i < 4; i++) {
-                const dag = flyttDag(idag(), -i);
-                try { if (await hentSnoVerdi(sentrum, dag)) { if (dag !== sno.dato) settSnoDato(dag); return; } }
-                catch (e) { return; }   // ingen kontakt med punkt-API: behold dagens dato
-            }
-        }
-
-        // Høyeste punkt på sporet = toppen
-        function toppPunkt(gpxLag) {
-            try {
-                const pts = gpxLag.getLayers()[0].getLatLngs().flat(Infinity);
-                let best = pts[pts.length - 1], hoyest = -Infinity;
-                pts.forEach(p => { const e = p.meta && Number(p.meta.ele); if (isFinite(e) && e > hoyest) { hoyest = e; best = p; } });
-                return best;
-            } catch (e) { return null; }
-        }
-
-        // Kalles når en topp velges (topp + GPX-lag) og når kartet nullstilles (null)
-        function snoToppOppdater(topp, gpxLag) {
-            sno.topp = topp ? { navn: topp.navn, ll: toppPunkt(gpxLag) } : null;
-            oppdaterSnoTopp();
-        }
-
-        async function oppdaterSnoTopp() {
-            const min = ++sno.forespoersel;
-            if (sno.merke) { map.removeLayer(sno.merke); sno.merke = null; }
-            const boks = snoLegendDiv && snoLegendDiv.querySelector('.sno-topp');
-            if (!sno.paa || !sno.topp || !sno.topp.ll) { if (boks) boks.hidden = true; return; }
-            const { navn, ll } = sno.topp;
-            if (boks) { boks.hidden = false; boks.innerHTML = '<b></b> <span class="sno-v">henter …</span>'; boks.firstChild.textContent = navn + ':'; }
-            let svar = null, feil = false;
-            try { svar = await hentSnoVerdi(ll, sno.dato); } catch (e) { feil = true; console.warn('Snødybde ved toppen kunne ikke hentes:', e); }
-            if (min !== sno.forespoersel || !sno.paa || !sno.topp) return;
-            if (boks) {
-                const v = boks.querySelector('.sno-v');
-                v.textContent = svar ? svar.verdi + ' ' + svar.enhet : (feil ? 'ikke tilgjengelig' : 'ingen data');
-                if (svar) {
-                    const merk = document.createElement('span'); merk.className = 'sno-merk';
-                    merk.textContent = 'Snitt for 1 km-ruta' + (svar.hoyde ? ' (ca. ' + Math.round(svar.hoyde) + ' moh)' : '') + '. Selve toppen kan ha mer eller mindre.';
-                    boks.appendChild(merk);
-                }
-            }
-            if (svar) {
-                sno.merke = L.marker(ll, { interactive: false, keyboard: false, zIndexOffset: 1000,
-                    icon: L.divIcon({ className: 'sno-merke', html: '<span>' + svar.verdi + ' ' + svar.enhet + '</span>', iconSize: [0, 0] }) }).addTo(map);
-            }
-        }
-
-        function settSno(paa) {
-            sno.paa = paa;
-            snoBtn.classList.toggle('btn-toggle-active', paa);
-            snoBtn.setAttribute('aria-pressed', String(paa));
-            yrToggle.hidden = !paa;   // Yr-bryteren vises bare når snødybde er på
-            if (paa) {
-                snoLag.options.dato = sno.dato;
-                map.addLayer(snoLag);
-                snoLegend.addTo(map);
-                visSnoDato();
-                if (!sno.datoSjekket) finnSnoDato();
-                oppdaterSnoTopp();
-            } else {
-                if (yr.paa) settYr(false);
-                map.removeLayer(snoLag);
-                map.removeControl(snoLegend); snoLegendDiv = null;
-                if (sno.merke) { map.removeLayer(sno.merke); sno.merke = null; }
-            }
-        }
-/* ===== Målte snødybder (MET Norway / Yr) som punkter. Hentes fra MET Frost, som krever en gratis klient-ID ===== */
-        const FROST_ID = '6ae51aee-fee5-4e4a-ae51-3d8dd13e3d3d';   // Valgfritt: lim inn din klient-ID her. Står den tom, spør siden og husker den i nettleseren.
-        // Nettleseren får ikke kalle Frost direkte (CORS). Lim inn adressen til mellomtjenesten (se frost-proxy.js), f.eks. 'https://frost.ditt-navn.workers.dev/'.
-        const FROST_PROXY = 'https://frost-proxy.lars-e3d.workers.dev/';
-        const FROST = FROST_PROXY || 'https://frost.met.no/';
-        const YR_MIN_ZOOM = 8;   // under dette zoomnivået hentes ingen stasjoner
-        const yr = { paa: false, stasjoner: new Map(), verdier: new Map(), verdiDato: null, hentet: null, lag: L.layerGroup(), timer: null, teller: 0, melding: '', spoer: false };
-        const yrToggle = document.getElementById('yrToggle');
-
-        function frostId() {
-            if (FROST_ID) return FROST_ID;
-            try { return localStorage.getItem('frostId') || ''; } catch (e) { return ''; }
-        }
-        function spoerFrostId() {
-            const id = (prompt('Lim inn din gratis klient-ID fra frost.met.no (lagres bare i denne nettleseren):') || '').trim();
-            if (id) { try { localStorage.setItem('frostId', id); } catch (e) {} }
-            return id;
-        }
-        async function frost(sti) {
-            // Via mellomtjenesten er kallet enkelt og uten egne headere; ID-en ligger der
-            const r = await fetch(FROST + sti, FROST_PROXY ? {} : { headers: { Authorization: 'Basic ' + btoa(frostId() + ':') } });
-            if (r.status === 404) return { data: [] };   // Frost svarer 404 når det ikke finnes data
-            if (r.status === 401 || r.status === 403) throw new Error('klient-ID avvist');
-            if (!r.ok) {
-                let grunn = '';
-                try { const j = await r.json(); grunn = (j.error && (j.error.reason || j.error.message)) || ''; } catch (e) {}
-                throw new Error('Frost ' + r.status + (grunn ? ': ' + grunn : ''));
-            }
-            return r.json();
-        }
-
-        function yrMelding(tekst, medKnapp) {
-            yr.melding = tekst; yr.spoer = !!medKnapp;
-            const el = snoLegendDiv && snoLegendDiv.querySelector('.sno-yr');
-            if (!el) return;
-            el.hidden = !yr.paa;
-            el.textContent = tekst;
-            if (medKnapp) {
-                el.appendChild(document.createTextNode(' '));
-                const b = document.createElement('button'); b.type = 'button'; b.textContent = 'Legg inn klient-ID';
-                b.onclick = () => { if (spoerFrostId()) oppdaterYr(); };
-                el.appendChild(b);
-            }
-        }
-
-        function yrPopup(navn, v, hoyde) {
-            const d = document.createElement('div');
-            const t = document.createElement('b'); t.textContent = navn; d.appendChild(t);
-            d.appendChild(document.createElement('br'));
-            d.appendChild(document.createTextNode(Math.max(0, Math.round(v.v)) + ' cm, målt ' + v.t.slice(0, 10) + (hoyde ? ' (' + Math.round(hoyde) + ' moh)' : '')));
-            d.appendChild(document.createElement('br'));
-            const k = document.createElement('span'); k.className = 'fg-kilde'; k.textContent = 'Målestasjon. Kilde: MET Norway / Yr';
-            d.appendChild(k);
-            return d;
-        }
-
-        async function oppdaterYr() {
-            if (!yr.paa) return;
-            const min = ++yr.teller;
-            yr.lag.clearLayers();
-            if (!FROST_PROXY && !frostId()) { yrMelding('Målte stasjoner trenger en gratis klient-ID fra MET.', true); return; }
-            if (map.getZoom() < YR_MIN_ZOOM) { yrMelding('Zoom inn for å se målte snødybder fra Yr.'); return; }
-            yrMelding('Henter målte snødybder …');
-            try {
-                const b = map.getBounds().pad(0.1);
-                if (!yr.hentet || !yr.hentet.contains(b)) {
-                    const sw = b.getSouthWest(), ne = b.getNorthEast();
-                    const pkt = [[sw.lng, sw.lat], [ne.lng, sw.lat], [ne.lng, ne.lat], [sw.lng, ne.lat], [sw.lng, sw.lat]].map(q => q[0].toFixed(4) + ' ' + q[1].toFixed(4)).join(',');
-                    const j = await frost('sources/v0.jsonld?types=SensorSystem&elements=surface_snow_thickness&geometry=' + encodeURIComponent('POLYGON((' + pkt + '))'));
-                    if (min !== yr.teller) return;
-                    (j.data || []).forEach(st => { const c = st.geometry && st.geometry.coordinates; if (c) yr.stasjoner.set(st.id, { navn: st.name || st.id, ll: L.latLng(c[1], c[0]), hoyde: st.masl }); });
-                    yr.hentet = b;
-                }
-                const dato = sno.dato > idag() ? idag() : sno.dato;   // målinger finnes ikke for fremtiden
-                if (yr.verdiDato !== dato) { yr.verdier.clear(); yr.verdiDato = dato; }
-                const synlige = [...yr.stasjoner].filter(([, st]) => b.contains(st.ll));
-                const mangler = synlige.map(([id]) => id).filter(id => !yr.verdier.has(id));
-                for (let i = 0; i < mangler.length; i += 40) {
-                    const del = mangler.slice(i, i + 40);
-                    const j = await frost('observations/v0.jsonld?sources=' + del.join(',') + '&elements=surface_snow_thickness&timeresolutions=P1D&referencetime=' + flyttDag(dato, -3) + '/' + flyttDag(dato, 1));
-                    if (min !== yr.teller) return;
-                    const nyeste = new Map();
-                    (j.data || []).forEach(o => {
-                        const id = String(o.sourceId).split(':')[0], ob = (o.observations || [])[0];
-                        if (!ob || typeof ob.value !== 'number') return;
-                        const g = nyeste.get(id);
-                        if (!g || o.referenceTime > g.t) nyeste.set(id, { t: o.referenceTime, v: ob.value });
-                    });
-                    del.forEach(id => yr.verdier.set(id, nyeste.get(id) || null));
-                }
-                let antall = 0;
-                synlige.forEach(([id, st]) => {
-                    const v = yr.verdier.get(id);
-                    if (!v) return;
-                    antall++;
-                    const gammel = v.t.slice(0, 10) < dato;
-                    L.marker(st.ll, { zIndexOffset: 500, icon: L.divIcon({ className: 'yr-pkt' + (gammel ? ' yr-gammel' : ''), html: '<span>' + Math.max(0, Math.round(v.v)) + '</span>', iconSize: [0, 0] }) })
-                        .bindPopup(yrPopup(st.navn, v, st.hoyde)).addTo(yr.lag);
-                });
-                yrMelding(antall ? 'Tall på kartet er målt snødybde i cm. Stiplet ramme: eldre måling. Kilde: MET Norway / Yr.' : 'Ingen målinger i dette utsnittet.');
-            } catch (e) {
-                console.warn('Målte snødybder fra Yr kunne ikke hentes:', e);
-                if (min === yr.teller) {
-                    const avvist = String(e.message).indexOf('klient-ID') >= 0;
-                    yrMelding(avvist ? 'Klient-ID ble avvist av MET.'
-                        : (e instanceof TypeError ? 'Målte snødybder kunne ikke hentes: ingen kontakt med MET (nettverk eller blokkert av nettleseren).'
-                        : 'Målte snødybder kunne ikke hentes: ' + e.message), avvist);
-                }
-            }
-        }
-
-        function settYr(paa) {
-            yr.paa = paa;
-            yrToggle.classList.toggle('active', paa);
-            yrToggle.setAttribute('aria-checked', String(paa));
-            if (paa) {
-                yr.lag.addTo(map);
-                if (!FROST_PROXY && !frostId()) spoerFrostId();
-                oppdaterYr();
-            } else {
-                yr.teller++;
-                map.removeLayer(yr.lag); yr.lag.clearLayers();
-                yrMelding('');
-            }
-        }
-        yrToggle.onclick = e => { e.stopPropagation(); settYr(!yr.paa); };
-        map.on('moveend', () => { if (yr.paa) { clearTimeout(yr.timer); yr.timer = setTimeout(oppdaterYr, 500); } });
-
-        snoBtn.onclick = () => settSno(!sno.paa);
-        snoLag.on('tileerror', e => console.warn('Snødybdekart kunne ikke hentes:', e && e.error));
-
         /* ==========================================================================
            OVERSIKTSKART (som oversikt.html): grått land, hvitt hav, blå innsjøer og blå spor.
            Vises når ingen topp er valgt. Når en topp velges brukes Norgeskart/OSM som før.
@@ -1425,7 +1083,6 @@
                 mapSelectEl.style.display = '';
                 document.getElementById('map').classList.remove('oversikt-modus');
             }
-            if (typeof snoLag !== 'undefined' && map.hasLayer(snoLag)) snoLag.bringToFront();
             if (bratthetMap && map.hasLayer(bratthetMap)) bratthetMap.bringToFront();
             if (typeof skredLag !== 'undefined') Object.values(skredLag).forEach(l => { if (map.hasLayer(l)) l.bringToFront(); });
         }
@@ -1526,7 +1183,7 @@
             const e = gpxLayer.get_elevation_gain();
             const h = gpxLayer.get_elevation_max();
             const minH = gpxLayer.get_elevation_min();
-            const stats = gpxLayer.get_elevation_data();
+            const stats = gpxLayer.get_elevation_data(); 
             const dato = parseDatoFraFil(gpxFil);
 
             let tidTR = "N/A";
@@ -1545,7 +1202,7 @@
                 for (let p of punkter) {
                     if (p.meta && p.meta.ele >= h - 0.5) {
                         toppPunktTid = p.meta.time;
-                        break;
+                        break; 
                     }
                 }
                 if (toppPunktTid) {
@@ -1813,9 +1470,9 @@
                         const l = e.target;
                         gpxLagMap[topp.id] = l;
                         allTracksGroup.addLayer(l);
-
+                
                         registrerLading();
-
+                
                         const aktiver = () => {
                             isReseting = false; aktivToppNavn = topp.navn; settKartModus('topp'); galleriForespørsel++;
                             document.getElementById('topSearchInput').value = topp.navn;
@@ -1832,7 +1489,7 @@
                             aktiveMarkører.forEach(m => map.removeLayer(m));
                             aktiveMarkører = [];
                             allTracksGroup.eachLayer(layer => layer.setStyle({opacity: 0.1, weight: 1, color: 'var(--strava-orange)'}));
-                            l.setStyle({opacity: 1, weight: 2.5, color: 'var(--strava-orange)'}).bringToFront();
+                            l.setStyle({opacity: 1, weight: 2.5, color: 'var(--strava-orange)'}).bringToFront(); 
 
                             videoContainer.innerHTML = '';
                             videoContainer.classList.remove('ui-hidden');
@@ -1890,7 +1547,7 @@
                                 videoContainer.appendChild(suuntoBtn);
                             }
 
-                            videoContainer.appendChild(skapKontrollRad(topp.navn, null, true,
+                            videoContainer.appendChild(skapKontrollRad(topp.navn, null, true, 
                                 (on) => on ? map.addLayer(l) : map.removeLayer(l),
                                 (on) => on ? visProfil(l, topp.navn, topp.fil) : map.closePopup()
                             ));
@@ -1958,7 +1615,7 @@
 
                             const dlArea = document.createElement('div');
                             dlArea.className = 'download-area';
-
+                    
                             const dlHeader = document.createElement('div');
                             dlHeader.className = 'download-header';
                             dlHeader.innerHTML = `<span>💾</span> Last ned GPX<span class="chev">▼</span>`;
@@ -1999,14 +1656,13 @@
                                 mapsBtn.style.borderColor = 'var(--new-green)';
                                 mapsBtn.style.color = 'var(--new-green)';
                                 mapsBtn.innerHTML = `<span>🚘</span> Veibeskrivelse`;
-
+                        
                                 videoContainer.appendChild(mapsBtn);
                             }
 
                             justerLenkeKnapper();
 
                             map.flyToBounds(l.getBounds(), {padding: [50, 50]});
-                            snoToppOppdater(topp, l);
                         };
 
                         knapperMap[topp.id].aktiver = aktiver;
@@ -2064,7 +1720,7 @@
         searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') utførSøk(); });
 
         document.getElementById('resetBtn').onclick = () => {
-            isReseting = true; aktivToppNavn = null; videoContainer.innerHTML = ''; settKartModus('oversikt'); snoToppOppdater(null);
+            isReseting = true; aktivToppNavn = null; videoContainer.innerHTML = ''; settKartModus('oversikt');
             searchInput.value = '';
 
             const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
@@ -2117,25 +1773,6 @@
         'Snøskredvarsel fra Varsom.no': 'Avalanche forecast from Varsom.no',
         'Skredterreng': 'Avalanche terrain',
         'Snøskred': 'Avalanches',
-        'Snødybde': 'Snow depth',
-        'Målte snødybder fra Yr (MET Norway)': 'Measured snow depths from Yr (MET Norway)',
-        'Målt snødybde fra Yr': 'Measured snow depth from Yr',
-        'Zoom inn for å se målte snødybder fra Yr.': 'Zoom in to see measured snow depths from Yr.',
-        'Henter målte snødybder …': 'Loading measured snow depths …',
-        'Ingen målinger i dette utsnittet.': 'No measurements in this view.',
-        'Målte snødybder kunne ikke hentes.': 'Measured snow depths could not be loaded.',
-        'Legg inn klient-ID': 'Enter client ID',
-        'Snødybde fra NVE (seNorge). Vises på oversiktskartet og inne på hver topp': 'Snow depth from NVE (seNorge). Shown on the overview map and on each peak',
-        'Dagen før': 'Previous day',
-        'Dagen etter': 'Next day',
-        'Fargeskala for snødybde i cm': 'Colour scale for snow depth in cm',
-        'Modellert snødybde, 1 km rutenett. Kilde: NVE / seNorge': 'Modelled snow depth, 1 km grid. Source: NVE / seNorge',
-        'Snitt for 1 km-ruta': 'Average for the 1 km cell',
-        'Selve toppen kan ha mer eller mindre.': 'The summit itself may have more or less.',
-        'henter …': 'loading …',
-        'ikke tilgjengelig': 'not available',
-        'ingen data': 'no data',
-        '(prognose)': '(forecast)',
         'Snøskred: aktsomhetsområder og faregrad': 'Avalanches: attention areas and danger level',
         'Lukk': 'Close',
         'Aktsomhetsområde kunne ikke hentes fra NVE': 'Attention areas could not be fetched from NVE',
