@@ -427,6 +427,28 @@
         }
         @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
+
+        /* Diskret markering av toppen med nyeste GPX-dato. */
+        .nyeste-gpx-prikk {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            min-width: 6px;
+            border-radius: 50%;
+            background: #dc2626;
+            flex: none;
+            pointer-events: none;
+        }
+        .letter-btn .nyeste-gpx-prikk {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+        }
+        .dropdown-item .nyeste-gpx-prikk {
+            align-self: center;
+            margin-left: 2px;
+        }
+
         /* ===== Progresjonsbar for innlasting av spor ===== */
         #track-progress { position: absolute; top: 0; left: 0; right: 0; z-index: 1100; pointer-events: none; transition: opacity .5s ease; }
         #track-progress.done { opacity: 0; }
@@ -1700,8 +1722,40 @@
             if (e.key === 'Escape') lukkAlleDropdowns();
         });
 
+        // Finn nyeste tur ut fra datoen i GPX-filnavnet, også eventuelle ekstraspor.
+        // Det er bare én topp som får den røde prikken; ingen manuell oppdatering nødvendig.
+        function gpxDatoTall(fil) {
+            const m = String(fil || '').match(/(\d{4})_(\d{2})_(\d{2})(?=\D|$)/);
+            if (!m) return 0;
+            const dato = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+            if (dato.getUTCFullYear() !== +m[1] || dato.getUTCMonth() !== +m[2] - 1 || dato.getUTCDate() !== +m[3]) return 0;
+            return +m[1] * 10000 + +m[2] * 100 + +m[3];
+        }
+
+        function nyesteGpxToppId(liste) {
+            let nyesteDato = 0;
+            let nyesteId = null;
+            liste.forEach(topp => {
+                const spor = [topp.fil, ...(Array.isArray(topp.ekstraSpor) ? topp.ekstraSpor.map(s => s.fil) : [])];
+                const dato = Math.max(0, ...spor.map(gpxDatoTall));
+                if (dato > nyesteDato) {
+                    nyesteDato = dato;
+                    nyesteId = topp.id;
+                }
+            });
+            return nyesteId;
+        }
+
+        function lagNyestePrikk() {
+            const prikk = document.createElement('span');
+            prikk.className = 'nyeste-gpx-prikk';
+            prikk.setAttribute('aria-hidden', 'true');
+            return prikk;
+        }
+
         function byggBokstavMeny() {
             const bokstavMap = {};
+            const nyesteId = nyesteGpxToppId(topper);
 
             topper.forEach(topp => {
                 knapperMap[topp.id] = { items: [], aktiver: null };
@@ -1721,6 +1775,10 @@
                 const btn = document.createElement('button');
                 btn.className = 'letter-btn';
                 btn.innerText = bokstav;
+                if (bokstavMap[bokstav].some(entry => entry.topp.id === nyesteId)) {
+                    btn.appendChild(lagNyestePrikk());
+                    btn.title = 'Inneholder nyeste GPX-tur';
+                }
 
                 const menu = document.createElement('div');
                 menu.className = 'dropdown-menu';
@@ -1744,6 +1802,10 @@
                     const tekstSpan = document.createElement('span');
                     tekstSpan.innerHTML = formaterNavnMedFarge(topp.navn, entry.ord);
                     item.appendChild(tekstSpan);
+                    if (topp.id === nyesteId) {
+                        item.appendChild(lagNyestePrikk());
+                        item.title = 'Nyeste GPX-tur';
+                    }
 
                     const badge = lagBadge(topp.fil, topp.overrideAar);
                     if (badge) item.appendChild(badge);
