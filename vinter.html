@@ -471,6 +471,19 @@
 
         /* ===== Snødybde (NVE seNorge) ===== */
         .legend.snolegend { width: 230px; max-width: calc(100vw - 40px); box-sizing: border-box; }
+        /* Snødybde: menyen kan minimeres eller lukkes uten å slå av kartlaget. */
+        .snolegend .sno-panelhode { display: flex; align-items: center; gap: 8px; }
+        .snolegend .sno-panelhode h4 { margin: 0; flex: 1; }
+        .snolegend .sno-panelknapper { display: flex; align-items: center; gap: 3px; }
+        .snolegend .sno-panelknapp { width: 25px; height: 25px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; background: transparent; color: var(--ink, #000); cursor: pointer; font: 400 19px/1 inherit; border-radius: 3px; }
+        .snolegend .sno-panelknapp:hover, .snolegend .sno-panelknapp:focus-visible { background: var(--winter-bg, #dde9f2); }
+        .snolegend .sno-panelinnhold { margin-top: 8px; }
+        .snolegend.sno-minimert .sno-panelinnhold, .snolegend.sno-lukket .sno-panelinnhold { display: none; }
+        .snolegend.sno-lukket { width: auto; min-width: 0; padding: 4px; }
+        .snolegend.sno-lukket .sno-panelhode h4, .snolegend.sno-lukket .sno-minimer, .snolegend.sno-lukket .sno-lukk { display: none; }
+        .snolegend:not(.sno-lukket) .sno-vis { display: none; }
+        @media (max-width: 768px) { .legend.snolegend { max-width: min(230px, calc(100vw - 24px)); } }
+
         .sno-dato { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin: 0 0 6px; font-size: 13px; }
         .sno-dato button { width: 26px; height: 26px; padding: 0; border: 1px solid var(--ink); border-radius: 0; background: #fff; color: var(--ink); font-size: 15px; line-height: 1; cursor: pointer; }
         .sno-dato button:hover:not(:disabled) { background: var(--winter-bg); }
@@ -1106,28 +1119,54 @@
             return { verdi: Math.round(Number(v)), enhet: j.Unit || 'cm', hoyde: j.Altitude };
         }
 
-        const sno = { paa: false, dato: idag(), datoSjekket: false, topp: null, merke: null, forespoersel: 0 };
+        const sno = { paa: false, dato: idag(), datoSjekket: false, topp: null, merke: null, forespoersel: 0, panelModus: 'apen' };
         const snoBtn = document.getElementById('snoBtn');
         const snoLegend = L.control({ position: 'bottomleft' });
         let snoLegendDiv = null;
 
         snoLegend.onAdd = function () {
             snoLegendDiv = L.DomUtil.create('div', 'legend snolegend');
+            snoLegendDiv.classList.toggle('sno-minimert', sno.panelModus === 'minimert');
+            snoLegendDiv.classList.toggle('sno-lukket', sno.panelModus === 'lukket');
             snoLegendDiv.innerHTML = `
-                <h4>Snødybde</h4>
-                <div class="sno-dato">
-                    <button type="button" class="sno-forrige" aria-label="Dagen før" title="Dagen før">‹</button>
-                    <span class="sno-dato-tekst"></span>
-                    <button type="button" class="sno-neste" aria-label="Dagen etter" title="Dagen etter">›</button>
+                <div class="sno-panelhode">
+                    <h4>Snødybde</h4>
+                    <div class="sno-panelknapper">
+                        <button type="button" class="sno-panelknapp sno-minimer" title="Minimer snødybdemenyen" aria-label="Minimer snødybdemenyen" aria-expanded="${sno.panelModus === 'apen'}">−</button>
+                        <button type="button" class="sno-panelknapp sno-lukk" title="Lukk snødybdemenyen (behold kartlaget)" aria-label="Lukk snødybdemenyen (behold kartlaget)">×</button>
+                        <button type="button" class="sno-panelknapp sno-vis" title="Vis snødybdemenyen" aria-label="Vis snødybdemenyen">ⓘ</button>
+                    </div>
                 </div>
-                <img class="sno-skala" src="${SNO_SKALA}" alt="Fargeskala for snødybde i cm" loading="lazy" />
-                <div class="sno-topp" hidden></div>
-                <p class="fg-merk sno-yr" hidden></p>
-                <div class="fg-kilde">Modellert snødybde, 1 km rutenett. Kilde: NVE / seNorge</div>
+                <div class="sno-panelinnhold">
+                    <div class="sno-dato">
+                        <button type="button" class="sno-forrige" aria-label="Dagen før" title="Dagen før">‹</button>
+                        <span class="sno-dato-tekst"></span>
+                        <button type="button" class="sno-neste" aria-label="Dagen etter" title="Dagen etter">›</button>
+                    </div>
+                    <img class="sno-skala" src="${SNO_SKALA}" alt="Fargeskala for snødybde i cm" loading="lazy" />
+                    <div class="sno-topp" hidden></div>
+                    <p class="fg-merk sno-yr" hidden></p>
+                    <div class="fg-kilde">Modellert snødybde, 1 km rutenett. Kilde: NVE / seNorge</div>
+                </div>
             `;
             L.DomEvent.disableClickPropagation(snoLegendDiv);
             snoLegendDiv.querySelector('.sno-forrige').onclick = () => settSnoDato(flyttDag(sno.dato, -1));
             snoLegendDiv.querySelector('.sno-neste').onclick = () => settSnoDato(flyttDag(sno.dato, 1));
+            function settPanelModus(modus) {
+                sno.panelModus = modus;
+                snoLegendDiv.classList.toggle('sno-minimert', modus === 'minimert');
+                snoLegendDiv.classList.toggle('sno-lukket', modus === 'lukket');
+                const knapp = snoLegendDiv.querySelector('.sno-minimer');
+                knapp.textContent = modus === 'minimert' ? '+' : '−';
+                knapp.setAttribute('aria-expanded', String(modus === 'apen'));
+                knapp.setAttribute('aria-label', modus === 'minimert' ? 'Utvid snødybdemenyen' : 'Minimer snødybdemenyen');
+                knapp.title = knapp.getAttribute('aria-label');
+            }
+            snoLegendDiv.querySelector('.sno-minimer').onclick = () => settPanelModus(sno.panelModus === 'minimert' ? 'apen' : 'minimert');
+            snoLegendDiv.querySelector('.sno-lukk').onclick = () => settPanelModus('lukket');
+            snoLegendDiv.querySelector('.sno-vis').onclick = () => settPanelModus('apen');
+            settPanelModus(sno.panelModus);
+
             return snoLegendDiv;
         };
 
@@ -2180,6 +2219,11 @@
         'Skredterreng': 'Avalanche terrain',
         'Snøskred': 'Avalanches',
         'Snødybde': 'Snow depth',
+        'Minimer snødybdemenyen': 'Minimize snow depth panel',
+        'Utvid snødybdemenyen': 'Expand snow depth panel',
+        'Lukk snødybdemenyen (behold kartlaget)': 'Close snow depth panel (keep map layer)',
+        'Vis snødybdemenyen': 'Show snow depth panel',
+
         'Målte snødybder fra Yr (MET Norway)': 'Measured snow depths from Yr (MET Norway)',
         'Målt snødybde fra Yr': 'Measured snow depth from Yr',
         'Zoom inn for å se målte snødybder fra Yr.': 'Zoom in to see measured snow depths from Yr.',
