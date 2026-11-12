@@ -548,93 +548,6 @@
         .gallery-nav-next { right: 15px; }
         .gallery-counter { color: #fff; margin-top: 15px; font-size: 14px; font-weight: 600; }
     </style>
-<style>
-    /* Regobs: diskret kartlag og kontrollpanel. Regobs-panelet er uavhengig av øvrige kartlag. */
-    #regobsBtn[aria-pressed="true"] { background: var(--winter-ink); border-color: var(--winter-ink); color: #fff; }
-    .regobs-panel { position: absolute; z-index: 1150; top: 12px; left: 12px; width: 246px; max-width: calc(100% - 24px); box-sizing: border-box; background: rgba(255,255,255,.97); border: 1px solid var(--ink); box-shadow: 0 3px 14px rgba(0,0,0,.13); padding: 10px 12px; text-align: left; font-family: 'Jost', Arial, sans-serif; font-size: 12px; color: var(--ink); }
-    .regobs-panel-header { display:flex; align-items:center; gap:5px; min-height:24px; }
-    .regobs-panel-heading { flex:1; font-weight: 500; font-size: 13px; }
-    .regobs-panel-icon { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; font-size:19px; font-weight:300; padding:0; border:0; background:none; cursor:pointer; color:var(--ink); }
-    .regobs-panel-icon:hover, .regobs-refresh:hover { background:var(--winter-bg); }
-    .regobs-panel.regobs-collapsed { width: 210px; }
-    .regobs-panel.regobs-collapsed #regobsPanelBody { display:none; }
-    .regobs-days-label { display:block; font-size:11px; color:var(--muted); margin:9px 0 4px; }
-    #regobsDays { width:100%; box-sizing:border-box; border:1px solid #aaa; border-radius:0; background:#fff; color:var(--ink); font:400 12px/1.3 'Jost', Arial, sans-serif; padding:5px 7px; }
-    .regobs-filters { display:grid; grid-template-columns:1fr 1fr; gap:7px 4px; margin:11px 0 10px; }
-    .regobs-filters label { display:flex; align-items:center; gap:5px; cursor:pointer; font-weight:400; white-space:nowrap; }
-    .regobs-filters input { margin:0; width:14px; height:14px; accent-color:var(--winter-ink); }
-    .regobs-dot { display:inline-block; width:9px; height:9px; border:1px solid #222; border-radius:50%; background:var(--regobs-color); }
-    .regobs-footer { border-top:1px solid #ddd; padding-top:8px; display:flex; align-items:center; gap:7px; }
-    .regobs-status { flex:1; font-size:11px; color:#555; line-height:1.4; }
-    .regobs-refresh { flex:none; width:27px; height:27px; border:1px solid #aaa; background:white; color:var(--ink); font:400 20px/1 Arial, sans-serif; cursor:pointer; }
-    .regobs-source { margin-top:9px; padding-top:7px; border-top:1px solid #eee; color:#666; line-height:1.35; font-size:10px; }
-    .regobs-source a { color:#285c7b; }
-    .regobs-popup { text-align:left; max-width:240px; line-height:1.45; }
-    .regobs-popup strong { display:block; font-size:14px; font-weight:500; margin-bottom:4px; }
-    .regobs-popup-detail { font-size:12px; margin:3px 0; }
-    .regobs-popup a { display:inline-block; margin-top:7px; font-weight:500; color:#235d8a; }
-    @media (max-width:768px) { .regobs-panel { top:8px; left:8px; width:min(220px, calc(100% - 16px)); padding:7px 9px; } .regobs-panel.regobs-collapsed { width:190px; } }
-
-    /* Språkbryteren står først, så den alltid er synlig på mobil uten siderulling. */
-    #buttons > #langBtn { flex: 0 0 auto; margin-right: 12px; white-space: nowrap; min-height: 39px; }
-    @media (max-width: 768px) { #buttons > #langBtn { margin-right: 10px; } }
-
-    /* Flyttbare kartpanel: fungerer med mus og finger på PC/mobil. */
-    #map-container > .flyttbart-kartpanel {
-        position: absolute !important;
-        z-index: 1120;
-        margin: 0 !important;
-        box-sizing: border-box;
-        max-height: calc(100% - 8px);
-        overflow-y: auto;
-        overflow-x: hidden;
-        overscroll-behavior: contain;
-    }
-    #map-container > .flyttbart-kartpanel[hidden] { display: none !important; }
-    #map-container > .snolegend { width: 230px; background: rgba(255,255,255,.97); }
-    #map-container > .legend.faregrad { width: 270px; }
-    #map-container > .flyttbart-kartpanel.snolegend.sno-lukket { width: auto; }
-    .flyttbart-panelhode, .skred-hode, .sno-panelhode, .regobs-panel-header {
-        cursor: grab;
-        touch-action: none;
-        user-select: none;
-        -webkit-user-select: none;
-    }
-    .flyttbart-panelhode:active, .skred-hode:active,
-    .sno-panelhode:active, .regobs-panel-header:active { cursor: grabbing; }
-    .flyttbart-panelhode::before, .skred-hode::before,
-    .sno-panelhode::before, .regobs-panel-header::before {
-        content: '⠿'; font-size: 15px; font-weight: 300; color: #888;
-        margin-right: 3px; flex: none;
-    }
-    .flyttbart-panelhode button, .skred-hode button,
-    .sno-panelhode button, .regobs-panel-header button {
-        cursor: pointer; touch-action: manipulation;
-    }
-    .flyttbart-panelhode {
-        display: flex; align-items: center; justify-content: space-between;
-        gap: 7px; margin-bottom: 5px;
-    }
-    .flyttbart-panelhode h4 { margin: 0; flex: 1; }
-    .flyttbart-panelinnhold[hidden], .skred-innhold[hidden] { display: none !important; }
-    .flyttbart-panelmin {
-        width: 25px; height: 25px; padding: 0; flex: none;
-        border: 0; background: none; color: var(--ink, #000);
-        font: 400 19px/1 'Jost', Arial, sans-serif;
-    }
-    .flyttbart-panelmin:hover { background: var(--winter-bg, #dde9f2); }
-    #skredMeny { max-height: calc(100% - 8px); }
-    #skredMeny .skred-tittel { flex: 1; }
-    #skredMeny .skred-min { font-size: 19px; }
-    #skredMeny.skred-minimert { min-width: 150px; width: 175px; padding-bottom: 8px; }
-    #skredMeny.skred-minimert .skred-innhold { display: none; }
-    #skredMeny.skred-minimert .skred-hode { margin: 0; }
-    #map-container > .regobs-panel.regobs-collapsed { width: 210px; }
-    @media (max-width: 768px) {
-        #map-container > .regobs-panel.regobs-collapsed { width: 190px; }
-        #map-container > .flyttbart-kartpanel { max-width: calc(100% - 8px); }
-    }
-</style>
 </head>
 <body>
 
@@ -643,9 +556,7 @@
     <h1><svg class="h-ico" viewBox="0 0 44 44" aria-hidden="true"><use href="#arm"/><use href="#arm" transform="rotate(60 22 22)"/><use href="#arm" transform="rotate(120 22 22)"/><use href="#arm" transform="rotate(180 22 22)"/><use href="#arm" transform="rotate(240 22 22)"/><use href="#arm" transform="rotate(300 22 22)"/></svg>Toppturer rundt Tromsø</h1>
 
     <div class="buttons-wrapper" id="buttonsWrapper">
-        <div id="buttons">
-            <button id="langBtn" type="button" class="ctl ctl-lang" title="Switch to English" aria-label="Switch to English"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg><span class="lang-code">EN</span></button>
-        </div>
+        <div id="buttons"></div>
     </div>
 
     <div id="controls-row">
@@ -672,10 +583,6 @@
             <span id="yrToggle" class="skala-toggle" role="switch" aria-checked="false" aria-label="Målt snødybde fra Yr" title="Målte snødybder fra Yr (MET Norway)" hidden><span class="skala-tekst">Yr</span><span class="switch-track"><span class="switch-thumb"></span></span></span>
         </button>
 
-        <button id="regobsBtn" type="button" class="ctl" aria-pressed="false" aria-controls="regobsPanel" title="Vis naturfareobservasjoner fra Regobs i kartet">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5V5l6-2 5 2 5-2v14.5l-5 2-5-2z"/><path d="M10 3v14.5M15 5v14.5"/><circle cx="12.5" cy="11" r="2.2"/><path d="M12.5 8.8v-1"/></svg> Data fra Regobs
-        </button>
-
         <button id="markerBtn" type="button" class="ctl ctl-marker" title="Marker et område du vil zoome til (dra en firkant med musen)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5"/><circle cx="11" cy="11" r="3.5"/><path d="M13.6 13.6L17 17"/></svg> Marker</button>
 
         <div class="search-input-wrapper">
@@ -685,6 +592,7 @@
         </div>
 
         <button id="resetBtn" class="ctl">Nullstill kart</button>
+        <button id="langBtn" type="button" class="ctl ctl-lang" title="Switch to English" aria-label="Switch to English"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg><span class="lang-code">EN</span></button>
     </div>
 
 
@@ -694,44 +602,13 @@
             <div class="tp-line"><div class="tp-fill" id="tpFill"></div></div>
             <span class="tp-label" id="tpLabel">Laster spor …</span>
         </div>
-        <section id="regobsPanel" class="regobs-panel" hidden aria-label="Regobs-observasjoner">
-            <div class="regobs-panel-header">
-                <span class="regobs-panel-heading">Regobs-observasjoner</span>
-                <button type="button" class="regobs-panel-icon" id="regobsMinBtn" aria-label="Minimer Regobs-panelet" aria-expanded="true" title="Minimer Regobs-panelet">−</button>
-                <button type="button" class="regobs-panel-icon" id="regobsCloseBtn" aria-label="Slå av Regobs-data" title="Slå av Regobs-data">×</button>
-            </div>
-            <div id="regobsPanelBody">
-                <label class="regobs-days-label" for="regobsDays">Vis observasjoner fra siste</label>
-                <select id="regobsDays" aria-label="Tidsperiode for Regobs-observasjoner">
-                    <option value="3">3 dager</option>
-                    <option value="7">7 dager</option>
-                    <option value="14" selected>14 dager</option>
-                    <option value="30">30 dager</option>
-                    <option value="90">90 dager</option>
-                </select>
-                <div class="regobs-filters" aria-label="Observasjonstyper">
-                    <label><input type="checkbox" data-regobs-type="10" checked><span class="regobs-dot" style="--regobs-color:#2d77b5"></span>Snø</label>
-                    <label><input type="checkbox" data-regobs-type="20" checked><span class="regobs-dot" style="--regobs-color:#a16b30"></span>Jord</label>
-                    <label><input type="checkbox" data-regobs-type="60" checked><span class="regobs-dot" style="--regobs-color:#17a39b"></span>Vann</label>
-                    <label><input type="checkbox" data-regobs-type="70" checked><span class="regobs-dot" style="--regobs-color:#865dc4"></span>Is</label>
-                </div>
-                <div class="regobs-footer">
-                    <span class="regobs-status" id="regobsStatus" role="status" aria-live="polite">Velg tidsperiode og observasjonstype.</span>
-                    <button id="regobsRefreshBtn" type="button" class="regobs-refresh" title="Oppdater observasjonar i kartutsnittet" aria-label="Oppdater Regobs-data">↻</button>
-                </div>
-                <div class="regobs-source">Kjelde: <a href="https://regobs.no/" target="_blank" rel="noopener noreferrer">Regobs.no</a> / NVE · Brukarregistrerte observasjonar, ikkje eit skredvarsel.</div>
-            </div>
-        </section>
-
         <div id="video-buttons-container"></div>
 
         <div id="skredMeny" hidden>
             <div class="skred-hode">
-                <span class="skred-tittel">Snøskred</span>
-                <button id="skredMin" type="button" class="skred-lukk skred-min" aria-label="Minimer snøskredmenyen" title="Minimer snøskredmenyen" aria-expanded="true">−</button>
+                <span>Snøskred</span>
                 <button id="skredLukk" type="button" class="skred-lukk" aria-label="Lukk">×</button>
             </div>
-            <div class="skred-innhold">
             <label class="skred-valg">
                 <input type="checkbox" id="valgS3">
                 <span class="color-box skred-s3"></span>
@@ -746,7 +623,6 @@
                 <input type="checkbox" id="valgFare">
                 <span><span class="tit">Faregrad</span><span class="besk">Dagens varsel (Varsom)</span></span>
             </label>
-            </div>
         </div>
     </div>
 
@@ -791,96 +667,6 @@
 
     <script>
         const map = L.map('map', { zoomSnap: 0.5 }).setView([69.65, 18.95], 10);
-
-        /* ===== Flyttbare panel på kartet: éin felles motor for snøskred, snødybde og Regobs. ===== */
-        const kartpanelPosisjoner = Object.create(null);
-        const kartpanelInstanser = new Map();
-        let kartpanelToppZ = 1200;
-
-        // Panel som kjem frå L.control flyttast ut av Leaflets hjørnecontainarar.
-        // L.control.remove() fjernar framleis elementet heilt normalt når kartlaget slås av.
-        function lagFlyttbartKartpanel(element, panelId, hodeSelector, standardPos) {
-            if (!element) return null;
-            const kartBoks = document.getElementById('map-container');
-            const kartFlate = document.getElementById('map');
-            if (element.parentElement !== kartBoks) kartBoks.appendChild(element);
-            element.classList.add('flyttbart-kartpanel');
-            const hode = element.querySelector(hodeSelector);
-            if (!hode) return null;
-            hode.classList.add('flyttbart-panelhode-aktiv');
-            hode.setAttribute('title', 'Dra for å flytte panelet');
-
-            function begrens(v, min, max) { return Math.max(min, Math.min(max, v)); }
-            function maal() {
-                return { width: kartFlate.clientWidth, height: kartFlate.clientHeight,
-                         panelWidth: element.offsetWidth, panelHeight: element.offsetHeight };
-            }
-            function brukPosisjon(x, y) {
-                const m = maal();
-                const nesteX = begrens(x, 4, Math.max(4, m.width - m.panelWidth - 4));
-                const nesteY = begrens(y, 4, Math.max(4, m.height - m.panelHeight - 4));
-                element.style.left = nesteX + 'px';
-                element.style.top = nesteY + 'px';
-                element.style.right = 'auto';
-                element.style.bottom = 'auto';
-                kartpanelPosisjoner[panelId] = { x: nesteX, y: nesteY };
-            }
-            function juster() {
-                if (element.hidden || !element.isConnected || !element.offsetWidth) return;
-                const m = maal();
-                const pos = kartpanelPosisjoner[panelId];
-                if (pos) { brukPosisjon(pos.x, pos.y); return; }
-                const x = standardPos.left !== undefined ? standardPos.left : m.width - m.panelWidth - (standardPos.right ?? 12);
-                const y = standardPos.top !== undefined ? standardPos.top : m.height - m.panelHeight - (standardPos.bottom ?? 12);
-                brukPosisjon(x, y);
-            }
-            function hev() { element.style.zIndex = String(++kartpanelToppZ); }
-            let aktiv = null;
-            function avslutt(e) {
-                if (!aktiv || (e && e.pointerId !== aktiv.id)) return;
-                const gjenopprett = aktiv.gjenopprett;
-                aktiv = null;
-                if (gjenopprett) map.dragging.enable();
-                hode.classList.remove('dras-naa');
-                if (e && hode.hasPointerCapture?.(e.pointerId)) hode.releasePointerCapture(e.pointerId);
-            }
-            hode.addEventListener('pointerdown', function (e) {
-                if ((e.pointerType === 'mouse' && e.button !== 0) || e.target.closest('button, a, input, label, select, textarea')) return;
-                juster();
-                const pos = kartpanelPosisjoner[panelId];
-                if (!pos) return;
-                e.preventDefault();
-                e.stopPropagation();
-                hev();
-                const gjenopprett = map.dragging.enabled();
-                if (gjenopprett) map.dragging.disable();
-                aktiv = { id: e.pointerId, startX: e.clientX, startY: e.clientY,
-                          x: pos.x, y: pos.y, gjenopprett };
-                hode.classList.add('dras-naa');
-                hode.setPointerCapture(e.pointerId);
-            });
-            hode.addEventListener('pointermove', function (e) {
-                if (!aktiv || aktiv.id !== e.pointerId) return;
-                e.preventDefault();
-                e.stopPropagation();
-                brukPosisjon(aktiv.x + e.clientX - aktiv.startX, aktiv.y + e.clientY - aktiv.startY);
-            });
-            hode.addEventListener('pointerup', avslutt);
-            hode.addEventListener('pointercancel', avslutt);
-            hode.addEventListener('lostpointercapture', avslutt);
-            // Klikk på eit panel skal ikkje zoome/flytte kartet som ligg under.
-            L.DomEvent.disableClickPropagation(element);
-            L.DomEvent.disableScrollPropagation(element);
-            element.addEventListener('pointerdown', hev);
-            const instans = { element, juster };
-            kartpanelInstanser.set(panelId, instans);
-            juster();
-            return instans;
-        }
-        window.addEventListener('resize', () => {
-            kartpanelInstanser.forEach(instans => { if (instans.element.isConnected) instans.juster(); });
-        });
-
 
         // Oversiktsvisning: zoomer inn fra «vis alle», selv om noen topper havner utenfor kartet.
         // Brukes både ved første innlasting og på «Nullstill kart». Endre tallet for mer/mindre zoom.
@@ -1212,36 +998,17 @@
         const skredMeny = document.getElementById('skredMeny');
 
         const skredLegend = L.control({ position: 'bottomleft' });
-        let skredLegendDiv = null, skredLegendPaa = false, skredLegendMinimert = false;
+        let skredLegendDiv = null, skredLegendPaa = false;
         skredLegend.onAdd = function () {
             skredLegendDiv = L.DomUtil.create('div', 'legend');
             skredLegendDiv.innerHTML = `
-                <div class="flyttbart-panelhode">
-                    <h4>Snøskred</h4>
-                    <button type="button" class="flyttbart-panelmin" aria-label="Minimer snøskredforklaring" title="Minimer snøskredforklaring" aria-expanded="true">−</button>
-                </div>
-                <div class="flyttbart-panelinnhold">
-                    <div class="legend-item sl-s3"><span class="color-box skred-s3"></span> Aktsomhetsområde S3</div>
-                    <div class="legend-item sl-s2"><span class="color-box skred-s2"></span> Aktsomhetsområde S2</div>
-                    <p class="fg-merk skred-hint sl-hint-akt">Zoom inn for å se aktsomhetsområder</p>
-                    <p class="fg-merk skred-hint sl-feil-akt">Aktsomhetsområde kunne ikke hentes fra NVE</p>
-                    <div class="fg-kilde">Grov oversikt, ikke et varsel. Kilde: NVE</div>
-                </div>
+                <h4>Snøskred</h4>
+                <div class="legend-item sl-s3"><span class="color-box skred-s3"></span> Aktsomhetsområde S3</div>
+                <div class="legend-item sl-s2"><span class="color-box skred-s2"></span> Aktsomhetsområde S2</div>
+                <p class="fg-merk skred-hint sl-hint-akt">Zoom inn for å se aktsomhetsområder</p>
+                <p class="fg-merk skred-hint sl-feil-akt">Aktsomhetsområde kunne ikke hentes fra NVE</p>
+                <div class="fg-kilde">Grov oversikt, ikke et varsel. Kilde: NVE</div>
             `;
-            const knapp = skredLegendDiv.querySelector('.flyttbart-panelmin');
-            const del = skredLegendDiv.querySelector('.flyttbart-panelinnhold');
-            del.hidden = skredLegendMinimert;
-            knapp.textContent = skredLegendMinimert ? '+' : '−';
-            knapp.setAttribute('aria-expanded', String(!skredLegendMinimert));
-            knapp.onclick = () => {
-                skredLegendMinimert = !skredLegendMinimert;
-                del.hidden = skredLegendMinimert;
-                knapp.textContent = skredLegendMinimert ? '+' : '−';
-                knapp.setAttribute('aria-expanded', String(!skredLegendMinimert));
-                const tekst = skredLegendMinimert ? 'Utvid snøskredforklaring' : 'Minimer snøskredforklaring';
-                knapp.setAttribute('aria-label', tekst); knapp.title = tekst;
-                kartpanelInstanser.get('skredForklaring')?.juster();
-            };
             return skredLegendDiv;
         };
 
@@ -1259,11 +1026,7 @@
         function oppdaterSkredUI() {
             skredBtn.classList.toggle('btn-toggle-active', skred.s3 || skred.s2 || skred.fare);
             const trengerLegend = skred.s3 || skred.s2;
-            if (trengerLegend && !skredLegendPaa) {
-                skredLegend.addTo(map);
-                lagFlyttbartKartpanel(skredLegendDiv, 'skredForklaring', '.flyttbart-panelhode', { left: 12, bottom: 15 });
-                skredLegendPaa = true;
-            }
+            if (trengerLegend && !skredLegendPaa) { skredLegend.addTo(map); skredLegendPaa = true; }
             if (!trengerLegend && skredLegendPaa) { map.removeControl(skredLegend); skredLegendPaa = false; skredLegendDiv = null; }
             oppdaterSkredLegend();
         }
@@ -1276,23 +1039,9 @@
         }
 
         // Menyen kan åpnes og lukkes uten at valgene forsvinner. Knappen er markert så lenge noe er på.
-        const skredPanelFlytt = lagFlyttbartKartpanel(skredMeny, 'skredMeny', '.skred-hode', { top: 10, right: 10 });
-        let skredMinimert = false;
-        const skredMinBtn = document.getElementById('skredMin');
-        skredMinBtn.onclick = () => {
-            skredMinimert = !skredMinimert;
-            skredMeny.classList.toggle('skred-minimert', skredMinimert);
-            skredMinBtn.textContent = skredMinimert ? '+' : '−';
-            skredMinBtn.setAttribute('aria-expanded', String(!skredMinimert));
-            const navn = skredMinimert ? 'Utvid snøskredmenyen' : 'Minimer snøskredmenyen';
-            skredMinBtn.setAttribute('aria-label', navn);
-            skredMinBtn.title = navn;
-            skredPanelFlytt.juster();
-        };
         function visSkredMeny(vis) {
             skredMeny.hidden = !vis;
             skredBtn.setAttribute('aria-expanded', vis ? 'true' : 'false');
-            if (vis) skredPanelFlytt.juster();
         }
         skredBtn.onclick = () => visSkredMeny(skredMeny.hidden);
         document.getElementById('skredLukk').onclick = () => visSkredMeny(false);
@@ -1415,7 +1164,6 @@
                 knapp.setAttribute('aria-expanded', String(modus === 'apen'));
                 knapp.setAttribute('aria-label', modus === 'minimert' ? 'Utvid snødybdemenyen' : 'Minimer snødybdemenyen');
                 knapp.title = knapp.getAttribute('aria-label');
-                kartpanelInstanser.get('snodybde')?.juster();
             }
             snoLegendDiv.querySelector('.sno-minimer').onclick = () => settPanelModus(sno.panelModus === 'minimert' ? 'apen' : 'minimert');
             snoLegendDiv.querySelector('.sno-lukk').onclick = () => settPanelModus('lukket');
@@ -1504,7 +1252,6 @@
                 snoLag.options.dato = sno.dato;
                 map.addLayer(snoLag);
                 snoLegend.addTo(map);
-                lagFlyttbartKartpanel(snoLegendDiv, 'snodybde', '.sno-panelhode', { left: 12, bottom: 38 });
                 visSnoDato();
                 if (!sno.datoSjekket) finnSnoDato();
                 oppdaterSnoTopp();
@@ -2126,9 +1873,6 @@
                 wrapper.appendChild(menu);
                 buttonsContainer.appendChild(wrapper);
             });
-            // Språkknappen skal alltid være først og synlig på mobil.
-            buttonsContainer.prepend(document.getElementById('langBtn'));
-            buttonsContainer.scrollLeft = 0;
         }
 
         function sjekkURLParameter() {
@@ -2478,36 +2222,6 @@
         'Skredterreng': 'Avalanche terrain',
         'Snøskred': 'Avalanches',
         'Snødybde': 'Snow depth',
-        'Data fra Regobs': 'Regobs data',
-        'Vis naturfareobservasjoner fra Regobs i kartet': 'Show natural hazard observations from Regobs on the map',
-        'Regobs-observasjoner': 'Regobs observations',
-        'Minimer Regobs-panelet': 'Minimize Regobs panel',
-        'Dra for å flytte panelet': 'Drag to move the panel',
-        'Minimer snøskredmenyen': 'Minimize avalanche menu',
-        'Utvid snøskredmenyen': 'Expand avalanche menu',
-        'Minimer snøskredforklaring': 'Minimize avalanche legend',
-        'Utvid snøskredforklaring': 'Expand avalanche legend',
-        'Minimer snøskredvarsel': 'Minimize avalanche warning',
-        'Utvid snøskredvarsel': 'Expand avalanche warning',
-        'Utvid Regobs-panelet': 'Expand Regobs panel',
-        'Slå av Regobs-data': 'Turn off Regobs data',
-        'Vis observasjoner fra siste': 'Show observations from the last',
-        'Tidsperiode for Regobs-observasjoner': 'Regobs observation time range',
-        'Observasjonstyper': 'Observation types',
-        'Snø': 'Snow',
-        'Jord': 'Landslide',
-        'Vann': 'Water',
-        'Is': 'Ice',
-        '3 dager': '3 days',
-        '7 dager': '7 days',
-        '14 dager': '14 days',
-        '30 dager': '30 days',
-        '90 dager': '90 days',
-        'Oppdater Regobs-data': 'Refresh Regobs data',
-        'Oppdater observasjonar i kartutsnittet': 'Refresh observations in map view',
-        'Kjelde:': 'Source:',
-        'Brukarregistrerte observasjonar, ikkje eit skredvarsel.': 'User-submitted observations, not an avalanche warning.',
-
         'Minimer snødybdemenyen': 'Minimize snow depth panel',
         'Utvid snødybdemenyen': 'Expand snow depth panel',
         'Lukk snødybdemenyen (behold kartlaget)': 'Close snow depth panel (keep map layer)',
@@ -2899,38 +2613,20 @@
         }
 
         let boks = null, innhold = null, sesong = null, lenke = null;
-        let faregradMinimert = false;
 
         const panel = L.control({ position: 'bottomright' });
         panel.onAdd = function () {
             boks = L.DomUtil.create('div', 'legend faregrad');
             boks.innerHTML =
-                '<div class="flyttbart-panelhode"><h4>Snøskredvarsel</h4>' +
-                '<button type="button" class="flyttbart-panelmin" aria-label="Minimer snøskredvarsel" title="Minimer snøskredvarsel" aria-expanded="true">−</button></div>' +
-                '<div class="flyttbart-panelinnhold">' +
-                    '<div class="fg-innhold"></div>' +
-                    '<p class="fg-merk" hidden>Varsom publiserer varsel fra 1. desember til 31. mai.</p>' +
-                    '<a class="fg-lenke" target="_blank" rel="noopener">Les hele varselet på Varsom.no</a>' +
-                    '<div class="fg-kilde">Kilde: NVE / Varsom.no</div>' +
-                '</div>';
+                '<h4>Snøskredvarsel</h4>' +
+                '<div class="fg-innhold"></div>' +
+                '<p class="fg-merk" hidden>Varsom publiserer varsel fra 1. desember til 31. mai.</p>' +
+                '<a class="fg-lenke" target="_blank" rel="noopener">Les hele varselet på Varsom.no</a>' +
+                '<div class="fg-kilde">Kilde: NVE / Varsom.no</div>';
             innhold = boks.querySelector('.fg-innhold');
             sesong = boks.querySelector('.fg-merk');
             lenke = boks.querySelector('.fg-lenke');
             lenke.href = varsomUrl();
-            const knapp = boks.querySelector('.flyttbart-panelmin');
-            const del = boks.querySelector('.flyttbart-panelinnhold');
-            del.hidden = faregradMinimert;
-            knapp.textContent = faregradMinimert ? '+' : '−';
-            knapp.setAttribute('aria-expanded', String(!faregradMinimert));
-            knapp.onclick = () => {
-                faregradMinimert = !faregradMinimert;
-                del.hidden = faregradMinimert;
-                knapp.textContent = faregradMinimert ? '+' : '−';
-                knapp.setAttribute('aria-expanded', String(!faregradMinimert));
-                const tekst = faregradMinimert ? 'Utvid snøskredvarsel' : 'Minimer snøskredvarsel';
-                knapp.setAttribute('aria-label', tekst); knapp.title = tekst;
-                kartpanelInstanser.get('faregrad')?.juster();
-            };
             L.DomEvent.disableClickPropagation(boks);
             L.DomEvent.disableScrollPropagation(boks);
             return boks;
@@ -2987,11 +2683,8 @@
 
         // Kalles fra Snøskred-menyen (avkrysningsboksen «Faregrad»)
         window.settFaregrad = function (paa) {
-            if (paa) {
-                panel.addTo(map);
-                lagFlyttbartKartpanel(boks, 'faregrad', '.flyttbart-panelhode', { right: 12, bottom: 20 });
-                last();
-            } else { map.removeControl(panel); boks = null; }
+            if (paa) { panel.addTo(map); last(); }
+            else { map.removeControl(panel); boks = null; }
         };
 
         document.addEventListener('langchange', () => { if (lenke) lenke.href = varsomUrl(); });
@@ -3040,7 +2733,7 @@
 
         // Fanges før kartet, så kartet ikke begynner å dra mens du markerer. Menyen over kartet fungerer som vanlig.
         beholder.addEventListener('mousedown', e => {
-            if (!modus || e.button !== 0 || e.target.closest('.leaflet-control, .flyttbart-kartpanel, #video-buttons-container, #track-progress')) return;
+            if (!modus || e.button !== 0 || e.target.closest('.leaflet-control, #video-buttons-container, #track-progress')) return;
             e.preventDefault();
             e.stopPropagation();
             start = punkt(e);
@@ -3063,218 +2756,5 @@
         document.addEventListener('keydown', e => { if (e.key === 'Escape' && modus) slaPa(false); });
     })();
     </script>
-<script>
-    /* ===== REGOBS: observerte naturfarar, henta frå NVE sitt opne Regobs API v5 =====
-       Finn observasjonar innanfor synleg kartutsnitt, ikkje frå faste koordinatar.
-       Eiget Leaflet-lag: påverkar ikkje GPX, snødybde, brattheit eller kartbakgrunnen.
-       API-dokumentasjon: https://api.regobs.no/v5/swagger/ui/index
-    */
-    (function () {
-        'use strict';
-        const API = 'https://api.regobs.no/v5/Search/AtAGlance';
-        const regobsBtn = document.getElementById('regobsBtn');
-        const panel = document.getElementById('regobsPanel');
-        const panelBody = document.getElementById('regobsPanelBody');
-        const regobsFlytt = lagFlyttbartKartpanel(panel, 'regobs', '.regobs-panel-header', { left: 12, top: 12 });
-        const minBtn = document.getElementById('regobsMinBtn');
-        const closeBtn = document.getElementById('regobsCloseBtn');
-        const refreshBtn = document.getElementById('regobsRefreshBtn');
-        const daysSelect = document.getElementById('regobsDays');
-        const statusEl = document.getElementById('regobsStatus');
-        const filterEls = [...panel.querySelectorAll('[data-regobs-type]')];
-        if (typeof map === 'undefined' || typeof L === 'undefined') return;
-
-        const labels = {
-            10: { no: 'Snø', en: 'Snow', color: '#2d77b5' },
-            20: { no: 'Jord', en: 'Landslide', color: '#a16b30' },
-            60: { no: 'Vann', en: 'Water', color: '#17a39b' },
-            70: { no: 'Is', en: 'Ice', color: '#865dc4' }
-        };
-        const lang = () => typeof window.__lang === 'function' && window.__lang() === 'en' ? 'en' : 'no';
-        const t = (no, en) => lang() === 'en' ? en : no;
-        const escapeHtml = v => String(v === null || v === undefined ? '' : v)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        const pane = map.createPane('regobsObservationsPane');
-        pane.style.zIndex = '625';
-        const observationsLayer = L.layerGroup();
-        let active = false;
-        let collapsed = false;
-        let observations = [];
-        let loading = false;
-        let requestNr = 0;
-        let controller = null;
-        let reloadTimer = null;
-        let lastStatus = ['idle'];
-        const MAX_RECORDS = 500;
-
-        const types = () => filterEls.filter(el => el.checked).map(el => Number(el.dataset.regobsType));
-        function status(code, count) {
-            lastStatus = [code, count];
-            const messages = {
-                idle: [ 'Slå på for å hente observasjonar.', 'Switch on to load observations.' ],
-                loading: [ 'Hentar observasjonar …', 'Loading observations …' ],
-                empty: [ 'Ingen observasjonar i dette kartutsnittet og tidsrommet.', 'No observations in this map view and time range.' ],
-                nofilter: [ 'Vel minst éin observasjonstype.', 'Select at least one observation type.' ],
-                failed: [ 'Kunne ikkje hente data. Kontroller nettet, eller prøv igjen.', 'Could not load data. Check your connection or retry.' ]
-            };
-            if (code === 'ready') {
-                statusEl.textContent = t(`Viser ${count} observasjonar`, `Showing ${count} observations`) +
-                    (count >= MAX_RECORDS ? t(' (maks. 500 – zoom inn)', ' (max 500 – zoom in)') : '');
-            } else statusEl.textContent = (messages[code] || messages.idle)[lang() === 'en' ? 1 : 0];
-            refreshBtn.disabled = loading;
-            refreshBtn.style.opacity = loading ? '.4' : '1';
-        }
-        function dateText(value) {
-            if (!value) return '';
-            const d = new Date(value);
-            if (!Number.isFinite(d.getTime())) return '';
-            return d.toLocaleString(lang() === 'en' ? 'en-GB' : 'nb-NO', {
-                day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-            });
-        }
-        function popupHtml(o) {
-            const type = labels[Number(o.GeoHazardTID)];
-            const heading = o.Title || (type ? type[lang()] : t('Observasjon', 'Observation'));
-            const forms = Array.isArray(o.FormNames) ? o.FormNames.filter(Boolean).join(', ') : '';
-            const name = o.NickName || t('Ikkje oppgitt', 'Not provided');
-            const sourceLink = Number.isInteger(o.RegId) && o.RegId > 0
-                ? `https://regobs.no/Registration/${o.RegId}` : 'https://regobs.no/';
-            return `<div class="regobs-popup">
-                <strong>${escapeHtml(heading)}</strong>
-                ${forms && forms !== heading ? `<div class="regobs-popup-detail">${escapeHtml(forms)}</div>` : ''}
-                <div class="regobs-popup-detail">${escapeHtml(dateText(o.DtObsTime))}</div>
-                <div class="regobs-popup-detail">${escapeHtml(t('Observatør:', 'Observer:'))} ${escapeHtml(name)}</div>
-                <a href="${sourceLink}" target="_blank" rel="noopener noreferrer">${escapeHtml(t('Sjå observasjonen på Regobs.no', 'View observation on Regobs.no'))} ↗</a>
-            </div>`;
-        }
-        function draw() {
-            observationsLayer.clearLayers();
-            const wanted = new Set(types());
-            let shown = 0;
-            for (const o of observations) {
-                if (!wanted.has(Number(o.GeoHazardTID))) continue;
-                const lat = Number(o.Latitude), lng = Number(o.Longitude);
-                if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) continue;
-                const conf = labels[Number(o.GeoHazardTID)];
-                const marker = L.circleMarker([lat, lng], {
-                    pane: 'regobsObservationsPane', radius: 7, color: '#fff', weight: 2,
-                    fillColor: conf ? conf.color : '#555', fillOpacity: .94,
-                    bubblingMouseEvents: false
-                });
-                marker.bindPopup(() => popupHtml(o), { maxWidth: 280, autoPan: true });
-                marker.bindTooltip(`${conf ? conf[lang()] : 'Regobs'} · ${o.Title || ''}`, { direction: 'top' });
-                observationsLayer.addLayer(marker);
-                shown++;
-            }
-            if (!loading) status(types().length === 0 ? 'nofilter' : shown ? 'ready' : 'empty', shown);
-        }
-        async function loadObservations() {
-            if (!active) return;
-            clearTimeout(reloadTimer);
-            if (controller) controller.abort();
-            controller = new AbortController();
-            const currentRequest = ++requestNr;
-            const selected = types();
-            if (!selected.length) {
-                observations = []; loading = false; draw(); return;
-            }
-            const b = map.getBounds();
-            if (!b.isValid()) return;
-            const days = Number(daysSelect.value) || 14;
-            const requestBody = {
-                LangKey: lang() === 'en' ? 2 : 1,
-                SelectedGeoHazards: selected,
-                FromDtObsTime: new Date(Date.now() - days * 86400000).toISOString(),
-                Extent: {
-                    TopLeft: { Latitude: Math.min(90, b.getNorth()), Longitude: Math.max(-180, b.getWest()) },
-                    BottomRight: { Latitude: Math.max(-90, b.getSouth()), Longitude: Math.min(180, b.getEast()) }
-                },
-                NumberOfRecords: MAX_RECORDS,
-                OrderBy: 'DtObsTime', AscendingOrder: false
-            };
-            loading = true;
-            status('loading');
-            try {
-                const response = await fetch(API, {
-                    method: 'POST', mode: 'cors',
-                    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-                    body: JSON.stringify(requestBody), signal: controller.signal
-                });
-                if (!response.ok) throw new Error(`Regobs API HTTP ${response.status}`);
-                const data = await response.json();
-                if (!active || currentRequest !== requestNr) return;
-                if (!Array.isArray(data)) throw new Error('Unexpected Regobs response');
-                observations = data;
-                loading = false;
-                draw();
-            } catch (error) {
-                if (!active || currentRequest !== requestNr || error.name === 'AbortError') return;
-                console.warn('Regobs: klarte ikkje hente observasjonar:', error);
-                observations = [];
-                loading = false;
-                observationsLayer.clearLayers();
-                status('failed');
-            }
-        }
-        function scheduleLoad() {
-            if (!active) return;
-            clearTimeout(reloadTimer);
-            reloadTimer = setTimeout(loadObservations, 400);
-        }
-        function enable(enabled) {
-            if (active === enabled) return;
-            active = enabled;
-            regobsBtn.classList.toggle('btn-toggle-active', enabled);
-            regobsBtn.setAttribute('aria-pressed', String(enabled));
-            panel.hidden = !enabled;
-            if (enabled) {
-                regobsFlytt.juster();
-                observationsLayer.addTo(map);
-                loadObservations();
-            } else {
-                ++requestNr;
-                clearTimeout(reloadTimer);
-                if (controller) controller.abort();
-                controller = null;
-                loading = false;
-                observations = [];
-                observationsLayer.clearLayers();
-                map.removeLayer(observationsLayer);
-                status('idle');
-            }
-        }
-        regobsBtn.addEventListener('click', () => enable(!active));
-        closeBtn.addEventListener('click', () => enable(false));
-        minBtn.addEventListener('click', () => {
-            collapsed = !collapsed;
-            panel.classList.toggle('regobs-collapsed', collapsed);
-            minBtn.textContent = collapsed ? '+' : '−';
-            minBtn.setAttribute('aria-expanded', String(!collapsed));
-            const title = collapsed ? t('Utvid Regobs-panelet', 'Expand Regobs panel') : t('Minimer Regobs-panelet', 'Minimize Regobs panel');
-            minBtn.setAttribute('aria-label', title);
-            minBtn.title = title;
-            regobsFlytt.juster();
-        });
-        refreshBtn.addEventListener('click', loadObservations);
-        daysSelect.addEventListener('change', loadObservations);
-        filterEls.forEach(el => el.addEventListener('change', () => {
-            // Filtera må verke med ein gong; ny API-forespurnad tek inn utvalet.
-            draw();
-            loadObservations();
-        }));
-        map.on('moveend', scheduleLoad);
-        document.addEventListener('langchange', () => {
-            if (!active) return;
-            status(...lastStatus);
-            if (!loading) draw();
-            scheduleLoad();
-        });
-        L.DomEvent.disableClickPropagation(panel);
-        L.DomEvent.disableScrollPropagation(panel);
-        // Frys Regobs-status ved init, men hent ikkje noko før brukaren slår på laget.
-        status('idle');
-    })();
-</script>
 </body>
 </html>
