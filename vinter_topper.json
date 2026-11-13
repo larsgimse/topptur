@@ -6,15 +6,18 @@
     "video": [
       {
         "url": "https://www.instagram.com/reel/DWg1TaHiJRJ/",
-        "tittel": "Video 1"
+        "tittel": "Hovedspor",
+        "spor": "Hovedspor"
       },
       {
         "url": "https://www.instagram.com/reel/DTnrjgliITD/",
-        "tittel": "Video 2"
+        "tittel": "Spor 2",
+        "spor": "Spor 2"
       },
       {
         "url": "https://www.instagram.com/p/DXFlkrDCLz1/",
-        "tittel": "Video 3"
+        "tittel": "Spor 3",
+        "spor": "Spor 3"
       }
     ],
     "ekstraSpor": [
@@ -82,16 +85,19 @@
     "video": [
       {
         "url": "https://www.instagram.com/p/DTVY5yfCDfU/",
-        "tittel": "Video 1"
+        "tittel": "Hovedspor",
+        "spor": "Hovedspor"
       },
       {
         "url": "https://www.instagram.com/p/DXCQalhiPgX/",
-        "tittel": "Video 2"
+        "tittel": "Spor 2",
+        "spor": "Spor 2"
       },
       {
         "url": "https://www.instagram.com/p/C5b3I2UsTb0/",
-        "tittel": "Video 3",
-        "dato": "2024_04_06"
+        "tittel": "Spor 3",
+        "dato": "2024_04_06",
+        "spor": "Spor 3"
       }
     ],
     "ekstraSpor": [
@@ -115,16 +121,19 @@
     "video": [
       {
         "url": "https://www.instagram.com/reel/DWXPzaUiAO5/",
-        "tittel": "Video 1"
+        "tittel": "Hovedspor",
+        "spor": "Hovedspor"
       },
       {
         "url": "https://www.instagram.com/reel/DTLiCcAiDMz/",
-        "tittel": "Video 2"
+        "tittel": "Spor 2",
+        "spor": "Spor 2"
       },
       {
         "url": "https://www.instagram.com/p/C5b3I2UsTb0/",
-        "tittel": "Video 3",
-        "dato": "2024_04_06"
+        "tittel": "Spor 3",
+        "dato": "2024_04_06",
+        "spor": "Spor 3"
       }
     ],
     "ekstraSpor": [
@@ -148,11 +157,13 @@
     "video": [
       {
         "url": "https://www.instagram.com/p/DI1NoNqsl-F/",
-        "tittel": "Video 1"
+        "tittel": "Hovedspor",
+        "spor": "Hovedspor"
       },
       {
         "url": "https://www.instagram.com/p/DECfPK3sre3/",
-        "tittel": "Video 2"
+        "tittel": "Spor 2",
+        "spor": "Spor 2"
       }
     ],
     "ekstraSpor": [
@@ -267,12 +278,14 @@
     "video": [
       {
         "url": "https://www.instagram.com/reel/DW4gus-iLa9/",
-        "tittel": "Video 1"
+        "tittel": "Hovedspor",
+        "spor": "Hovedspor"
       },
       {
         "url": "https://www.instagram.com/reels/DYInP-Tosh6/",
-        "tittel": "Video 2",
-        "dato": "2026_05_09"
+        "tittel": "Spor 2",
+        "dato": "2026_05_09",
+        "spor": "Spor 2"
       }
     ],
     "ekstraSpor": [
@@ -327,12 +340,14 @@
     "video": [
       {
         "url": "https://www.instagram.com/reel/DWHz3RbCPlU/",
-        "tittel": "Video 1"
+        "tittel": "Hovedspor",
+        "spor": "Hovedspor"
       },
       {
         "url": "https://www.instagram.com/p/DXwr41Fodzo/",
-        "tittel": "Video 2",
-        "dato": "2026_04_04"
+        "tittel": "Spor 2",
+        "dato": "2026_04_04",
+        "spor": "Spor 2"
       }
     ],
     "ekstraSpor": [
@@ -363,11 +378,18 @@
     "video": [
       {
         "url": "https://www.instagram.com/p/DVodnhniPMj/",
-        "tittel": "Video 1"
+        "tittel": "Hovedspor",
+        "spor": "Hovedspor"
       },
       {
         "url": "https://www.instagram.com/p/DWPmIqVCCo7/",
-        "tittel": "Video 2"
+        "tittel": "Spor 2",
+        "spor": "Spor 2"
+      },
+      {
+        "url": "https://www.strava.com/activities/20963089068",
+        "tittel": "Se Strava-aktivitet – Spor 3",
+        "spor": "Spor 3"
       }
     ],
     "ekstraSpor": [
@@ -375,6 +397,11 @@
         "tittel": "Spor 2",
         "fil": "2026_03_22.gpx",
         "farge": "#5c6bc0"
+      },
+      {
+        "tittel": "Spor 3",
+        "fil": "2026_11_12.gpx",
+        "farge": "#e1306c"
       }
     ],
     "beskrivelse": "Kommer mer info snart..."
@@ -464,15 +491,18 @@
     "video": [
       {
         "url": "https://www.instagram.com/p/DYfYRV0o6la/",
-        "tittel": "Video 1"
+        "tittel": "Hovedspor",
+        "spor": "Hovedspor"
       },
       {
         "url": "https://www.instagram.com/p/DYpqoqRoyyR/",
-        "tittel": "Video 2"
+        "tittel": "Spor 2",
+        "spor": "Spor 2"
       },
       {
         "url": "https://www.instagram.com/p/DZMwqUnopJN/",
-        "tittel": "Video 3"
+        "tittel": "Spor 3",
+        "spor": "Spor 3"
       }
     ],
     "ekstraSpor": [

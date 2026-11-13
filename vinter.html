@@ -428,7 +428,7 @@
         @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
 
-        /* Diskret markering av toppen med nyeste GPX-dato. */
+        /* Tre nyeste GPX-spor, beregnet automatisk fra filnavndato. */
         .nyeste-gpx-prikk {
             display: inline-block;
             width: 6px;
@@ -439,6 +439,18 @@
             flex: none;
             pointer-events: none;
         }
+        .nyeste-gpx-prikk.gpx-rang-1 { background: #dc2626; }
+        .nyeste-gpx-prikk.gpx-rang-2 { background: #f97316; }
+        .nyeste-gpx-prikk.gpx-rang-3 { background: #eab308; }
+        .gpx-prikk-forklaring {
+            width: 100%; max-width: 1100px; box-sizing: border-box;
+            margin: -8px auto 12px; padding: 0 2px;
+            display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px;
+            font-size: 11px; color: var(--muted); font-weight: 400;
+            text-align: left; order: 4;
+        }
+        .gpx-prikk-forklaring > span { display: inline-flex; align-items: center; gap: 5px; }
+        .gpx-prikk-forklaring .nyeste-gpx-prikk { width: 7px; height: 7px; min-width: 7px; }
         .letter-btn .nyeste-gpx-prikk {
             position: absolute;
             top: 4px;
@@ -646,6 +658,12 @@
         <div id="buttons">
             <button id="langBtn" type="button" class="ctl ctl-lang" title="Switch to English" aria-label="Switch to English"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg><span class="lang-code">EN</span></button>
         </div>
+    </div>
+
+    <div class="gpx-prikk-forklaring" aria-label="Farger for nyeste GPX-spor">
+        <span><i class="nyeste-gpx-prikk gpx-rang-1" aria-hidden="true"></i>Rød: nyeste GPX-spor</span>
+        <span><i class="nyeste-gpx-prikk gpx-rang-2" aria-hidden="true"></i>Oransje: nest nyeste</span>
+        <span><i class="nyeste-gpx-prikk gpx-rang-3" aria-hidden="true"></i>Gul: tredje nyeste</span>
     </div>
 
     <div id="controls-row">
@@ -2017,8 +2035,8 @@
             if (e.key === 'Escape') lukkAlleDropdowns();
         });
 
-        // Finn nyeste tur ut fra datoen i GPX-filnavnet, også eventuelle ekstraspor.
-        // Det er bare én topp som får den røde prikken; ingen manuell oppdatering nødvendig.
+        // Finn dei tre nyaste individuelle GPX-spora (inkludert ekstraspor).
+        // Ein topp får farge etter det nyaste av sine spor som er i topp tre.
         function gpxDatoTall(fil) {
             const m = String(fil || '').match(/(\d{4})_(\d{2})_(\d{2})(?=\D|$)/);
             if (!m) return 0;
@@ -2027,30 +2045,35 @@
             return +m[1] * 10000 + +m[2] * 100 + +m[3];
         }
 
-        function nyesteGpxToppId(liste) {
-            let nyesteDato = 0;
-            let nyesteId = null;
-            liste.forEach(topp => {
-                const spor = [topp.fil, ...(Array.isArray(topp.ekstraSpor) ? topp.ekstraSpor.map(s => s.fil) : [])];
-                const dato = Math.max(0, ...spor.map(gpxDatoTall));
-                if (dato > nyesteDato) {
-                    nyesteDato = dato;
-                    nyesteId = topp.id;
-                }
-            });
-            return nyesteId;
+        function gpxToppRangering(liste) {
+            const alleSpor = liste.flatMap(topp => [topp.fil, ...(Array.isArray(topp.ekstraSpor) ? topp.ekstraSpor.map(s => s.fil) : [])]
+                .map(fil => ({ id: topp.id, fil, dato: gpxDatoTall(fil) })))
+                .filter(s => s.dato > 0);
+            alleSpor.sort((a, b) => b.dato - a.dato || a.fil.localeCompare(b.fil));
+            const rangering = new Map();
+            // Unike spor, med høyest plassering for topper som har fleire av dei nyaste.
+            const brukte = new Set();
+            for (const spor of alleSpor) {
+                const nøkkel = spor.id + ':' + spor.fil;
+                if (brukte.has(nøkkel)) continue;
+                brukte.add(nøkkel);
+                const rang = brukte.size;
+                if (rang > 3) break;
+                if (!rangering.has(spor.id)) rangering.set(spor.id, rang);
+            }
+            return rangering;
         }
 
-        function lagNyestePrikk() {
+        function lagNyestePrikk(rang) {
             const prikk = document.createElement('span');
-            prikk.className = 'nyeste-gpx-prikk';
+            prikk.className = 'nyeste-gpx-prikk gpx-rang-' + rang;
             prikk.setAttribute('aria-hidden', 'true');
             return prikk;
         }
 
         function byggBokstavMeny() {
             const bokstavMap = {};
-            const nyesteId = nyesteGpxToppId(topper);
+            const gpxRang = gpxToppRangering(topper);
 
             topper.forEach(topp => {
                 knapperMap[topp.id] = { items: [], aktiver: null };
@@ -2070,9 +2093,10 @@
                 const btn = document.createElement('button');
                 btn.className = 'letter-btn';
                 btn.innerText = bokstav;
-                if (bokstavMap[bokstav].some(entry => entry.topp.id === nyesteId)) {
-                    btn.appendChild(lagNyestePrikk());
-                    btn.title = 'Inneholder nyeste GPX-tur';
+                const rangBokstav = Math.min(4, ...bokstavMap[bokstav].map(entry => gpxRang.get(entry.topp.id) || 4));
+                if (rangBokstav <= 3) {
+                    btn.appendChild(lagNyestePrikk(rangBokstav));
+                    btn.title = ['Nyeste', 'Nest nyeste', 'Tredje nyeste'][rangBokstav - 1] + ' GPX-spor finnes under denne bokstaven';
                 }
 
                 const menu = document.createElement('div');
@@ -2097,9 +2121,10 @@
                     const tekstSpan = document.createElement('span');
                     tekstSpan.innerHTML = formaterNavnMedFarge(topp.navn, entry.ord);
                     item.appendChild(tekstSpan);
-                    if (topp.id === nyesteId) {
-                        item.appendChild(lagNyestePrikk());
-                        item.title = 'Nyeste GPX-tur';
+                    const rangTopp = gpxRang.get(topp.id);
+                    if (rangTopp) {
+                        item.appendChild(lagNyestePrikk(rangTopp));
+                        item.title = ['Nyeste', 'Nest nyeste', 'Tredje nyeste'][rangTopp - 1] + ' GPX-spor';
                     }
 
                     const badge = lagBadge(topp.fil, topp.overrideAar);
@@ -2229,8 +2254,13 @@
                                 const a = document.createElement('a'); a.href = v.url; a.target = "_blank";
                                 a.className = 'video-link-btn' + (lt === 'strava' ? ' strava-link-btn' : lt === 'suunto' ? ' suunto-link-btn' : '');
                                 const ikonHtml = lt === 'strava' ? '<span>🏃</span>' : lt === 'suunto' ? '<span class="suunto-icon">▲</span>' : `<span>${lt === 'photo' ? '📷' : '🎥'}</span>`;
-                                a.innerHTML = `${ikonHtml} ${lt === 'suunto' ? '3D visualisering' : v.tittel}`;
-                                const filRef = v.dato ? v.dato : ((topp.ekstraSpor && topp.ekstraSpor[i-1]) ? topp.ekstraSpor[i-1].fil : topp.fil);
+                                const sporNavn = v.spor || null;
+                                const lenkeTittel = lt === 'suunto' ? '3D visualisering'
+                                    : (lt === 'strava' && sporNavn ? 'Strava – ' + sporNavn : v.tittel);
+                                a.innerHTML = `${ikonHtml} ${lenkeTittel}`;
+                                const sporFil = sporNavn === 'Hovedspor' ? topp.fil
+                                    : (topp.ekstraSpor || []).find(es => es.tittel === sporNavn)?.fil;
+                                const filRef = v.dato || sporFil || ((topp.ekstraSpor && topp.ekstraSpor[i-1]) ? topp.ekstraSpor[i-1].fil : topp.fil);
                                 const vBadge = lagBadge(filRef, (filRef === topp.fil) ? topp.overrideAar : null);
                                 if (vBadge) a.appendChild(vBadge);
                                 videoContainer.appendChild(a);
@@ -2457,6 +2487,12 @@
         /* --- Felles / navigasjon --- */
         'Toppturer - Oversiktskart': 'Summit trips - Overview map',
         'Toppturer': 'Summit trips',
+        'Rød: nyeste GPX-spor': 'Red: newest GPX track',
+        'Oransje: nest nyeste': 'Orange: second newest',
+        'Gul: tredje nyeste': 'Yellow: third newest',
+        'Nyeste GPX-spor': 'Newest GPX track',
+        'Nest nyeste GPX-spor': 'Second newest GPX track',
+        'Tredje nyeste GPX-spor': 'Third newest GPX track',
         'Nullstill': 'Reset',
         'Nullstill kart': 'Reset map',
         'Vinter': 'Winter',
