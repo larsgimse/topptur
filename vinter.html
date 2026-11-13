@@ -272,21 +272,18 @@
         }
         .control-label { font-size: 11px; font-weight: 700; flex-grow: 1; text-align: left; position: relative; }
 
+        /* Diskret Strava-symbol ved rett GPX-spor, utan eiga ramme/knapp. */
         .spor-link-ikon {
-            width: 24px;
-            height: 24px;
-            min-width: 24px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--ink);
-            background: #fff;
-            color: var(--strava-orange);
-            text-decoration: none;
-            transition: background .2s ease, color .2s ease;
+            width: 22px; height: 24px; min-width: 22px;
+            display: inline-flex; align-items: center; justify-content: center;
+            flex-shrink: 0; color: #fc4c02; background: transparent;
+            border: 0; text-decoration: none; border-radius: 3px;
+            opacity: .85; transition: opacity .2s ease, background .2s ease;
         }
-        .spor-link-ikon:hover { background: #fff4ef; }
-        .spor-link-ikon svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+        .spor-link-ikon:hover, .spor-link-ikon:focus-visible {
+            opacity: 1; background: #fff0e8;
+        }
+        .spor-link-ikon svg { display: block; width: 13px; height: 13px; fill: currentColor; }
 
         .toggle-group { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
         .toggle-text { font-size: 8px; color: #64748b; font-weight: 800; text-transform: uppercase; }
@@ -1927,21 +1924,16 @@
             gpxLayer.bindPopup(popupContent).openPopup();
         }
 
-        function finnVideoForSpor(topp, sporNavn) {
-            return Array.isArray(topp.video) ? topp.video.find(v => (v.spor || null) === sporNavn && ['video', 'photo'].includes(lenkeType(v))) : null;
-        }
-
+        // Strava-lenker uten angitt spor tilhører hovedsporet.
+        // Nye lenker kan knyttes til ekstra spor med "spor": "Spor 2" osv.
         function finnStravaLenkeForSpor(topp, sporNavn) {
-            const eksplisitt = Array.isArray(topp.video)
-                ? topp.video.find(v => lenkeType(v) === 'strava' && (v.spor || null) === sporNavn)
-                : null;
-            if (eksplisitt?.url) return eksplisitt.url;
-            if (sporNavn === 'Hovedspor' && topp.strava) return topp.strava;
-            if (Array.isArray(topp.ekstraSpor)) {
-                const match = topp.ekstraSpor.find(es => es.tittel === sporNavn && es.strava);
-                if (match?.strava) return match.strava;
-            }
-            return null;
+            const lenker = Array.isArray(topp.video) ? topp.video : [];
+            const match = lenker.find(v => lenkeType(v) === 'strava' &&
+                (v.spor || 'Hovedspor') === sporNavn);
+            if (match?.url) return match.url;
+            if (sporNavn === 'Hovedspor') return topp.strava || null;
+            const ekstra = (topp.ekstraSpor || []).find(es => es.tittel === sporNavn);
+            return ekstra?.strava || null;
         }
 
         function skapKontrollRad(label, badgeFil, startOn, onSporToggle, onProfilToggle, gpxRang = null, stravaUrl = null) {
@@ -1965,7 +1957,7 @@
                 stravaLink.rel = 'noopener noreferrer';
                 stravaLink.title = 'Åpne Strava-aktivitet for ' + label;
                 stravaLink.setAttribute('aria-label', 'Åpne Strava-aktivitet for ' + label);
-                stravaLink.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 16l4-8 4 8"/><path d="M6 20l2-4 2 4"/><path d="M12 20l2-4 2 4"/></svg>`;
+                stravaLink.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4.8 16.2h4.5l2.7-5.5 2.7 5.5h4.5L12 2Zm6.4 12-3.3 6.6h3.2l1.7-3.3 1.7 3.3H24L20.4 14h-2Z"/></svg>`;
                 container.appendChild(stravaLink);
             }
 
@@ -2306,7 +2298,7 @@
                                 const lt = lenkeType(v);
                                 const sporNavn = v.spor || null;
                                 // Spor-knytte Strava-lenker vises som eit lite ikon på rett spor-rad.
-                                if (lt === 'strava' && sporNavn) return;
+                                if (lt === 'strava') return;
                                 // Strava/Suunto vises av egne knapper under når de finnes
                                 if ((lt === 'strava' && topp.strava) || (lt === 'suunto' && topp.suunto)) return;
                                 const a = document.createElement('a'); a.href = v.url; a.target = "_blank";
@@ -2321,13 +2313,6 @@
                                 if (vBadge) a.appendChild(vBadge);
                                 videoContainer.appendChild(a);
                             });
-
-                            if (topp.strava && !finnStravaLenkeForSpor(topp, 'Hovedspor')) {
-                                const sBtn = document.createElement('a');
-                                sBtn.className = 'video-link-btn strava-link-btn'; sBtn.href = topp.strava; sBtn.target = '_blank';
-                                sBtn.innerHTML = `<span>🏃</span> Strava`;
-                                videoContainer.appendChild(sBtn);
-                            }
 
                             if (topp.suunto) {
                                 const suuntoBtn = document.createElement('a');
