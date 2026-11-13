@@ -39,7 +39,7 @@
         #controls-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; order: 5; position: relative; z-index: 10; }
 
         #map-container { position: relative; max-width: 1100px; margin: 0 auto; width: 100%; order: 7; z-index: 1; }
-        #bottom-controls-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; flex-wrap: wrap; order: 8; position: relative; z-index: 10; }
+        #bottom-controls-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; flex-wrap: wrap; order: 9; position: relative; z-index: 10; }
 
         #map {
             height: 65vh;
@@ -444,13 +444,14 @@
         .nyeste-gpx-prikk.gpx-rang-3 { background: #eab308; }
         .gpx-prikk-forklaring {
             width: 100%; max-width: 1100px; box-sizing: border-box;
-            margin: -8px auto 12px; padding: 0 2px;
+            margin: 10px auto 8px; padding: 0 2px;
             display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px;
             font-size: 11px; color: var(--muted); font-weight: 400;
-            text-align: left; order: 4;
+            text-align: left; order: 8;
         }
         .gpx-prikk-forklaring > span { display: inline-flex; align-items: center; gap: 5px; }
         .gpx-prikk-forklaring .nyeste-gpx-prikk { width: 7px; height: 7px; min-width: 7px; }
+        .control-label .nyeste-gpx-prikk { margin-left: 7px; vertical-align: middle; }
         .letter-btn .nyeste-gpx-prikk {
             position: absolute;
             top: 4px;
@@ -660,12 +661,6 @@
         </div>
     </div>
 
-    <div class="gpx-prikk-forklaring" aria-label="Farger for nyeste GPX-spor">
-        <span><i class="nyeste-gpx-prikk gpx-rang-1" aria-hidden="true"></i>Rød: nyeste GPX-spor</span>
-        <span><i class="nyeste-gpx-prikk gpx-rang-2" aria-hidden="true"></i>Oransje: nest nyeste</span>
-        <span><i class="nyeste-gpx-prikk gpx-rang-3" aria-hidden="true"></i>Gul: tredje nyeste</span>
-    </div>
-
     <div id="controls-row">
         <select id="mapSelect" class="ctl">
             <option value="norge">Norgeskart</option>
@@ -766,6 +761,12 @@
             </label>
             </div>
         </div>
+    </div>
+
+    <div class="gpx-prikk-forklaring" aria-label="Farger for nyeste GPX-spor">
+        <span><i class="nyeste-gpx-prikk gpx-rang-1" aria-hidden="true"></i>Rød: nyeste GPX-spor</span>
+        <span><i class="nyeste-gpx-prikk gpx-rang-2" aria-hidden="true"></i>Oransje: nest nyeste</span>
+        <span><i class="nyeste-gpx-prikk gpx-rang-3" aria-hidden="true"></i>Gul: tredje nyeste</span>
     </div>
 
     <div id="bottom-controls-row">
@@ -1910,12 +1911,16 @@
             gpxLayer.bindPopup(popupContent).openPopup();
         }
 
-        function skapKontrollRad(label, badgeFil, startOn, onSporToggle, onProfilToggle) {
+        function skapKontrollRad(label, badgeFil, startOn, onSporToggle, onProfilToggle, gpxRang = null) {
             const container = document.createElement('div');
             container.className = 'control-row-container';
             const labelEl = document.createElement('div');
             labelEl.className = 'control-label';
             labelEl.innerText = label;
+            if (gpxRang) {
+                labelEl.appendChild(lagNyestePrikk(gpxRang));
+                labelEl.title = ["Nyeste", "Nest nyeste", "Tredje nyeste"][gpxRang - 1] + " GPX-spor";
+            }
             if (badgeFil) { const bdg = lagBadge(badgeFil); if (bdg) labelEl.appendChild(bdg); }
             container.appendChild(labelEl);
 
@@ -2045,21 +2050,26 @@
             return +m[1] * 10000 + +m[2] * 100 + +m[3];
         }
 
-        function gpxToppRangering(liste) {
+        function gpxSporRangering(liste) {
             const alleSpor = liste.flatMap(topp => [topp.fil, ...(Array.isArray(topp.ekstraSpor) ? topp.ekstraSpor.map(s => s.fil) : [])]
                 .map(fil => ({ id: topp.id, fil, dato: gpxDatoTall(fil) })))
                 .filter(s => s.dato > 0);
             alleSpor.sort((a, b) => b.dato - a.dato || a.fil.localeCompare(b.fil));
             const rangering = new Map();
-            // Unike spor, med høyest plassering for topper som har fleire av dei nyaste.
-            const brukte = new Set();
             for (const spor of alleSpor) {
                 const nøkkel = spor.id + ':' + spor.fil;
-                if (brukte.has(nøkkel)) continue;
-                brukte.add(nøkkel);
-                const rang = brukte.size;
-                if (rang > 3) break;
-                if (!rangering.has(spor.id)) rangering.set(spor.id, rang);
+                if (rangering.has(nøkkel)) continue;
+                if (rangering.size >= 3) break;
+                rangering.set(nøkkel, rangering.size + 1);
+            }
+            return rangering;
+        }
+
+        function gpxToppRangering(liste) {
+            const rangering = new Map();
+            for (const [nøkkel, rang] of gpxSporRangering(liste)) {
+                const id = nøkkel.slice(0, nøkkel.indexOf(':'));
+                if (!rangering.has(id)) rangering.set(id, rang);
             }
             return rangering;
         }
@@ -2280,9 +2290,11 @@
                                 videoContainer.appendChild(suuntoBtn);
                             }
 
+                            const rangPerSpor = gpxSporRangering(topper);
                             videoContainer.appendChild(skapKontrollRad(topp.navn, null, true,
                                 (on) => on ? map.addLayer(l) : map.removeLayer(l),
-                                (on) => on ? visProfil(l, topp.navn, topp.fil) : map.closePopup()
+                                (on) => on ? visProfil(l, topp.navn, topp.fil) : map.closePopup(),
+                                rangPerSpor.get(topp.id + ':' + topp.fil)
                             ));
 
                             topp.ekstraSpor?.forEach(es => {
@@ -2313,7 +2325,8 @@
                                         if (on) { visEkstraSpor(); }
                                         else if (esL) { map.removeLayer(esL); aktiveEkstraSporLayers = aktiveEkstraSporLayers.filter(x => x !== esL); }
                                     },
-                                    (on) => { if (on && esL) visProfil(esL, es.tittel, es.fil); else map.closePopup(); }
+                                    (on) => { if (on && esL) visProfil(esL, es.tittel, es.fil); else map.closePopup(); },
+                                    rangPerSpor.get(topp.id + ':' + es.fil)
                                 ));
 
                                 if (es.defaultActive) visEkstraSpor();
