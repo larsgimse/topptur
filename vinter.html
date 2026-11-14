@@ -280,12 +280,15 @@
             border: 0; text-decoration: none; border-radius: 3px;
             opacity: .85; transition: opacity .2s ease, background .2s ease;
         }
-        .spor-video-ikon { color: #e62117; }
-        .spor-video-ikon svg { width: 18px; height: 15px; }
-        .spor-video-ikon:hover, .spor-video-ikon:focus-visible { background: #fff0ee; }
+        .spor-video-ikon { color: #000; }
+        /* Same outlined YouTube SVG as index(5).html. */
+        .spor-video-ikon svg.yt-icon { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; }
+        .spor-video-ikon svg.yt-icon path { fill: currentColor; stroke: none; }
+        .spor-video-ikon:hover, .spor-video-ikon:focus-visible { background: #f1f1f1; }
         .spor-link-ikon:hover, .spor-link-ikon:focus-visible {
             opacity: 1; background: #fff0e8;
         }
+        .spor-video-ikon:hover, .spor-video-ikon:focus-visible { background: #f1f1f1; }
         .spor-link-ikon svg { display: block; width: 13px; height: 13px; fill: currentColor; }
 
         .toggle-group { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
@@ -470,7 +473,9 @@
         .gpx-prikk-forklaring .ikon-forklaring { gap: 5px; }
         .gpx-prikk-forklaring .ikon-forklaring i { display: inline-flex; align-items: center; font-style: normal; }
         .gpx-prikk-forklaring .ikon-forklaring svg { display: block; width: 17px; height: 15px; flex: none; }
-        .gpx-prikk-forklaring .ikon-video { color: #e62117; }
+        .gpx-prikk-forklaring .ikon-video { color: #000; }
+        .gpx-prikk-forklaring .ikon-video svg.yt-icon { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; }
+        .gpx-prikk-forklaring .ikon-video svg.yt-icon path { fill: currentColor; stroke: none; }
         .gpx-prikk-forklaring .ikon-strava { color: #fc4c02; }
         .control-label .nyeste-gpx-prikk { margin-left: 7px; vertical-align: middle; }
         .letter-btn .nyeste-gpx-prikk {
@@ -788,7 +793,7 @@
         <span><i class="nyeste-gpx-prikk gpx-rang-1" aria-hidden="true"></i>Rød: nyeste GPX-spor</span>
         <span><i class="nyeste-gpx-prikk gpx-rang-2" aria-hidden="true"></i>Oransje: nest nyeste</span>
         <span><i class="nyeste-gpx-prikk gpx-rang-3" aria-hidden="true"></i>Gul: tredje nyeste</span>
-        <span class="ikon-forklaring"><i class="ikon-video" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22.1 7.1a2.8 2.8 0 0 0-2-2C18.3 4.6 12 4.6 12 4.6s-6.3 0-8.1.5a2.8 2.8 0 0 0-2 2C1.4 9 1.4 12 1.4 12s0 3 .5 4.9a2.8 2.8 0 0 0 2 2c1.8.5 8.1.5 8.1.5s6.3 0 8.1-.5a2.8 2.8 0 0 0 2-2c.5-1.9.5-4.9.5-4.9s0-3-.5-4.9Z"/><path fill="#fff" d="m10 8.5 6 3.5-6 3.5Z"/></svg></i>Video: se turvideo</span>
+        <span class="ikon-forklaring"><i class="ikon-video" aria-hidden="true"><svg class="yt-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5.25" width="19" height="13.5" rx="4"/><path d="M10 9l5 3-5 3z"/></svg></i>Video: se turvideo</span>
         <span class="ikon-forklaring"><i class="ikon-strava" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 4.8 16.2h4.5l2.7-5.5 2.7 5.5h4.5L12 2Zm6.4 12-3.3 6.6h3.2l1.7-3.3 1.7 3.3H24L20.4 14h-2Z"/></svg></i>Strava: åpne aktiviteten</span>
     </div>
 
@@ -1977,7 +1982,7 @@
                 const tekst = 'Se video for ' + label + (videoLenker.length > 1 ? ' (' + (index + 1) + ')' : '');
                 videoLink.title = tekst;
                 videoLink.setAttribute('aria-label', tekst);
-                videoLink.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22.1 7.1a2.8 2.8 0 0 0-2-2C18.3 4.6 12 4.6 12 4.6s-6.3 0-8.1.5a2.8 2.8 0 0 0-2 2C1.4 9 1.4 12 1.4 12s0 3 .5 4.9a2.8 2.8 0 0 0 2 2c1.8.5 8.1.5 8.1.5s6.3 0 8.1-.5a2.8 2.8 0 0 0 2-2c.5-1.9.5-4.9.5-4.9s0-3-.5-4.9Z"/><path fill="#fff" d="m10 8.5 6 3.5-6 3.5Z"/></svg>`;
+                videoLink.innerHTML = `<svg class="yt-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5.25" width="19" height="13.5" rx="4"/><path d="M10 9l5 3-5 3z"/></svg>`;
                 container.appendChild(videoLink);
             });
 
