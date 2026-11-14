@@ -2,34 +2,49 @@
   {
     "id": "884",
     "navn": "884",
-    "fil": "2026_03_27.gpx",
+    "fil": "2026_04_13.gpx",
     "video": [
       {
         "url": "https://www.instagram.com/reel/DWg1TaHiJRJ/",
-        "tittel": "Hovedspor",
-        "spor": "Hovedspor"
-      },
-      {
-        "url": "https://www.instagram.com/reel/DTnrjgliITD/",
         "tittel": "Spor 2",
         "spor": "Spor 2"
       },
       {
-        "url": "https://www.instagram.com/p/DXFlkrDCLz1/",
+        "url": "https://www.instagram.com/reel/DTnrjgliITD/",
         "tittel": "Spor 3",
         "spor": "Spor 3"
+      },
+      {
+        "url": "https://www.instagram.com/p/DXFlkrDCLz1/",
+        "tittel": "Hovedspor",
+        "spor": "Hovedspor"
+      },
+      {
+        "url": "https://www.strava.com/activities/17879295117",
+        "tittel": "Se Strava-aktivitet – Spor 2",
+        "spor": "Spor 2"
+      },
+      {
+        "url": "https://www.strava.com/activities/17078519122",
+        "tittel": "Se Strava-aktivitet – Spor 3",
+        "spor": "Spor 3"
+      },
+      {
+        "url": "https://www.strava.com/activities/18093898891",
+        "tittel": "Se Strava-aktivitet – Hovedspor",
+        "spor": "Hovedspor"
       }
     ],
     "ekstraSpor": [
       {
+        "fil": "2026_03_27.gpx",
         "tittel": "Spor 2",
-        "fil": "2026_01_17.gpx",
         "farge": "#5c6bc0"
       },
       {
         "tittel": "Spor 3",
-        "fil": "2026_04_13.gpx",
-        "farge": "#008b8b"
+        "fil": "2026_01_17.gpx",
+        "farge": "#5c6bc0"
       }
     ],
     "beskrivelse": "Kommer mer info snart..."
@@ -81,17 +96,17 @@
   {
     "id": "buren",
     "navn": "Buren",
-    "fil": "2026_01_10.gpx",
+    "fil": "2026_04_12.gpx",
     "video": [
       {
         "url": "https://www.instagram.com/p/DTVY5yfCDfU/",
-        "tittel": "Hovedspor",
-        "spor": "Hovedspor"
+        "tittel": "Spor 2",
+        "spor": "Spor 2"
       },
       {
         "url": "https://www.instagram.com/p/DXCQalhiPgX/",
-        "tittel": "Spor 2",
-        "spor": "Spor 2"
+        "tittel": "Hovedspor",
+        "spor": "Hovedspor"
       },
       {
         "url": "https://www.instagram.com/p/C5b3I2UsTb0/",
@@ -102,8 +117,8 @@
     ],
     "ekstraSpor": [
       {
+        "fil": "2026_01_10.gpx",
         "tittel": "Spor 2",
-        "fil": "2026_04_12.gpx",
         "farge": "#5c6bc0"
       },
       {
@@ -274,24 +289,24 @@
   {
     "id": "langfjellaksla",
     "navn": "Langfjellaksla",
-    "fil": "2026_04_08.gpx",
+    "fil": "2026_05_09.gpx",
     "video": [
       {
         "url": "https://www.instagram.com/reel/DW4gus-iLa9/",
-        "tittel": "Hovedspor",
-        "spor": "Hovedspor"
+        "tittel": "Spor 2",
+        "spor": "Spor 2"
       },
       {
         "url": "https://www.instagram.com/reels/DYInP-Tosh6/",
-        "tittel": "Spor 2",
+        "tittel": "Hovedspor",
         "dato": "2026_05_09",
-        "spor": "Spor 2"
+        "spor": "Hovedspor"
       }
     ],
     "ekstraSpor": [
       {
+        "fil": "2026_04_08.gpx",
         "tittel": "Spor 2",
-        "fil": "2026_05_09.gpx",
         "farge": "#5c6bc0"
       }
     ],
@@ -336,24 +351,24 @@
   {
     "id": "skittentinden",
     "navn": "Skittentinden",
-    "fil": "2026_03_15.gpx",
+    "fil": "2026_04_04.gpx",
     "video": [
       {
         "url": "https://www.instagram.com/reel/DWHz3RbCPlU/",
-        "tittel": "Hovedspor",
-        "spor": "Hovedspor"
+        "tittel": "Spor 2",
+        "spor": "Spor 2"
       },
       {
         "url": "https://www.instagram.com/p/DXwr41Fodzo/",
-        "tittel": "Spor 2",
+        "tittel": "Hovedspor",
         "dato": "2026_04_04",
-        "spor": "Spor 2"
+        "spor": "Hovedspor"
       }
     ],
     "ekstraSpor": [
       {
+        "fil": "2026_03_15.gpx",
         "tittel": "Spor 2",
-        "fil": "2026_04_04.gpx",
         "farge": "#5c6bc0"
       }
     ],
@@ -374,12 +389,12 @@
   {
     "id": "steinskartinden",
     "navn": "Steinskartinden",
-    "fil": "2026_03_08.gpx",
+    "fil": "2026_11_12.gpx",
     "video": [
       {
         "url": "https://www.instagram.com/p/DVodnhniPMj/",
-        "tittel": "Hovedspor",
-        "spor": "Hovedspor"
+        "tittel": "Spor 3",
+        "spor": "Spor 3"
       },
       {
         "url": "https://www.instagram.com/p/DWPmIqVCCo7/",
@@ -388,13 +403,13 @@
       },
       {
         "url": "https://www.strava.com/activities/20963089068",
-        "tittel": "Se Strava-aktivitet – Spor 3",
-        "spor": "Spor 3"
+        "tittel": "Se Strava-aktivitet – Hovedspor",
+        "spor": "Hovedspor"
       },
       {
         "url": "https://www.strava.com/activities/17649282821",
-        "tittel": "Se Strava-aktivitet – Hovedspor",
-        "spor": "Hovedspor"
+        "tittel": "Se Strava-aktivitet – Spor 3",
+        "spor": "Spor 3"
       },
       {
         "url": "https://www.strava.com/activities/17816751580",
@@ -403,8 +418,8 @@
       },
       {
         "url": "https://www.instagram.com/p/Dft2MW_oEWe/",
-        "tittel": "Spor 3",
-        "spor": "Spor 3"
+        "tittel": "Hovedspor",
+        "spor": "Hovedspor"
       }
     ],
     "ekstraSpor": [
@@ -414,9 +429,9 @@
         "farge": "#5c6bc0"
       },
       {
+        "fil": "2026_03_08.gpx",
         "tittel": "Spor 3",
-        "fil": "2026_11_12.gpx",
-        "farge": "#e1306c"
+        "farge": "#008b8b"
       }
     ],
     "beskrivelse": "Kommer mer info snart..."
@@ -502,12 +517,12 @@
   {
     "id": "tromsdalstinden",
     "navn": "Tromsdalstinden",
-    "fil": "2026_05_14.gpx",
+    "fil": "2026_06_03.gpx",
     "video": [
       {
         "url": "https://www.instagram.com/p/DYfYRV0o6la/",
-        "tittel": "Hovedspor",
-        "spor": "Hovedspor"
+        "tittel": "Spor 3",
+        "spor": "Spor 3"
       },
       {
         "url": "https://www.instagram.com/p/DYpqoqRoyyR/",
@@ -516,8 +531,8 @@
       },
       {
         "url": "https://www.instagram.com/p/DZMwqUnopJN/",
-        "tittel": "Spor 3",
-        "spor": "Spor 3"
+        "tittel": "Hovedspor",
+        "spor": "Hovedspor"
       }
     ],
     "ekstraSpor": [
@@ -527,9 +542,9 @@
         "farge": "#5c6bc0"
       },
       {
+        "fil": "2026_05_14.gpx",
         "tittel": "Spor 3",
-        "fil": "2026_06_03.gpx",
-        "farge": "#e1306c"
+        "farge": "#008b8b"
       }
     ],
     "beskrivelse": "Kommer mer info snart..."

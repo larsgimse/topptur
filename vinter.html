@@ -2287,13 +2287,50 @@
             }
         }
 
+
+        // Nyeste GPX-dato er alltid hovedspor. Lenker følger GPX-filen ved omnummerering.
+        // Endringen er idempotent: ferdig sorterte JSON-filer forblir uendret.
+        function sorterNyesteSporSomHovedspor(topp) {
+            const ekstra = Array.isArray(topp.ekstraSpor) ? topp.ekstraSpor : [];
+            if (!ekstra.length) return topp;
+            const opprinnelige = [
+                { navn: 'Hovedspor', fil: topp.fil, data: null },
+                ...ekstra.map(s => ({ navn: s.tittel, fil: s.fil, data: s }))
+            ];
+            const sorterte = [...opprinnelige].sort((a, b) =>
+                gpxDatoTall(b.fil) - gpxDatoTall(a.fil) || a.navn.localeCompare(b.navn, 'no'));
+            if (sorterte.every((s, i) => s === opprinnelige[i])) return topp;
+            const nyeNavn = new Map(sorterte.map((s, i) => [s.navn, i ? 'Spor ' + (i + 1) : 'Hovedspor']));
+            const gamleToppLenker = { strava: topp.strava, suunto: topp.suunto };
+            topp.fil = sorterte[0].fil;
+            for (const felt of ['strava', 'suunto']) {
+                if (sorterte[0].data?.[felt]) topp[felt] = sorterte[0].data[felt];
+                else if (sorterte[0].data) delete topp[felt];
+            }
+            topp.ekstraSpor = sorterte.slice(1).map((s, i) => {
+                const data = s.data ? { ...s.data } : { fil: s.fil, ...gamleToppLenker };
+                data.tittel = 'Spor ' + (i + 2);
+                if (!data.farge) data.farge = i === 0 ? '#5c6bc0' : '#008b8b';
+                return data;
+            });
+            (topp.video || []).forEach(v => {
+                const gammelt = v.spor || 'Hovedspor';
+                const nytt = nyeNavn.get(gammelt) || gammelt;
+                if (v.spor || nytt !== 'Hovedspor') v.spor = nytt;
+                if (v.tittel === gammelt) v.tittel = nytt;
+                else if (v.tittel?.endsWith('– ' + gammelt))
+                    v.tittel = v.tittel.slice(0, -gammelt.length) + nytt;
+            });
+            return topp;
+        }
+
         fetch('vinter_topper.json')
             .then(res => {
                 if (!res.ok) throw new Error('Fant ikke vinter_topper.json');
                 return res.json();
             })
             .then(data => {
-                topper = data;
+                topper = data.map(sorterNyesteSporSomHovedspor);
                 totalTracksCount = topper.length;
                 oppdaterProgresjon();
 
@@ -2384,7 +2421,7 @@
                             });
 
                             const rangPerSpor = gpxSporRangering(topper);
-                            videoContainer.appendChild(skapKontrollRad(topp.navn, null, true,
+                            videoContainer.appendChild(skapKontrollRad(topp.navn, topp.fil, true,
                                 (on) => on ? map.addLayer(l) : map.removeLayer(l),
                                 (on) => on ? visProfil(l, topp.navn, topp.fil) : map.closePopup(),
                                 rangPerSpor.get(topp.id + ':' + topp.fil),
