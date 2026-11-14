@@ -282,7 +282,7 @@
         }
         .spor-video-ikon { color: #000; }
         /* Same outlined YouTube SVG as index(5).html. */
-        .spor-video-ikon svg.yt-icon { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; }
+        .spor-video-ikon svg.yt-icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; }
         .spor-video-ikon svg.yt-icon path { fill: currentColor; stroke: none; }
         .spor-video-ikon:hover, .spor-video-ikon:focus-visible { background: #f1f1f1; }
         .spor-link-ikon:hover, .spor-link-ikon:focus-visible {
@@ -290,6 +290,8 @@
         }
         .spor-video-ikon:hover, .spor-video-ikon:focus-visible { background: #f1f1f1; }
         .spor-link-ikon svg { display: block; width: 13px; height: 13px; fill: currentColor; }
+        /* Strava og video er like store i sporradene. */
+        .spor-link-ikon:not(.spor-video-ikon) svg { width: 20px; height: 20px; }
 
         .toggle-group { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
         .toggle-text { font-size: 8px; color: #64748b; font-weight: 800; text-transform: uppercase; }
@@ -474,9 +476,10 @@
         .gpx-prikk-forklaring .ikon-forklaring i { display: inline-flex; align-items: center; font-style: normal; }
         .gpx-prikk-forklaring .ikon-forklaring svg { display: block; width: 17px; height: 15px; flex: none; }
         .gpx-prikk-forklaring .ikon-video { color: #000; }
-        .gpx-prikk-forklaring .ikon-video svg.yt-icon { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; }
+        .gpx-prikk-forklaring .ikon-video svg.yt-icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; }
         .gpx-prikk-forklaring .ikon-video svg.yt-icon path { fill: currentColor; stroke: none; }
         .gpx-prikk-forklaring .ikon-strava { color: #fc4c02; }
+        .gpx-prikk-forklaring .ikon-strava svg { width: 20px; height: 20px; }
         .control-label .nyeste-gpx-prikk { margin-left: 7px; vertical-align: middle; }
         .letter-btn .nyeste-gpx-prikk {
             position: absolute;
