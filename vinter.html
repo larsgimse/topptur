@@ -290,8 +290,11 @@
         }
         .spor-video-ikon:hover, .spor-video-ikon:focus-visible { background: #f1f1f1; }
         .spor-link-ikon svg { display: block; width: 13px; height: 13px; fill: currentColor; }
-        /* Strava og video er like store i sporradene. */
+        /* Alle tre lenkeikon bruker same 20 × 20 px-format. */
         .spor-link-ikon:not(.spor-video-ikon) svg { width: 20px; height: 20px; }
+        .spor-suunto-ikon { color: var(--suunto-red); }
+        .spor-suunto-ikon:hover, .spor-suunto-ikon:focus-visible { background: #fff0ef; }
+        .spor-suunto-ikon svg { width: 20px; height: 20px; }
 
         .toggle-group { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
         .toggle-text { font-size: 8px; color: #64748b; font-weight: 800; text-transform: uppercase; }
@@ -480,6 +483,8 @@
         .gpx-prikk-forklaring .ikon-video svg.yt-icon path { fill: currentColor; stroke: none; }
         .gpx-prikk-forklaring .ikon-strava { color: #fc4c02; }
         .gpx-prikk-forklaring .ikon-strava svg { width: 20px; height: 20px; }
+        .gpx-prikk-forklaring .ikon-suunto { color: var(--suunto-red); }
+        .gpx-prikk-forklaring .ikon-suunto svg { width: 20px; height: 20px; }
         .control-label .nyeste-gpx-prikk { margin-left: 7px; vertical-align: middle; }
         .letter-btn .nyeste-gpx-prikk {
             position: absolute;
@@ -798,6 +803,7 @@
         <span><i class="nyeste-gpx-prikk gpx-rang-3" aria-hidden="true"></i>Gul: tredje nyeste</span>
         <span class="ikon-forklaring"><i class="ikon-video" aria-hidden="true"><svg class="yt-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5.25" width="19" height="13.5" rx="4"/><path d="M10 9l5 3-5 3z"/></svg></i>Video: se turvideo</span>
         <span class="ikon-forklaring"><i class="ikon-strava" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 4.8 16.2h4.5l2.7-5.5 2.7 5.5h4.5L12 2Zm6.4 12-3.3 6.6h3.2l1.7-3.3 1.7 3.3H24L20.4 14h-2Z"/></svg></i>Strava: åpne aktiviteten</span>
+        <span class="ikon-forklaring"><i class="ikon-suunto" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 22 21H2L12 3Z"/></svg></i>3D visualisering: åpne Suunto</span>
     </div>
 
     <div id="bottom-controls-row">
@@ -1962,7 +1968,19 @@
                 (v.spor || 'Hovedspor') === sporNavn && v.url);
         }
 
-        function skapKontrollRad(label, badgeFil, startOn, onSporToggle, onProfilToggle, gpxRang = null, stravaUrl = null, videoLenker = []) {
+        // Suunto-aktivitetar er spor-spesifikke på same vis som Strava.
+        // Eldre data utan spor-felt er alltid knytte til hovudsporet.
+        function finnSuuntoLenkeForSpor(topp, sporNavn) {
+            const lenker = Array.isArray(topp.video) ? topp.video : [];
+            const match = lenker.find(v => lenkeType(v) === 'suunto' &&
+                (v.spor || 'Hovedspor') === sporNavn && v.url);
+            if (match) return match.url;
+            if (sporNavn === 'Hovedspor') return topp.suunto || null;
+            const ekstra = (topp.ekstraSpor || []).find(es => es.tittel === sporNavn);
+            return ekstra?.suunto || null;
+        }
+
+        function skapKontrollRad(label, badgeFil, startOn, onSporToggle, onProfilToggle, gpxRang = null, stravaUrl = null, videoLenker = [], suuntoUrl = null) {
             const container = document.createElement('div');
             container.className = 'control-row-container';
             const labelEl = document.createElement('div');
@@ -1999,6 +2017,19 @@
                 stravaLink.setAttribute('aria-label', 'Åpne Strava-aktivitet for ' + label);
                 stravaLink.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4.8 16.2h4.5l2.7-5.5 2.7 5.5h4.5L12 2Zm6.4 12-3.3 6.6h3.2l1.7-3.3 1.7 3.3H24L20.4 14h-2Z"/></svg>`;
                 container.appendChild(stravaLink);
+            }
+
+            // Suunto 3D-visualisering: til høgre for Strava og før spor-brytaren.
+            if (suuntoUrl) {
+                const suuntoLink = document.createElement('a');
+                suuntoLink.className = 'spor-link-ikon spor-suunto-ikon';
+                suuntoLink.href = suuntoUrl;
+                suuntoLink.target = '_blank';
+                suuntoLink.rel = 'noopener noreferrer';
+                suuntoLink.title = '3D visualisering (Suunto) for ' + label;
+                suuntoLink.setAttribute('aria-label', suuntoLink.title);
+                suuntoLink.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 22 21H2L12 3Z"/></svg>';
+                container.appendChild(suuntoLink);
             }
 
             const sporGroup = document.createElement('div');
@@ -2337,10 +2368,8 @@
                             topp.video?.forEach((v, i) => {
                                 const lt = lenkeType(v);
                                 const sporNavn = v.spor || null;
-                                // Video og Strava vises nå som minimalistiske ikoner i tilhørende spor-rad.
-                                if (lt === 'strava' || lt === 'video') return;
-                                // Strava/Suunto vises av egne knapper under når de finnes
-                                if ((lt === 'strava' && topp.strava) || (lt === 'suunto' && topp.suunto)) return;
+                                // Video, Strava og Suunto vises som minimalistiske ikoner i tilhørende spor-rad.
+                                if (lt === 'strava' || lt === 'video' || lt === 'suunto') return;
                                 const a = document.createElement('a'); a.href = v.url; a.target = "_blank";
                                 a.className = 'video-link-btn' + (lt === 'strava' ? ' strava-link-btn' : lt === 'suunto' ? ' suunto-link-btn' : '');
                                 const ikonHtml = lt === 'strava' ? '<span>🏃</span>' : lt === 'suunto' ? '<span class="suunto-icon">▲</span>' : `<span>${lt === 'photo' ? '📷' : '🎥'}</span>`;
@@ -2354,20 +2383,14 @@
                                 videoContainer.appendChild(a);
                             });
 
-                            if (topp.suunto) {
-                                const suuntoBtn = document.createElement('a');
-                                suuntoBtn.className = 'video-link-btn suunto-link-btn'; suuntoBtn.href = topp.suunto; suuntoBtn.target = '_blank';
-                                suuntoBtn.innerHTML = `<span class="suunto-icon">▲</span> 3D visualisering`;
-                                videoContainer.appendChild(suuntoBtn);
-                            }
-
                             const rangPerSpor = gpxSporRangering(topper);
                             videoContainer.appendChild(skapKontrollRad(topp.navn, null, true,
                                 (on) => on ? map.addLayer(l) : map.removeLayer(l),
                                 (on) => on ? visProfil(l, topp.navn, topp.fil) : map.closePopup(),
                                 rangPerSpor.get(topp.id + ':' + topp.fil),
                                 finnStravaLenkeForSpor(topp, 'Hovedspor'),
-                                finnVideoLenkerForSpor(topp, 'Hovedspor')
+                                finnVideoLenkerForSpor(topp, 'Hovedspor'),
+                                finnSuuntoLenkeForSpor(topp, 'Hovedspor')
                             ));
 
                             topp.ekstraSpor?.forEach(es => {
@@ -2401,7 +2424,8 @@
                                     (on) => { if (on && esL) visProfil(esL, es.tittel, es.fil); else map.closePopup(); },
                                     rangPerSpor.get(topp.id + ':' + es.fil),
                                     finnStravaLenkeForSpor(topp, es.tittel),
-                                    finnVideoLenkerForSpor(topp, es.tittel)
+                                    finnVideoLenkerForSpor(topp, es.tittel),
+                                    finnSuuntoLenkeForSpor(topp, es.tittel)
                                 ));
 
                                 if (es.defaultActive) visEkstraSpor();
@@ -2578,6 +2602,9 @@
         'Rød: nyeste GPX-spor': 'Red: newest GPX track',
         'Oransje: nest nyeste': 'Orange: second newest',
         'Gul: tredje nyeste': 'Yellow: third newest',
+        'Video: se turvideo': 'Video: watch trip video',
+        'Strava: åpne aktiviteten': 'Strava: open activity',
+        '3D visualisering: åpne Suunto': '3D visualization: open Suunto',
         'Nyeste GPX-spor': 'Newest GPX track',
         'Nest nyeste GPX-spor': 'Second newest GPX track',
         'Tredje nyeste GPX-spor': 'Third newest GPX track',
