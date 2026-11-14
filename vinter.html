@@ -272,7 +272,7 @@
         }
         .control-label { font-size: 11px; font-weight: 700; flex-grow: 1; text-align: left; position: relative; }
 
-        /* Diskret Strava-symbol ved rett GPX-spor, utan eiga ramme/knapp. */
+        /* Diskrete video- og Strava-ikon ved rett GPX-spor. */
         .spor-link-ikon {
             width: 22px; height: 24px; min-width: 22px;
             display: inline-flex; align-items: center; justify-content: center;
@@ -280,6 +280,8 @@
             border: 0; text-decoration: none; border-radius: 3px;
             opacity: .85; transition: opacity .2s ease, background .2s ease;
         }
+        .spor-video-ikon { color: #e1306c; }
+        .spor-video-ikon:hover, .spor-video-ikon:focus-visible { background: #fce7f1; }
         .spor-link-ikon:hover, .spor-link-ikon:focus-visible {
             opacity: 1; background: #fff0e8;
         }
@@ -1936,7 +1938,15 @@
             return ekstra?.strava || null;
         }
 
-        function skapKontrollRad(label, badgeFil, startOn, onSporToggle, onProfilToggle, gpxRang = null, stravaUrl = null) {
+        // Videolenker uten spesifisert spor hører til hovedsporet, også for topper med ett spor.
+        // Suunto og bilde-lenker beholder sine egne knapper.
+        function finnVideoLenkerForSpor(topp, sporNavn) {
+            const lenker = Array.isArray(topp.video) ? topp.video : [];
+            return lenker.filter(v => lenkeType(v) === 'video' &&
+                (v.spor || 'Hovedspor') === sporNavn && v.url);
+        }
+
+        function skapKontrollRad(label, badgeFil, startOn, onSporToggle, onProfilToggle, gpxRang = null, stravaUrl = null, videoLenker = []) {
             const container = document.createElement('div');
             container.className = 'control-row-container';
             const labelEl = document.createElement('div');
@@ -1948,6 +1958,20 @@
             }
             if (badgeFil) { const bdg = lagBadge(badgeFil); if (bdg) labelEl.appendChild(bdg); }
             container.appendChild(labelEl);
+
+            // Videoikonet står til venstre for Strava, direkte i spor-raden.
+            videoLenker.forEach((video, index) => {
+                const videoLink = document.createElement('a');
+                videoLink.className = 'spor-link-ikon spor-video-ikon';
+                videoLink.href = video.url;
+                videoLink.target = '_blank';
+                videoLink.rel = 'noopener noreferrer';
+                const tekst = 'Se video for ' + label + (videoLenker.length > 1 ? ' (' + (index + 1) + ')' : '');
+                videoLink.title = tekst;
+                videoLink.setAttribute('aria-label', tekst);
+                videoLink.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5a1 1 0 0 1 1.5-.86l10 6.5a1 1 0 0 1 0 1.72l-10 6.5A1 1 0 0 1 8 18.5v-13Z"/></svg>`;
+                container.appendChild(videoLink);
+            });
 
             if (stravaUrl) {
                 const stravaLink = document.createElement('a');
@@ -2297,8 +2321,8 @@
                             topp.video?.forEach((v, i) => {
                                 const lt = lenkeType(v);
                                 const sporNavn = v.spor || null;
-                                // Spor-knytte Strava-lenker vises som eit lite ikon på rett spor-rad.
-                                if (lt === 'strava') return;
+                                // Video og Strava vises nå som minimalistiske ikoner i tilhørende spor-rad.
+                                if (lt === 'strava' || lt === 'video') return;
                                 // Strava/Suunto vises av egne knapper under når de finnes
                                 if ((lt === 'strava' && topp.strava) || (lt === 'suunto' && topp.suunto)) return;
                                 const a = document.createElement('a'); a.href = v.url; a.target = "_blank";
@@ -2326,7 +2350,8 @@
                                 (on) => on ? map.addLayer(l) : map.removeLayer(l),
                                 (on) => on ? visProfil(l, topp.navn, topp.fil) : map.closePopup(),
                                 rangPerSpor.get(topp.id + ':' + topp.fil),
-                                finnStravaLenkeForSpor(topp, 'Hovedspor')
+                                finnStravaLenkeForSpor(topp, 'Hovedspor'),
+                                finnVideoLenkerForSpor(topp, 'Hovedspor')
                             ));
 
                             topp.ekstraSpor?.forEach(es => {
@@ -2359,7 +2384,8 @@
                                     },
                                     (on) => { if (on && esL) visProfil(esL, es.tittel, es.fil); else map.closePopup(); },
                                     rangPerSpor.get(topp.id + ':' + es.fil),
-                                    finnStravaLenkeForSpor(topp, es.tittel)
+                                    finnStravaLenkeForSpor(topp, es.tittel),
+                                    finnVideoLenkerForSpor(topp, es.tittel)
                                 ));
 
                                 if (es.defaultActive) visEkstraSpor();
