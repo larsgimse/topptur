@@ -2499,7 +2499,14 @@
                             if (topp.beskrivelse) {
                                 const descBox = document.createElement('div');
                                 descBox.className = 'desc-box';
-                                descBox.innerHTML = `<div class="desc-box-title"><span>📝</span> Gimses turbeskrivelse<span class="chev">▼</span></div><div class="desc-box-body">${topp.beskrivelse}</div>`;
+                                descBox.innerHTML = `<div class="desc-box-title"><span>📝</span> Gimses turbeskrivelse<span class="chev">▼</span></div><div class="desc-box-body"></div>`;
+                                // Behold originaltekst og engelsk oversettelse separat, slik at EN/NO
+                                // bytter innhold uten å miste norsk tekst eller sammenleggbar tilstand.
+                                const descBody = descBox.querySelector('.desc-box-body');
+                                descBody._turbeskrivelseNo = topp.beskrivelse;
+                                descBody._turbeskrivelseEn = topp.beskrivelse_en || topp.beskrivelse;
+                                descBody.textContent = (typeof window.__lang === 'function' && window.__lang() === 'en')
+                                    ? descBody._turbeskrivelseEn : descBody._turbeskrivelseNo;
                                 gjørSammenleggbar(descBox);
                                 descBox.classList.add('collapsed');   // lukket som standard
                                 videoContainer.appendChild(descBox);
@@ -3069,6 +3076,14 @@
         oppdaterKnapp();
         try { document.dispatchEvent(new CustomEvent('langchange', { detail: lang })); } catch (_) {}
     }
+
+    // Oppdater eksisterende turbeskrivelse straks brukeren skifter språk.
+    document.addEventListener('langchange', function () {
+        document.querySelectorAll('.desc-box-body').forEach(function (el) {
+            if (typeof el._turbeskrivelseNo !== 'string') return;
+            el.textContent = lang === 'en' ? el._turbeskrivelseEn : el._turbeskrivelseNo;
+        });
+    });
 
     window.__lang = function () { return lang; };
     window.__oversett = oversett;

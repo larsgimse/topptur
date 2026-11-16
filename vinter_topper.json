@@ -208,7 +208,8 @@
         "farge": "#008b8b"
       }
     ],
-    "beskrivelse": "Fagerfjellet (871 moh.) ligger rundt 30 minutters kjøring fra Tromsø sentrum og byr på en flott topptur med nydelig utsikt. Fra toppen kan du se Hamperokken mot øst og Ramfjorden mot vest. Terrenget er stort sett slakt og holder seg under 30 grader, men enkelte partier kan være litt brattere. Opp til rundt 400 moh. går turen gjennom mye skog, noe som gjør dette til en fin topp for deg som liker skogskjøring. Parkering er mulig ved skolen eller kiosken. Vurder alltid snø- og skredforholdene før turen, særlig i de brattere partiene."
+    "beskrivelse": "Fagerfjellet (871 moh.) ligger rundt 30 minutters kjøring fra Tromsø sentrum og byr på en flott topptur med nydelig utsikt. Fra toppen kan du se Hamperokken mot øst og Ramfjorden mot vest. Terrenget er stort sett slakt og holder seg under 30 grader, men enkelte partier kan være litt brattere. Opp til rundt 400 moh. går turen gjennom mye skog, noe som gjør dette til en fin topp for deg som liker skogskjøring. Parkering er mulig ved skolen eller kiosken. Vurder alltid snø- og skredforholdene før turen, særlig i de brattere partiene.",
+    "beskrivelse_en": "Fagerfjellet (871 m above sea level) is about a 30-minute drive from central Tromsø and offers a wonderful ski tour with beautiful views. From the summit, you can see Hamperokken to the east and Ramfjorden to the west. The terrain is mostly gentle, with slopes below 30 degrees, although a few sections can be somewhat steeper. Up to around 400 metres, the route passes through extensive woodland, making this a great mountain for those who enjoy skiing through trees. Parking is available by the school or the kiosk. Always assess the snow and avalanche conditions before setting out, particularly on the steeper sections."
   },
   {
     "id": "finnlandsfjellet",
@@ -228,7 +229,8 @@
         "tittel": "Se Suunto-aktivitet"
       }
     ],
-    "beskrivelse": "Finnlandsfjellet er en flott nybegynnertopp med kort reisevei fra Tromsø. Turen starter ved en liten, gratis parkeringsplass og byr på en rask og enkel tur opp og ned. Terrenget er slakt, med helning under 30 grader, og toppen byr på fin utsikt når sikten er god. Dette er et fint turmål også på dager med dårlig vær og begrenset sikt, men vær oppmerksom på værforhold og orientering underveis."
+    "beskrivelse": "Finnlandsfjellet er en flott nybegynnertopp med kort reisevei fra Tromsø. Turen starter ved en liten, gratis parkeringsplass og byr på en rask og enkel tur opp og ned. Terrenget er slakt, med helning under 30 grader, og toppen byr på fin utsikt når sikten er god. Dette er et fint turmål også på dager med dårlig vær og begrenset sikt, men vær oppmerksom på værforhold og orientering underveis.",
+    "beskrivelse_en": "Finnlandsfjellet is an excellent beginner-friendly ski touring mountain within easy reach of Tromsø. The tour starts at a small, free car park and makes for a quick and straightforward ascent and descent. The terrain is gentle, with slopes below 30 degrees, and the summit offers lovely views when visibility is good. It can also be a good choice on days with poor weather and limited visibility, but pay close attention to weather conditions and navigation along the way."
   },
   {
     "id": "finnlandsfjellet-hestefjellet",
