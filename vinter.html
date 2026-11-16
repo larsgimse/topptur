@@ -491,6 +491,19 @@
             top: 4px;
             right: 4px;
         }
+        /* Vis alle aktuelle GPX-farger ved samme bokstav, uten overlapping. */
+        .letter-btn .gpx-prikk-gruppe {
+            position: absolute; top: 4px; right: 4px;
+            display: inline-flex; align-items: center; gap: 3px;
+            pointer-events: none;
+        }
+        .letter-btn .gpx-prikk-gruppe .nyeste-gpx-prikk {
+            position: static;
+        }
+        .dropdown-item .gpx-prikk-gruppe {
+            display: inline-flex; align-items: center; gap: 4px;
+            flex: none;
+        }
         .dropdown-item .nyeste-gpx-prikk {
             align-self: center;
             margin-left: 2px;
@@ -2191,7 +2204,22 @@
 
         function byggBokstavMeny() {
             const bokstavMap = {};
-            const gpxRang = gpxToppRangering(topper);
+            // Behald alle plasseringane per topp: ein bokstav kan ha fleire fargar.
+            const gpxRang = new Map();
+            for (const [nøkkel, rang] of gpxSporRangering(topper)) {
+                const id = nøkkel.slice(0, nøkkel.indexOf(':'));
+                if (!gpxRang.has(id)) gpxRang.set(id, []);
+                gpxRang.get(id).push(rang);
+            }
+            const rangTekst = ['Nyeste', 'Nest nyeste', 'Tredje nyeste'];
+            function lagPrikkGruppe(ranger) {
+                const gruppe = document.createElement('span');
+                gruppe.className = 'gpx-prikk-gruppe';
+                [...new Set(ranger)].sort((a, b) => a - b).forEach(rang => {
+                    gruppe.appendChild(lagNyestePrikk(rang));
+                });
+                return gruppe;
+            }
 
             topper.forEach(topp => {
                 knapperMap[topp.id] = { items: [], aktiver: null };
@@ -2211,10 +2239,10 @@
                 const btn = document.createElement('button');
                 btn.className = 'letter-btn';
                 btn.innerText = bokstav;
-                const rangBokstav = Math.min(4, ...bokstavMap[bokstav].map(entry => gpxRang.get(entry.topp.id) || 4));
-                if (rangBokstav <= 3) {
-                    btn.appendChild(lagNyestePrikk(rangBokstav));
-                    btn.title = ['Nyeste', 'Nest nyeste', 'Tredje nyeste'][rangBokstav - 1] + ' GPX-spor finnes under denne bokstaven';
+                const rangerBokstav = [...new Set(bokstavMap[bokstav].flatMap(entry => gpxRang.get(entry.topp.id) || []))].sort((a, b) => a - b);
+                if (rangerBokstav.length) {
+                    btn.appendChild(lagPrikkGruppe(rangerBokstav));
+                    btn.title = rangerBokstav.map(rang => rangTekst[rang - 1]).join(', ') + ' GPX-spor finnes under denne bokstaven';
                 }
 
                 const menu = document.createElement('div');
@@ -2239,10 +2267,10 @@
                     const tekstSpan = document.createElement('span');
                     tekstSpan.innerHTML = formaterNavnMedFarge(topp.navn, entry.ord);
                     item.appendChild(tekstSpan);
-                    const rangTopp = gpxRang.get(topp.id);
-                    if (rangTopp) {
-                        item.appendChild(lagNyestePrikk(rangTopp));
-                        item.title = ['Nyeste', 'Nest nyeste', 'Tredje nyeste'][rangTopp - 1] + ' GPX-spor';
+                    const rangerTopp = gpxRang.get(topp.id) || [];
+                    if (rangerTopp.length) {
+                        item.appendChild(lagPrikkGruppe(rangerTopp));
+                        item.title = rangerTopp.map(rang => rangTekst[rang - 1]).join(', ') + ' GPX-spor';
                     }
 
                     const badge = lagBadge(topp.fil, topp.overrideAar);
