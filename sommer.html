@@ -1453,8 +1453,9 @@
             }
         });
 
-        // Finn dei tre nyaste individuelle GPX-spora (inkludert ekstraspor).
-        // Ein topp får farge etter det nyaste av sine spor som er i topp tre.
+        // Finn dei tre nyaste ULIKE turane ut frå datoen til nyaste GPX-spor per tur.
+        // Fleire ferske spor på same tur skal ikkje bruke opp raud, oransje og gul prikk.
+        // Berre den nyaste GPX-fila på kvar av dei tre turane får sin eigen prikk.
         function gpxDatoTall(fil) {
             const m = String(fil || '').match(/(\d{4})_(\d{2})_(\d{2})(?=\D|$)/);
             if (!m) {
@@ -1468,16 +1469,28 @@
         }
 
         function gpxSporRangering(liste) {
-            const alleSpor = liste.flatMap(topp => [topp.fil, ...(Array.isArray(topp.ekstraSpor) ? topp.ekstraSpor.map(s => s.fil) : [])]
-                .map(fil => ({ id: topp.id || topp.navn.toLowerCase(), fil, dato: gpxDatoTall(fil) })))
-                .filter(s => s.dato > 0);
-            alleSpor.sort((a, b) => b.dato - a.dato || a.fil.localeCompare(b.fil));
+            // Finn siste daterte spor for KVAR tur før turane blir rangerte.
+            // Å rangere alle ekstraSpor globalt gav tre prikkar til same tur.
+            const sisteSporPerTur = liste.map(topp => {
+                const filer = [topp.fil,
+                    ...(Array.isArray(topp.ekstraSpor) ? topp.ekstraSpor.map(spor => spor.fil) : [])];
+                const daterte = filer
+                    .map(fil => ({ id: gpxToppNokkel(topp), fil, dato: gpxDatoTall(fil) }))
+                    .filter(spor => spor.dato > 0)
+                    .sort((a, b) => b.dato - a.dato || a.fil.localeCompare(b.fil, 'no'));
+                return daterte[0] || null;
+            }).filter(Boolean);
+
+            sisteSporPerTur.sort((a, b) =>
+                b.dato - a.dato || a.id.localeCompare(b.id, 'no') || a.fil.localeCompare(b.fil, 'no'));
+
             const rangering = new Map();
-            for (const spor of alleSpor) {
-                const nøkkel = spor.id + ':' + spor.fil;
-                if (rangering.has(nøkkel)) continue;
-                if (rangering.size >= 3) break;
-                rangering.set(nøkkel, rangering.size + 1);
+            const brukteTurar = new Set();
+            for (const spor of sisteSporPerTur) {
+                if (brukteTurar.has(spor.id)) continue;
+                brukteTurar.add(spor.id);
+                rangering.set(spor.id + ':' + spor.fil, rangering.size + 1);
+                if (rangering.size === 3) break;
             }
             return rangering;
         }
