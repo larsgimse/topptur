@@ -698,6 +698,7 @@
         <span><i class="nyeste-gpx-prikk gpx-rang-1" aria-hidden="true"></i>Rød: nyeste GPX-spor</span>
         <span><i class="nyeste-gpx-prikk gpx-rang-2" aria-hidden="true"></i>Oransje: nest nyeste</span>
         <span><i class="nyeste-gpx-prikk gpx-rang-3" aria-hidden="true"></i>Gul: tredje nyeste</span>
+        <span>Samme farger på sporene i oversiktskartet</span>
         <span class="ikon-forklaring"><i class="ikon-video" aria-hidden="true"><svg class="yt-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5.25" width="19" height="13.5" rx="4"/><path d="M10 9l5 3-5 3z"/></svg></i>Video: se turvideo</span>
         <span class="ikon-forklaring"><i class="ikon-strava" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 4.8 16.2h4.5l2.7-5.5 2.7 5.5h4.5L12 2Zm6.4 12-3.3 6.6h3.2l1.7-3.3 1.7 3.3H24L20.4 14h-2Z"/></svg></i>Strava: åpne aktiviteten</span>
         <span class="ikon-forklaring"><i class="ikon-suunto" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 22 21H2L12 3Z"/></svg></i>3D visualisering: åpne Suunto</span>
@@ -912,8 +913,17 @@
            ========================================================================== */
         const SOMMER_FARGE = '#5f7f3b';
         const OVERSIKT_HOVER = { color: '#000000', weight: 4, opacity: 1 };
-        // Sporfarger i oversikten: sommergrønn, sykkelturer blå og Nordfjellet i egen grønnfarge
-        const hovedFargeOversikt = (t) => erSykkel(t) ? 'var(--sykkel-blue)' : (t && t.navn === "Nordfjellet - Tromsø geografiske midtpunkt" ? 'var(--strava-green)' : SOMMER_FARGE);
+        // De tre nyeste ULIKE turene har samme sporlinjefarge som GPX-prikken.
+        // Rangering oppdateres fra sommer_topper.json hver gang siden lastes, så turer
+        // utenfor topp tre går automatisk tilbake til sin opprinnelige oversiktsfarge.
+        const GPX_RANG_FARGER = { 1: '#dc2626', 2: '#f97316', 3: '#eab308' };
+        let gpxRangPerTur = new Map();
+        const hovedFargeOversikt = (t) => {
+            const rang = t ? gpxRangPerTur.get(gpxToppNokkel(t)) : null;
+            if (rang && GPX_RANG_FARGER[rang]) return GPX_RANG_FARGER[rang];
+            return erSykkel(t) ? 'var(--sykkel-blue)' :
+                (t && t.navn === "Nordfjellet - Tromsø geografiske midtpunkt" ? 'var(--strava-green)' : SOMMER_FARGE);
+        };
         const LINJE = '#000000';
         const veiFilter = ['match', ['get', 'class'], ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor'], true, false];
         const veiBredde = ['interpolate', ['exponential', 1.4], ['zoom'], 6, 0.4, 10, 0.8, 14, 1.6, 18, 4];
@@ -1565,6 +1575,8 @@
             .then(data => {
                 topper = data.map(sorterNyesteSporSomHovedspor);
                 const rangPerSpor = gpxSporRangering(topper);
+                // Bruk samme datobaserte rangering til både fargeprikker og kartlinjer.
+                gpxRangPerTur = gpxToppRangering(topper);
                 totalTracksCount = topper.length;
                 oppdaterProgresjon();
 
@@ -2228,6 +2240,7 @@
         'Rød: nyeste GPX-spor': 'Red: newest GPX track',
         'Oransje: nest nyeste': 'Orange: second newest',
         'Gul: tredje nyeste': 'Yellow: third newest',
+        'Samme farger på sporene i oversiktskartet': 'Matching track colors on the overview map',
         'Video: se turvideo': 'Video: watch trip video',
         'Strava: åpne aktiviteten': 'Strava: open the activity',
         '3D visualisering: åpne Suunto': '3D visualization: open Suunto',

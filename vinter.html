@@ -814,6 +814,7 @@
         <span><i class="nyeste-gpx-prikk gpx-rang-1" aria-hidden="true"></i>Rød: nyeste GPX-spor</span>
         <span><i class="nyeste-gpx-prikk gpx-rang-2" aria-hidden="true"></i>Oransje: nest nyeste</span>
         <span><i class="nyeste-gpx-prikk gpx-rang-3" aria-hidden="true"></i>Gul: tredje nyeste</span>
+        <span>Samme farger på sporene i oversiktskartet</span>
         <span class="ikon-forklaring"><i class="ikon-video" aria-hidden="true"><svg class="yt-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5.25" width="19" height="13.5" rx="4"/><path d="M10 9l5 3-5 3z"/></svg></i>Video: se turvideo</span>
         <span class="ikon-forklaring"><i class="ikon-strava" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 4.8 16.2h4.5l2.7-5.5 2.7 5.5h4.5L12 2Zm6.4 12-3.3 6.6h3.2l1.7-3.3 1.7 3.3H24L20.4 14h-2Z"/></svg></i>Strava: åpne aktiviteten</span>
         <span class="ikon-forklaring"><i class="ikon-suunto" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 22 21H2L12 3Z"/></svg></i>3D visualisering: åpne Suunto</span>
@@ -1721,6 +1722,18 @@
            ========================================================================== */
         const OVERSIKT_SPOR = { color: '#3f6f93', weight: 1.8, opacity: 0.9 };
         const OVERSIKT_HOVER = { color: '#000000', weight: 4, opacity: 1 };
+        // Dei tre nyaste ULIKE turane får same farge på oversiktskartet som GPX-prikken.
+        // Rangeringa kjem frå vinter_topper.json ved kvar innlasting, så ein tur som
+        // fell ut av topp tre får automatisk den originale blå sporfargen tilbake.
+        const GPX_RANG_FARGER = { 1: '#dc2626', 2: '#f97316', 3: '#eab308' };
+        let gpxRangPerTopp = new Map();
+        function oversiktSporStil(topp) {
+            const rang = topp ? gpxRangPerTopp.get(topp.id) : null;
+            return { ...OVERSIKT_SPOR, color: GPX_RANG_FARGER[rang] || OVERSIKT_SPOR.color };
+        }
+        function oversiktStilForLag(lag) {
+            return lag._oversiktStil || OVERSIKT_SPOR;
+        }
         const LINJE = '#000000';
         const veiFilter = ['match', ['get', 'class'], ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor'], true, false];
         const veiBredde = ['interpolate', ['exponential', 1.4], ['zoom'], 6, 0.4, 10, 0.8, 14, 1.6, 18, 4];
@@ -2071,7 +2084,7 @@
             if (!l) return;
             clearTimeout(hoverBackTimer);
             if (hoverId && hoverId !== topp.id && gpxLagMap[hoverId]) {
-                gpxLagMap[hoverId].setStyle(OVERSIKT_SPOR);
+                gpxLagMap[hoverId].setStyle(oversiktStilForLag(gpxLagMap[hoverId]));
             }
             if (!hoverStartView) hoverStartView = { center: map.getCenter(), zoom: map.getZoom() };
             hoverId = topp.id;
@@ -2093,7 +2106,7 @@
             if (!hoverId && !hoverStartView) return;
             if (!aktivToppNavn && !isReseting) {
                 if (hoverId && gpxLagMap[hoverId]) {
-                    gpxLagMap[hoverId].setStyle(OVERSIKT_SPOR);
+                    gpxLagMap[hoverId].setStyle(oversiktStilForLag(gpxLagMap[hoverId]));
                 }
                 if (hoverStartView) map.flyTo(hoverStartView.center, hoverStartView.zoom, { duration: 0.4 });
             }
@@ -2161,8 +2174,8 @@
             if (e.key === 'Escape') lukkAlleDropdowns();
         });
 
-        // Finn dei tre nyaste individuelle GPX-spora (inkludert ekstraspor).
-        // Ein topp får farge etter det nyaste av sine spor som er i topp tre.
+        // Rangér dei tre nyaste ULIKE turane etter nyaste gyldige GPX-dato per tur.
+        // Berre det nyaste sporet på kvar tur får prikk, også når ein tur har mange spor.
         function gpxDatoTall(fil) {
             const m = String(fil || '').match(/(\d{4})_(\d{2})_(\d{2})(?=\D|$)/);
             if (!m) return 0;
@@ -2172,16 +2185,22 @@
         }
 
         function gpxSporRangering(liste) {
-            const alleSpor = liste.flatMap(topp => [topp.fil, ...(Array.isArray(topp.ekstraSpor) ? topp.ekstraSpor.map(s => s.fil) : [])]
-                .map(fil => ({ id: topp.id, fil, dato: gpxDatoTall(fil) })))
-                .filter(s => s.dato > 0);
-            alleSpor.sort((a, b) => b.dato - a.dato || a.fil.localeCompare(b.fil));
+            const nyastePerTur = liste.map(topp => {
+                const filer = [topp.fil, ...(Array.isArray(topp.ekstraSpor) ? topp.ekstraSpor.map(s => s.fil) : [])];
+                const daterte = filer.map(fil => ({ id: topp.id, fil, dato: gpxDatoTall(fil) }))
+                    .filter(spor => spor.dato > 0)
+                    .sort((a, b) => b.dato - a.dato || a.fil.localeCompare(b.fil, 'no'));
+                return daterte[0] || null;
+            }).filter(Boolean);
+            nyastePerTur.sort((a, b) => b.dato - a.dato ||
+                String(a.id).localeCompare(String(b.id), 'no') || a.fil.localeCompare(b.fil, 'no'));
             const rangering = new Map();
-            for (const spor of alleSpor) {
-                const nøkkel = spor.id + ':' + spor.fil;
-                if (rangering.has(nøkkel)) continue;
-                if (rangering.size >= 3) break;
-                rangering.set(nøkkel, rangering.size + 1);
+            const brukteTurar = new Set();
+            for (const spor of nyastePerTur) {
+                if (brukteTurar.has(spor.id)) continue;
+                brukteTurar.add(spor.id);
+                rangering.set(spor.id + ':' + spor.fil, rangering.size + 1);
+                if (rangering.size === 3) break;
             }
             return rangering;
         }
@@ -2359,6 +2378,8 @@
             })
             .then(data => {
                 topper = data.map(sorterNyesteSporSomHovedspor);
+                // Same rangering styrer både prikkane og GPX-linjene på oversiktskartet.
+                gpxRangPerTopp = gpxToppRangering(topper);
                 totalTracksCount = topper.length;
                 oppdaterProgresjon();
 
@@ -2373,13 +2394,14 @@
 
                     const track = new L.GPX('gpx/' + topp.fil, {
                         async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
-                        polyline_options: { color: '#3f6f93', weight: 1.8, opacity: 0.9 }
+                        polyline_options: oversiktSporStil(topp)
                     }).on('error', () => {
                         console.warn(`Kunne ikke laste GPX for ${topp.navn} (${topp.fil})`);
                         registrerLading();
                     }).on('loaded', (e) => {
                         const l = e.target;
                         gpxLagMap[topp.id] = l;
+                        l._oversiktStil = oversiktSporStil(topp);
                         allTracksGroup.addLayer(l);
 
                         registrerLading();
@@ -2594,7 +2616,7 @@
                         });
                         l.on('mouseout', () => {
                             if (!aktivToppNavn && !isReseting && !isTouchDevice && hoverId !== topp.id) {
-                                l.setStyle(OVERSIKT_SPOR);
+                                l.setStyle(oversiktStilForLag(l));
                             }
                         });
                     });
@@ -2652,7 +2674,7 @@
             aktiveEkstraSporLayers = [];
             aktiveMarkører.forEach(m => map.removeLayer(m));
             aktiveMarkører = [];
-            allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle(OVERSIKT_SPOR); });
+            allTracksGroup.eachLayer(l => { if(!map.hasLayer(l)) map.addLayer(l); l.setStyle(oversiktStilForLag(l)); });
             visOversikt(allTracksGroup.getBounds());
             setTimeout(() => isReseting = false, 300);
         };
@@ -2674,6 +2696,7 @@
         'Rød: nyeste GPX-spor': 'Red: newest GPX track',
         'Oransje: nest nyeste': 'Orange: second newest',
         'Gul: tredje nyeste': 'Yellow: third newest',
+        'Samme farger på sporene i oversiktskartet': 'Same colors for tracks on the overview map',
         'Video: se turvideo': 'Video: watch trip video',
         'Strava: åpne aktiviteten': 'Strava: open activity',
         '3D visualisering: åpne Suunto': '3D visualization: open Suunto',
