@@ -550,6 +550,99 @@
     .marker-boks { position: absolute; z-index: 800; border: 1px solid var(--ink, #000); background: rgba(0, 0, 0, .07); pointer-events: none; }
     .marker-hint { position: absolute; z-index: 801; left: 10px; top: 10px; background: #fff; border: 1px solid var(--ink, #000); padding: 4px 10px; font-size: 12px; font-weight: 400; color: var(--ink, #000); pointer-events: none; }
     </style>
+
+    <style>
+        /* Oppdatering frå vinter: tre nyaste GPX-spor og lenkjeikon ved kvart spor. */
+        /* Tre nyeste GPX-spor, beregnet automatisk fra filnavndato. */
+        .nyeste-gpx-prikk {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            min-width: 6px;
+            border-radius: 50%;
+            background: #dc2626;
+            flex: none;
+            pointer-events: none;
+        }
+        .nyeste-gpx-prikk.gpx-rang-1 { background: #dc2626; }
+        .nyeste-gpx-prikk.gpx-rang-2 { background: #f97316; }
+        .nyeste-gpx-prikk.gpx-rang-3 { background: #eab308; }
+        .gpx-prikk-forklaring {
+            width: 100%; max-width: 1100px; box-sizing: border-box;
+            margin: 10px auto 8px; padding: 0 2px;
+            display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px;
+            font-size: 11px; color: var(--muted); font-weight: 400;
+            text-align: left; order: 8;
+        }
+        .gpx-prikk-forklaring > span { display: inline-flex; align-items: center; gap: 5px; }
+        .gpx-prikk-forklaring .nyeste-gpx-prikk { width: 7px; height: 7px; min-width: 7px; }
+        .gpx-prikk-forklaring .ikon-forklaring { gap: 5px; }
+        .gpx-prikk-forklaring .ikon-forklaring i { display: inline-flex; align-items: center; font-style: normal; }
+        .gpx-prikk-forklaring .ikon-forklaring svg { display: block; width: 17px; height: 15px; flex: none; }
+        .gpx-prikk-forklaring .ikon-video { color: #000; }
+        .gpx-prikk-forklaring .ikon-video svg.yt-icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; }
+        .gpx-prikk-forklaring .ikon-video svg.yt-icon path { fill: currentColor; stroke: none; }
+        .gpx-prikk-forklaring .ikon-strava { color: #fc4c02; }
+        .gpx-prikk-forklaring .ikon-strava svg { width: 20px; height: 20px; }
+        .gpx-prikk-forklaring .ikon-suunto { color: var(--suunto-red); }
+        .gpx-prikk-forklaring .ikon-suunto svg { width: 20px; height: 20px; }
+        .control-label .nyeste-gpx-prikk { margin-left: 7px; vertical-align: middle; }
+        .letter-btn .nyeste-gpx-prikk {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+        }
+        /* Vis alle aktuelle GPX-farger ved samme bokstav, uten overlapping. */
+        .letter-btn .gpx-prikk-gruppe {
+            position: absolute; top: 4px; right: 4px;
+            display: inline-flex; align-items: center; gap: 3px;
+            pointer-events: none;
+        }
+        .letter-btn .gpx-prikk-gruppe .nyeste-gpx-prikk {
+            position: static;
+        }
+        .dropdown-item .gpx-prikk-gruppe {
+            display: inline-flex; align-items: center; gap: 4px;
+            flex: none;
+        }
+        .dropdown-item .nyeste-gpx-prikk {
+            align-self: center;
+            margin-left: 2px;
+        }
+
+
+        /* Diskrete video- og Strava-ikon ved rett GPX-spor. */
+        .spor-link-ikon {
+            width: 22px; height: 24px; min-width: 22px;
+            display: inline-flex; align-items: center; justify-content: center;
+            flex-shrink: 0; color: #fc4c02; background: transparent;
+            border: 0; text-decoration: none; border-radius: 3px;
+            opacity: .85; transition: opacity .2s ease, background .2s ease;
+        }
+        .spor-video-ikon { color: #000; }
+        /* Same outlined YouTube SVG as index(5).html. */
+        .spor-video-ikon svg.yt-icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; }
+        .spor-video-ikon svg.yt-icon path { fill: currentColor; stroke: none; }
+        .spor-video-ikon:hover, .spor-video-ikon:focus-visible { background: #f1f1f1; }
+        .spor-link-ikon:hover, .spor-link-ikon:focus-visible {
+            opacity: 1; background: #fff0e8;
+        }
+        .spor-video-ikon:hover, .spor-video-ikon:focus-visible { background: #f1f1f1; }
+        .spor-link-ikon svg { display: block; width: 13px; height: 13px; fill: currentColor; }
+        /* Alle tre lenkeikon bruker same 20 × 20 px-format. */
+        .spor-link-ikon:not(.spor-video-ikon) svg { width: 20px; height: 20px; }
+        .spor-suunto-ikon { color: var(--suunto-red); }
+        .spor-suunto-ikon:hover, .spor-suunto-ikon:focus-visible { background: #fff0ef; }
+        .spor-suunto-ikon svg { width: 20px; height: 20px; }
+
+
+        .control-label { min-width: 0; overflow-wrap: anywhere; }
+        .gpx-prikk-forklaring { order: 8; }
+        .footer-row { order: 9; }
+        .sykkel-tag { order: 0; }
+        /* Ekstraspor sine plasshaldarar bevarer riktig rekkjefølgje under asynkron GPX-lasting. */
+        #video-buttons-container > .ekstra-slot { order: 1; }
+    </style>
 </head>
 <body>
 
@@ -599,6 +692,15 @@
             <span class="tp-label" id="tpLabel">Laster spor …</span>
         </div>
         <div id="video-buttons-container"></div>
+    </div>
+
+    <div class="gpx-prikk-forklaring" aria-label="Farger for nyeste GPX-spor">
+        <span><i class="nyeste-gpx-prikk gpx-rang-1" aria-hidden="true"></i>Rød: nyeste GPX-spor</span>
+        <span><i class="nyeste-gpx-prikk gpx-rang-2" aria-hidden="true"></i>Oransje: nest nyeste</span>
+        <span><i class="nyeste-gpx-prikk gpx-rang-3" aria-hidden="true"></i>Gul: tredje nyeste</span>
+        <span class="ikon-forklaring"><i class="ikon-video" aria-hidden="true"><svg class="yt-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5.25" width="19" height="13.5" rx="4"/><path d="M10 9l5 3-5 3z"/></svg></i>Video: se turvideo</span>
+        <span class="ikon-forklaring"><i class="ikon-strava" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 4.8 16.2h4.5l2.7-5.5 2.7 5.5h4.5L12 2Zm6.4 12-3.3 6.6h3.2l1.7-3.3 1.7 3.3H24L20.4 14h-2Z"/></svg></i>Strava: åpne aktiviteten</span>
+        <span class="ikon-forklaring"><i class="ikon-suunto" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 22 21H2L12 3Z"/></svg></i>3D visualisering: åpne Suunto</span>
     </div>
 
     <div class="footer-row">
@@ -1143,26 +1245,100 @@
             gpxLayer.openPopup();
         }
 
-        function skapKontrollRad(label, badgeFil, startOn, onSporToggle, onProfilToggle, onZoomToggle) {
+        // Strava-lenker uten angitt spor tilhører hovedsporet.
+        // Nye lenker kan knyttes til ekstra spor med "spor": "Spor 2" osv.
+        function finnStravaLenkeForSpor(topp, sporNavn) {
+            const lenker = Array.isArray(topp.video) ? topp.video : [];
+            const match = lenker.find(v => lenkeType(v) === 'strava' &&
+                (v.spor || 'Hovedspor') === sporNavn);
+            if (match?.url) return match.url;
+            if (sporNavn === 'Hovedspor') return topp.strava || null;
+            const ekstra = (topp.ekstraSpor || []).find(es => es.tittel === sporNavn);
+            return ekstra?.strava || null;
+        }
+
+        // Videolenker uten spesifisert spor hører til hovedsporet, også for topper med ett spor.
+        // Suunto og bilde-lenker beholder sine egne knapper.
+        function finnVideoLenkerForSpor(topp, sporNavn) {
+            const lenker = Array.isArray(topp.video) ? topp.video : [];
+            return lenker.filter(v => lenkeType(v) === 'video' &&
+                (v.spor || 'Hovedspor') === sporNavn && v.url);
+        }
+
+        // Suunto-aktivitetar er spor-spesifikke på same vis som Strava.
+        // Eldre data utan spor-felt er alltid knytte til hovudsporet.
+        function finnSuuntoLenkeForSpor(topp, sporNavn) {
+            const lenker = Array.isArray(topp.video) ? topp.video : [];
+            const match = lenker.find(v => lenkeType(v) === 'suunto' &&
+                (v.spor || 'Hovedspor') === sporNavn && v.url);
+            if (match) return match.url;
+            if (sporNavn === 'Hovedspor') return topp.suunto || null;
+            const ekstra = (topp.ekstraSpor || []).find(es => es.tittel === sporNavn);
+            return ekstra?.suunto || null;
+        }
+
+        function skapKontrollRad(label, badgeFil, startOn, onSporToggle, onProfilToggle, onZoomToggle = null, gpxRang = null, stravaUrl = null, videoLenker = [], suuntoUrl = null) {
             const container = document.createElement('div');
             container.className = 'control-row-container';
-            const lb = document.createElement('div'); lb.className = 'control-label'; lb.innerText = label;
-            if (badgeFil) {
-                const badge = lagBadge(badgeFil);
-                if (badge) lb.appendChild(badge);
+            const labelEl = document.createElement('div');
+            labelEl.className = 'control-label';
+            labelEl.innerText = label;
+            if (gpxRang) {
+                labelEl.appendChild(lagNyestePrikk(gpxRang));
+                labelEl.title = ["Nyeste", "Nest nyeste", "Tredje nyeste"][gpxRang - 1] + " GPX-spor";
             }
-            container.appendChild(lb);
+            if (badgeFil) { const bdg = lagBadge(badgeFil); if (bdg) labelEl.appendChild(bdg); }
+            container.appendChild(labelEl);
+
+            // Videoikonet står til venstre for Strava, direkte i spor-raden.
+            videoLenker.forEach((video, index) => {
+                const videoLink = document.createElement('a');
+                videoLink.className = 'spor-link-ikon spor-video-ikon';
+                videoLink.href = video.url;
+                videoLink.target = '_blank';
+                videoLink.rel = 'noopener noreferrer';
+                const tekst = 'Se video for ' + label + (videoLenker.length > 1 ? ' (' + (index + 1) + ')' : '');
+                videoLink.title = tekst;
+                videoLink.setAttribute('aria-label', tekst);
+                videoLink.innerHTML = `<svg class="yt-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5.25" width="19" height="13.5" rx="4"/><path d="M10 9l5 3-5 3z"/></svg>`;
+                container.appendChild(videoLink);
+            });
+
+            if (stravaUrl) {
+                const stravaLink = document.createElement('a');
+                stravaLink.className = 'spor-link-ikon';
+                stravaLink.href = stravaUrl;
+                stravaLink.target = '_blank';
+                stravaLink.rel = 'noopener noreferrer';
+                stravaLink.title = 'Åpne Strava-aktivitet for ' + label;
+                stravaLink.setAttribute('aria-label', 'Åpne Strava-aktivitet for ' + label);
+                stravaLink.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4.8 16.2h4.5l2.7-5.5 2.7 5.5h4.5L12 2Zm6.4 12-3.3 6.6h3.2l1.7-3.3 1.7 3.3H24L20.4 14h-2Z"/></svg>`;
+                container.appendChild(stravaLink);
+            }
+
+            // Suunto 3D-visualisering: til høgre for Strava og før spor-brytaren.
+            if (suuntoUrl) {
+                const suuntoLink = document.createElement('a');
+                suuntoLink.className = 'spor-link-ikon spor-suunto-ikon';
+                suuntoLink.href = suuntoUrl;
+                suuntoLink.target = '_blank';
+                suuntoLink.rel = 'noopener noreferrer';
+                suuntoLink.title = '3D visualisering (Suunto) for ' + label;
+                suuntoLink.setAttribute('aria-label', suuntoLink.title);
+                suuntoLink.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 22 21H2L12 3Z"/></svg>';
+                container.appendChild(suuntoLink);
+            }
 
             const sporGroup = document.createElement('div');
             sporGroup.className = 'toggle-group' + (startOn ? ' active' : '');
             sporGroup.innerHTML = `<span class="toggle-text">Spor</span><div class="switch-track"><div class="switch-thumb"></div></div>`;
-            sporGroup.onclick = () => onSporToggle(sporGroup.classList.toggle('active'));
+            sporGroup.onclick = () => { onSporToggle(sporGroup.classList.toggle('active')); };
             container.appendChild(sporGroup);
 
             const profilGroup = document.createElement('div');
             profilGroup.className = 'toggle-group';
             profilGroup.innerHTML = `<span class="toggle-text">Profil</span><div class="switch-track"><div class="switch-thumb"></div></div>`;
-            profilGroup.onclick = () => onProfilToggle(profilGroup.classList.toggle('active'));
+            profilGroup.onclick = () => { onProfilToggle(profilGroup.classList.toggle('active')); };
             container.appendChild(profilGroup);
 
             if (onZoomToggle) {
@@ -1175,6 +1351,7 @@
 
             return container;
         }
+
 
         function skapBrattskalaKontroll() {
             const container = document.createElement('div');
@@ -1276,10 +1453,105 @@
             }
         });
 
+        // Finn dei tre nyaste individuelle GPX-spora (inkludert ekstraspor).
+        // Ein topp får farge etter det nyaste av sine spor som er i topp tre.
+        function gpxDatoTall(fil) {
+            const m = String(fil || '').match(/(\d{4})_(\d{2})_(\d{2})(?=\D|$)/);
+            if (!m) {
+                const reversed = String(fil || '').match(/(?:^|\D)(\d{2})_(\d{2})_(\d{4})(?=\D|$)/);
+                if (!reversed) return 0;
+                return gpxDatoTall(`${reversed[3]}_${reversed[2]}_${reversed[1]}`);
+            }
+            const dato = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+            if (dato.getUTCFullYear() !== +m[1] || dato.getUTCMonth() !== +m[2] - 1 || dato.getUTCDate() !== +m[3]) return 0;
+            return +m[1] * 10000 + +m[2] * 100 + +m[3];
+        }
+
+        function gpxSporRangering(liste) {
+            const alleSpor = liste.flatMap(topp => [topp.fil, ...(Array.isArray(topp.ekstraSpor) ? topp.ekstraSpor.map(s => s.fil) : [])]
+                .map(fil => ({ id: topp.id || topp.navn.toLowerCase(), fil, dato: gpxDatoTall(fil) })))
+                .filter(s => s.dato > 0);
+            alleSpor.sort((a, b) => b.dato - a.dato || a.fil.localeCompare(b.fil));
+            const rangering = new Map();
+            for (const spor of alleSpor) {
+                const nøkkel = spor.id + ':' + spor.fil;
+                if (rangering.has(nøkkel)) continue;
+                if (rangering.size >= 3) break;
+                rangering.set(nøkkel, rangering.size + 1);
+            }
+            return rangering;
+        }
+
+        function gpxToppRangering(liste) {
+            const rangering = new Map();
+            for (const [nøkkel, rang] of gpxSporRangering(liste)) {
+                const id = nøkkel.slice(0, nøkkel.indexOf(':'));
+                if (!rangering.has(id)) rangering.set(id, rang);
+            }
+            return rangering;
+        }
+
+        function lagNyestePrikk(rang) {
+            const prikk = document.createElement('span');
+            prikk.className = 'nyeste-gpx-prikk gpx-rang-' + rang;
+            prikk.setAttribute('aria-hidden', 'true');
+            return prikk;
+        }
+
+        function gpxToppNokkel(topp) { return topp.id || topp.navn.toLowerCase(); }
+        function gpxRangerForTopp(topp, rangMap) {
+            const prefix = gpxToppNokkel(topp) + ':';
+            return [...rangMap].filter(([key]) => key.startsWith(prefix)).map(([, rang]) => rang).sort((a, b) => a - b);
+        }
+        function lagPrikkGruppe(ranger) {
+            const gruppe = document.createElement('span');
+            gruppe.className = 'gpx-prikk-gruppe';
+            [...new Set(ranger)].sort((a, b) => a - b).forEach(rang => gruppe.appendChild(lagNyestePrikk(rang)));
+            return gruppe;
+        }
+        const rangTekst = ['Nyeste', 'Nest nyeste', 'Tredje nyeste'];
+
+        // Nyeste GPX-dato er alltid hovedspor. Lenker følger GPX-filen ved omnummerering.
+        // Endringen er idempotent: ferdig sorterte JSON-filer forblir uendret.
+        function sorterNyesteSporSomHovedspor(topp) {
+            const ekstra = Array.isArray(topp.ekstraSpor) ? topp.ekstraSpor : [];
+            if (!ekstra.length) return topp;
+            const opprinnelige = [
+                { navn: 'Hovedspor', fil: topp.fil, data: null },
+                ...ekstra.map(s => ({ navn: s.tittel, fil: s.fil, data: s }))
+            ];
+            const sorterte = [...opprinnelige].sort((a, b) =>
+                gpxDatoTall(b.fil) - gpxDatoTall(a.fil) || a.navn.localeCompare(b.navn, 'no'));
+            if (sorterte.every((s, i) => s === opprinnelige[i])) return topp;
+            const nyeNavn = new Map(sorterte.map((s, i) => [s.navn, i ? 'Spor ' + (i + 1) : 'Hovedspor']));
+            const gamleToppLenker = { strava: topp.strava, suunto: topp.suunto };
+            topp.fil = sorterte[0].fil;
+            for (const felt of ['strava', 'suunto']) {
+                if (sorterte[0].data?.[felt]) topp[felt] = sorterte[0].data[felt];
+                else if (sorterte[0].data) delete topp[felt];
+            }
+            topp.ekstraSpor = sorterte.slice(1).map((s, i) => {
+                const data = s.data ? { ...s.data } : { fil: s.fil, ...gamleToppLenker };
+                data.tittel = 'Spor ' + (i + 2);
+                if (!data.farge) data.farge = i === 0 ? '#5c6bc0' : '#008b8b';
+                return data;
+            });
+            (topp.video || []).forEach(v => {
+                const gammelt = v.spor || 'Hovedspor';
+                const nytt = nyeNavn.get(gammelt) || gammelt;
+                if (v.spor || nytt !== 'Hovedspor') v.spor = nytt;
+                if (v.tittel === gammelt) v.tittel = nytt;
+                else if (v.tittel?.endsWith('– ' + gammelt))
+                    v.tittel = v.tittel.slice(0, -gammelt.length) + nytt;
+            });
+            return topp;
+        }
+
         fetch('sommer_topper.json')
             .then(res => res.json())
             .then(data => {
-                topper = data;
+                topper = data.map(sorterNyesteSporSomHovedspor);
+                const rangPerSpor = gpxSporRangering(topper);
                 totalTracksCount = topper.length;
                 oppdaterProgresjon();
 
@@ -1318,6 +1590,11 @@
                     btn.className = 'letter-btn';
                     btn.innerText = bokstav;
                     if (bokstavMap[bokstav].some(e => erSykkel(e.topp))) btn.classList.add('har-sykkel');
+                    const rangerBokstav = [...new Set(bokstavMap[bokstav].flatMap(e => gpxRangerForTopp(e.topp, rangPerSpor)))].sort((a, b) => a - b);
+                    if (rangerBokstav.length) {
+                        btn.appendChild(lagPrikkGruppe(rangerBokstav));
+                        btn.title = rangerBokstav.map(r => rangTekst[r - 1]).join(', ') + ' GPX-spor under bokstaven';
+                    }
 
                     const menu = document.createElement('div');
                     menu.className = 'dropdown-menu';
@@ -1340,6 +1617,11 @@
                         const tekstSpan = document.createElement('span');
                         tekstSpan.innerHTML = formaterNavnMedFarge(topp.navn, entry.ord);
                         item.appendChild(tekstSpan);
+                        const rangerTopp = gpxRangerForTopp(topp, rangPerSpor);
+                        if (rangerTopp.length) {
+                            item.appendChild(lagPrikkGruppe(rangerTopp));
+                            item.title = rangerTopp.map(r => rangTekst[r - 1]).join(', ') + ' GPX-spor';
+                        }
 
                         if (erSykkel(topp)) {
                             const ik = document.createElement('span');
@@ -1490,7 +1772,12 @@
                                 topp.navn, 
                                 topp.fil, true, 
                                 (on) => on ? map.addLayer(l) : map.removeLayer(l), 
-                                (on) => visProfil(l, topp.navn, topp.fil, on)
+                                (on) => visProfil(l, topp.navn, topp.fil, on),
+                                null,
+                                rangPerSpor.get(gpxToppNokkel(topp) + ':' + topp.fil),
+                                finnStravaLenkeForSpor(topp, 'Hovedspor'),
+                                finnVideoLenkerForSpor(topp, 'Hovedspor'),
+                                finnSuuntoLenkeForSpor(topp, 'Hovedspor')
                             ));
 
                             // Legg til kontroll for Brattskala inne på den enkelte topp
@@ -1567,7 +1854,11 @@
                                                     aktivZoomGroup = null;
                                                     map.flyToBounds(l.getBounds(), { padding: [60, 60], duration: 0.6 });
                                                 }
-                                            }
+                                            },
+                                            rangPerSpor.get(gpxToppNokkel(topp) + ':' + ekstra.fil),
+                                            finnStravaLenkeForSpor(topp, ekstra.tittel),
+                                            finnVideoLenkerForSpor(topp, ekstra.tittel),
+                                            finnSuuntoLenkeForSpor(topp, ekstra.tittel)
                                         );
                                         ekstraSlot.appendChild(eRad);
                                     });
@@ -1610,8 +1901,8 @@
                             if (topp.video && topp.video.length > 0) {
                                 topp.video.forEach(v => {
                                     const lt = lenkeType(v);
-                                    // Strava/Suunto vises av egne knapper under når de finnes
-                                    if ((lt === 'strava' && topp.strava) || (lt === 'suunto' && topp.suunto)) return;
+                                    // Video, Strava og Suunto er samla som ikon ved riktig GPX-spor.
+                                    if (lt === 'strava' || lt === 'suunto' || lt === 'video') return;
                                     const vBtn = document.createElement('a');
                                     vBtn.className = 'video-link-btn' + (lt === 'strava' ? ' strava-link-btn' : lt === 'suunto' ? ' suunto-link-btn' : '');
                                     vBtn.href = v.url; vBtn.target = '_blank';
@@ -1623,20 +1914,6 @@
                                     }
                                     videoContainer.appendChild(vBtn);
                                 });
-                            }
-
-                            if (topp.strava) {
-                                const sBtn = document.createElement('a');
-                                sBtn.className = 'video-link-btn strava-link-btn'; sBtn.href = topp.strava; sBtn.target = '_blank';
-                                sBtn.innerHTML = `<span>🏃</span> Strava`;
-                                videoContainer.appendChild(sBtn);
-                            }
-
-                            if (topp.suunto) {
-                                const suuntoBtn = document.createElement('a');
-                                suuntoBtn.className = 'video-link-btn suunto-link-btn'; suuntoBtn.href = topp.suunto; suuntoBtn.target = '_blank';
-                                suuntoBtn.innerHTML = `<span class="suunto-icon">▲</span> 3D visualisering`;
-                                videoContainer.appendChild(suuntoBtn);
                             }
 
                             videoContainer.appendChild(Object.assign(document.createElement('a'), {
@@ -1935,6 +2212,15 @@
         'Brattskala': 'Steepness scale',
         'Skala': 'Scale',
         '3D visualisering': '3D visualization',
+        'Rød: nyeste GPX-spor': 'Red: newest GPX track',
+        'Oransje: nest nyeste': 'Orange: second newest',
+        'Gul: tredje nyeste': 'Yellow: third newest',
+        'Video: se turvideo': 'Video: watch trip video',
+        'Strava: åpne aktiviteten': 'Strava: open the activity',
+        '3D visualisering: åpne Suunto': '3D visualization: open Suunto',
+        'Nyeste GPX-spor': 'Newest GPX track',
+        'Nest nyeste GPX-spor': 'Second newest GPX track',
+        'Tredje nyeste GPX-spor': 'Third newest GPX track',
         'Sykkeltur': 'Bike trip',
         'Nordfjellet - Tromsø geografiske midtpunkt': 'Nordfjellet - geographical midpoint of Tromsø',
 
