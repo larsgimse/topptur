@@ -952,9 +952,9 @@
         });
 
 
-        // Oversiktsvisning: zoomer inn fra «vis alle», selv om noen topper havner utenfor kartet.
+        // Oversiktsvisning: eitt zoomtrinn lenger ut, slik at fleire toppar er synlege.
         // Brukes både ved første innlasting og på «Nullstill kart». Endre tallet for mer/mindre zoom.
-        const OVERSIKT_ZOOM_INN = 2;
+        const OVERSIKT_ZOOM_INN = 1;
         function visOversikt(bounds) {
             const padding = 40;
             map.invalidateSize({ animate: false });
