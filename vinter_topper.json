@@ -168,27 +168,47 @@
   {
     "id": "fagerfjellet",
     "navn": "Fagerfjellet",
-    "fil": "2025_04_22.gpx",
+    "fil": "2026_11_15.gpx",
     "video": [
       {
-        "url": "https://www.instagram.com/p/DI1NoNqsl-F/",
+        "url": "https://www.instagram.com/p/DfyuWRGIENo/",
         "tittel": "Hovedspor",
         "spor": "Hovedspor"
       },
       {
-        "url": "https://www.instagram.com/p/DECfPK3sre3/",
+        "url": "https://www.strava.com/activities/20997488990",
+        "tittel": "Se Strava-aktivitet – Hovedspor",
+        "spor": "Hovedspor"
+      },
+      {
+        "url": "https://maps.suunto.com/move/larsgimse/6af9b252d8fa2637361d8c2a",
+        "tittel": "Se Suunto-aktivitet – Hovedspor",
+        "spor": "Hovedspor"
+      },
+      {
+        "url": "https://www.instagram.com/p/DI1NoNqsl-F/",
         "tittel": "Spor 2",
         "spor": "Spor 2"
+      },
+      {
+        "url": "https://www.instagram.com/p/DECfPK3sre3/",
+        "tittel": "Spor 3",
+        "spor": "Spor 3"
       }
     ],
     "ekstraSpor": [
       {
         "tittel": "Spor 2",
-        "fil": "2024_12_23.gpx",
+        "fil": "2025_04_22.gpx",
         "farge": "#5c6bc0"
+      },
+      {
+        "tittel": "Spor 3",
+        "fil": "2024_12_23.gpx",
+        "farge": "#008b8b"
       }
     ],
-    "beskrivelse": "Kommer mer info snart..."
+    "beskrivelse": "Fagerfjellet (871 moh.) ligger rundt 30 minutters kjøring fra Tromsø sentrum og byr på en flott topptur med nydelig utsikt. Fra toppen kan du se Hamperokken mot øst og Ramfjorden mot vest. Terrenget er stort sett slakt og holder seg under 30 grader, men enkelte partier kan være litt brattere. Opp til rundt 400 moh. går turen gjennom mye skog, noe som gjør dette til en fin topp for deg som liker skogskjøring. Parkering er mulig ved skolen eller kiosken. Vurder alltid snø- og skredforholdene før turen, særlig i de brattere partiene."
   },
   {
     "id": "finnlandsfjellet",
