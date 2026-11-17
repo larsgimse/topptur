@@ -152,6 +152,14 @@ nav { position: relative; border-top: 1px solid var(--ink); }  /* ingen z-index 
 .lang svg { width: 17px; height: 17px; flex: none; }
 .lang:hover, .lang:focus-visible { background: var(--map-bg); outline: none; }
 .lang-code { letter-spacing: .04em; }
+
+/* Kompakt beta-lenke under oversiktskartet */
+.beta-overview { display:flex; align-items:center; justify-content:space-between; gap:12px;
+  min-height:36px; padding:8px 12px; border-bottom:1px solid var(--ink);
+  color:var(--ink); text-decoration:none; font-size:14px; line-height:1.35;
+  background:var(--paper); transition:background .2s ease, padding-left .2s ease; }
+.beta-overview:hover, .beta-overview:focus-visible { background:var(--map-bg); padding-left:18px; outline:none; }
+.beta-go { font-size:15px; flex-shrink:0; opacity:.65; }
 </style>
 </head>
 <body>
@@ -166,7 +174,7 @@ nav { position: relative; border-top: 1px solid var(--ink); }  /* ingen z-index 
 <main>
     <button id="langBtn" type="button" class="lang" title="Switch to English" aria-label="Switch to English"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg><span class="lang-code">EN</span></button>
     <svg class="outline" viewBox="0 0 800 1546" aria-hidden="true"><use href="#tromso"/></svg>
-    <h1>Toppturer</h1>
+    <h1>Fjellturer</h1>
     <p class="sub">Vinter og sommer rundt Tromsø</p>
 
     <nav>
@@ -180,7 +188,6 @@ nav { position: relative; border-top: 1px solid var(--ink); }  /* ingen z-index 
             </svg>
             <span class="txt"><span class="name">Toppturer vinter</span><span class="desc">Ski og skredfare</span></span>
         </a>
-        <a href="beta_vinter.html" id="betaBtn" class="beta"><span>Prøv 🧰 GPX-lab</span></a>
         </div>
 
         <a href="sommer.html" class="row summer">
@@ -195,6 +202,7 @@ nav { position: relative; border-top: 1px solid var(--ink); }  /* ingen z-index 
             <svg class="ico tall" viewBox="0 0 800 1546" aria-hidden="true"><use href="#tromso"/></svg>
             <span class="txt"><span class="name">Oversikt turer</span><span class="desc">Alle turene på kartet</span></span>
         </a>
+<a id="betaBtn" class="beta-overview" href="https://larsgimse.github.io/topptur/beta_topptur.html" target="_blank" rel="noopener noreferrer"><span>Fjellturer - vinter &amp; sommer (Beta)</span><span class="beta-go" aria-hidden="true">↗</span></a>
     </nav>
 
     <div class="foot">
@@ -241,6 +249,8 @@ nav { position: relative; border-top: 1px solid var(--ink); }  /* ingen z-index 
         /* --- Felles / navigasjon --- */
         'Toppturer - Oversiktskart': 'Summit trips - Overview map',
         'Toppturer': 'Summit trips',
+        'Fjellturer': 'Mountain hikes',
+        'Fjellturer - vinter & sommer (Beta)': 'Mountain hikes - winter & summer (Beta)',
         'Nullstill': 'Reset',
         'Nullstill kart': 'Reset map',
         'Vinter': 'Winter',
@@ -337,7 +347,6 @@ nav { position: relative; border-top: 1px solid var(--ink); }  /* ingen z-index 
         'Fjellturer rundt Tromsø': 'Mountain hikes around Tromsø',
         'Toppturer rundt Tromsø': 'Summit trips around Tromsø',
         'Toppturer vinter': 'Winter summit trips',
-        'Prøv 🧰 GPX-lab': 'Try 🧰 GPX-lab',
         'Fjellturer sommer': 'Summer mountain hikes',
         'Oversikt turer': 'Trip overview',
         'Sykkelturer:': 'Bike trips:',
@@ -576,7 +585,7 @@ nav { position: relative; border-top: 1px solid var(--ink); }  /* ingen z-index 
     (function () {
         var b = document.getElementById('betaBtn');
         if (b) b.addEventListener('click', function () {
-            try { b.href = 'beta_vinter.html?lang=' + (window.__lang ? window.__lang() : 'no'); } catch (e) {}
+            try { b.href = 'https://larsgimse.github.io/topptur/beta_topptur.html?lang=' + (window.__lang ? window.__lang() : 'no'); } catch (e) {}
         });
     })();
 </script>
