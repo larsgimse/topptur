@@ -1852,13 +1852,14 @@ h1 .h-sun {flex:none;width:35px;height:35px;fill:none;stroke:#d59b28;stroke-widt
             kartModus = modus;
             if (modus === 'oversikt') {
                 map.removeLayer(norgeLayer); map.removeLayer(osmLayer);
-                map.addLayer(oversiktGlLayer);
+                map.addLayer(oversiktsReserveAktiv ? reserveOversiktskart : oversiktGlLayer);
                 if (topoAktiv) map.addLayer(topoMap);
                 topoBtn.style.display = '';
                 mapSelectEl.style.display = 'none';
                 document.getElementById('map').classList.add('oversikt-modus');
             } else {
                 map.removeLayer(oversiktGlLayer);
+                if (typeof reserveOversiktskart !== 'undefined') map.removeLayer(reserveOversiktskart);
                 map.removeLayer(topoMap);
                 if (mapSelectEl.value === 'osm') map.addLayer(osmLayer); else map.addLayer(norgeLayer);
                 topoBtn.style.display = 'none';
@@ -1870,6 +1871,26 @@ h1 .h-sun {flex:none;width:35px;height:35px;fill:none;stroke:#d59b28;stroke-widt
             if (typeof skredLag !== 'undefined') Object.values(skredLag).forEach(l => { if (map.hasLayer(l)) l.bringToFront(); });
         }
 
+        // WebGL kan miste grafikkonteksten ved første innlasting på enkelte enheter.
+        // Bytt automatisk til ordinære kartfliser i stedet for at kartet blir hvitt.
+        const reserveOversiktskart = L.tileLayer(
+            'https://cache.kartverket.no/v1/wmts/1.0.0/topograatone/default/webmercator/{z}/{y}/{x}.png',
+            {attribution: '© Kartverket', maxZoom: 20, maxNativeZoom: 18}
+        );
+        let oversiktsReserveAktiv = false;
+        function brukReserveOversiktskart() {
+            if (oversiktsReserveAktiv) return;
+            oversiktsReserveAktiv = true;
+            try { map.removeLayer(oversiktGlLayer); } catch (_) {}
+            if (kartModus === 'oversikt' && !map.hasLayer(reserveOversiktskart)) {
+                reserveOversiktskart.addTo(map);
+            }
+            console.warn('Vektorkartet vart utilgjengeleg. Byter til Kartverket.');
+        }
+        if (typeof oversiktGlLayer.on === 'function') {
+            oversiktGlLayer.on('error', brukReserveOversiktskart);
+        }
+        document.getElementById('map').addEventListener('webglcontextlost', brukReserveOversiktskart, true);
         settKartModus('oversikt');
 
         // Håndtere toggling av Legende / Bratthetsforklaring via Switch
@@ -2443,21 +2464,48 @@ h1 .h-sun {flex:none;width:35px;height:35px;fill:none;stroke:#d59b28;stroke-widt
                 topperListEl.innerHTML = '';
                 topper.forEach(t => { const o = document.createElement('option'); o.value = t.navn; topperListEl.appendChild(o); });
 
-                topper.forEach(topp => {
-
+                // Last GPX i kontrollerte grupper, ikkje fleire hundre samtidig.
+                // Det hindrar minne-/nettverkstoppar som kan gi kvit side.
+                const ventandeSpor = topper.slice();
+                let aktiveLastingar = 0;
+                const MAKS_SAMTIDIGE_SPOR = 4;
+                function nesteSpor() {
+                    while (aktiveLastingar < MAKS_SAMTIDIGE_SPOR && ventandeSpor.length) {
+                        const topp = ventandeSpor.shift();
+                        aktiveLastingar++;
+                        lastEittSpor(topp);
+                    }
+                }
+                function lastEittSpor(topp) {
+                    let ferdig = false;
+                    const avslutt = () => {
+                        if (ferdig) return false;
+                        ferdig = true;
+                        clearTimeout(tidsgrense);
+                        aktiveLastingar--;
+                        registrerLading();
+                        nesteSpor();
+                        return true;
+                    };
+                    // Ei manglande GPX-fil skal aldri stoppe resten av innlastinga.
+                    const tidsgrense = setTimeout(() => {
+                        console.warn('GPX svara ikkje:', topp.fil);
+                        avslutt();
+                    }, 20000);
                     const track = new L.GPX('gpx/' + topp.fil, {
                         async: true, marker_options: { startIconUrl:null, endIconUrl:null, shadowUrl:null },
                         polyline_options: oversiktSporStil(topp)
                     }).on('error', () => {
                         console.warn(`Kunne ikke laste GPX for ${topp.navn} (${topp.fil})`);
-                        registrerLading();
+                        avslutt();
                     }).on('loaded', (e) => {
+                        if (ferdig) return;
                         const l = e.target;
                         gpxLagMap[topp.id] = l;
                         l._oversiktStil = oversiktSporStil(topp);
                         allTracksGroup.addLayer(l);
 
-                        registrerLading();
+                        avslutt();
 
                         const aktiver = () => {
                             isReseting = false; aktivToppNavn = topp.navn; aktivToppId = topp.id; settKartModus('topp'); galleriForespørsel++;
@@ -2673,9 +2721,10 @@ h1 .h-sun {flex:none;width:35px;height:35px;fill:none;stroke:#d59b28;stroke-widt
                             }
                         });
                     });
-                });
+                }
+                nesteSpor();
             })
-            .catch(err => console.error("Kunne ikke laste vinter_topper.json:", err) || oppdaterProgresjon(true));
+            .catch(err => console.error("Kunne ikke laste turdata:", err) || oppdaterProgresjon(true));
 
         // Lenkeknapper, Brattskala og lukket GPX-boks ligger to og to; er antallet oddetall får den siste full bredde
         function justerLenkeKnapper() {
