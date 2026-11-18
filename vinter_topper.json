@@ -285,6 +285,31 @@
     "beskrivelse": "Kommer mer info snart..."
   },
   {
+    "id": "kenny-finnlandsfjellet",
+    "navn": "Kenny - Finnlandsfjellet",
+    "fil": "2026_11_17.gpx",
+    "mediaMappe": "2026_11_17",
+    "mediaJson": "2026_11_17.json",
+    "video": [
+      {
+        "url": "https://www.instagram.com/p/Df33qywKI3M/",
+        "tittel": "Hovedspor",
+        "spor": "Hovedspor"
+      },
+      {
+        "url": "https://www.strava.com/activities/21024278884",
+        "tittel": "Se Strava-aktivitet – Hovedspor",
+        "spor": "Hovedspor"
+      },
+      {
+        "url": "https://maps.suunto.com/move/larsgimse/6afc95b921e7fd49d0cf5703",
+        "tittel": "Se Suunto-aktivitet – Hovedspor",
+        "spor": "Hovedspor"
+      }
+    ],
+    "beskrivelse": "Kommer mer info snart..."
+  },
+  {
     "id": "klemmartindan",
     "navn": "Klemmartindan",
     "fil": "2024_04_28.gpx",
