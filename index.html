@@ -160,6 +160,19 @@ nav { position: relative; border-top: 1px solid var(--ink); }  /* ingen z-index 
   background:var(--paper); transition:background .2s ease, padding-left .2s ease; }
 .beta-overview:hover, .beta-overview:focus-visible { background:var(--map-bg); padding-left:18px; outline:none; }
 .beta-go { font-size:15px; flex-shrink:0; opacity:.65; }
+
+/* Små, dynamiske prikker for de tre nyeste GPX-sporene. */
+.row .name { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.recent-dots { position:relative; z-index:3; display:flex; flex-wrap:wrap; align-items:center; gap: 6px 16px; padding: 0 4px 12px 68px; margin-top:-9px; background:var(--paper); border-bottom:1px solid var(--ink); }
+.recent-dots:not(:empty) { margin-top:0; padding-top:7px; }
+.recent-dots a { display:inline-flex; align-items:center; gap:5px; color:var(--muted); font-size:12px; text-decoration:none; white-space:nowrap; }
+.recent-dots a:hover, .recent-dots a:focus-visible { color:var(--ink); text-decoration:underline; }
+@media(max-width:560px){ .recent-dots { padding-left:58px; gap:6px 10px; } }
+.recent-dots:empty { display: none; }
+.recent-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex: none; }
+.recent-dot.rank-0 { background: #d93636; }
+.recent-dot.rank-1 { background: #ed891f; }
+.recent-dot.rank-2 { background: #e5be19; }
 </style>
 </head>
 <body>
@@ -188,6 +201,7 @@ nav { position: relative; border-top: 1px solid var(--ink); }  /* ingen z-index 
             </svg>
             <span class="txt"><span class="name">Toppturer vinter</span><span class="desc">Ski og skredfare</span></span>
         </a>
+        <div class="recent-dots" data-season="winter"></div>
         </div>
 
         <a href="sommer.html" class="row summer">
@@ -197,12 +211,15 @@ nav { position: relative; border-top: 1px solid var(--ink); }  /* ingen z-index 
             </svg>
             <span class="txt"><span class="name">Fjellturer sommer</span><span class="desc">Stier og utsikt</span></span>
         </a>
+        <div class="recent-dots" data-season="summer"></div>
 
         <a href="oversikt.html" class="row map">
             <svg class="ico tall" viewBox="0 0 800 1546" aria-hidden="true"><use href="#tromso"/></svg>
             <span class="txt"><span class="name">Oversikt turer</span><span class="desc">Alle turene på kartet</span></span>
         </a>
-<a id="betaBtn" class="beta-overview" href="https://larsgimse.github.io/topptur/beta_topptur.html" target="_blank" rel="noopener noreferrer"><span>Fjellturer - vinter &amp; sommer (Beta)</span><span class="beta-go" aria-hidden="true">↗</span></a>
+        <div class="recent-dots" data-season="map"></div>
+<a id="betaBtn" class="beta-overview" href="https://larsgimse.github.io/topptur/beta_topptur.html" target="_blank" rel="noopener noreferrer"><span>Fjellturer - vinter &amp; sommer (Beta) </span><span class="beta-go" aria-hidden="true">↗</span></a>
+        <div class="recent-dots" data-season="beta"></div>
     </nav>
 
     <div class="foot">
@@ -588,6 +605,65 @@ nav { position: relative; border-top: 1px solid var(--ink); }  /* ingen z-index 
             try { b.href = 'https://larsgimse.github.io/topptur/beta_topptur.html?lang=' + (window.__lang ? window.__lang() : 'no'); } catch (e) {}
         });
     })();
+</script>
+<script>
+(function () {
+    const base = 'https://larsgimse.github.io/topptur/';
+    const sources = { winter: 'vinter_topper.json', summer: 'sommer_topper.json' };
+    const results = {};
+    function collect(data) {
+        const found = new Map();
+        for (const topp of (Array.isArray(data) ? data : [])) {
+            if (!topp.id && !topp.navn) continue;
+            for (const spor of [topp, ...(Array.isArray(topp.ekstraSpor) ? topp.ekstraSpor : [])]) {
+                const file = spor.fil;
+                if (typeof file !== 'string') continue;
+                const m = file.match(/(20\d{2})[_-](\d{2})[_-](\d{2}).*\.gpx$/i);
+                if (!m) continue;
+                const date = `${m[1]}-${m[2]}-${m[3]}`;
+                if (Number.isNaN(Date.parse(date))) continue;
+                const key = file.toLowerCase();
+                if (!found.has(key)) found.set(key, {file, date, id:topp.id || topp.navn, name:topp.navn || topp.id});
+            }
+        }
+        return [...found.values()].sort((a,b) => b.date.localeCompare(a.date) || a.file.localeCompare(b.file));
+    }
+    function render() {
+        const en = document.documentElement.lang === 'en';
+        const labels = en ? ['Newest track','Second newest track','Third newest track'] : ['Nyeste spor','Nest nyeste spor','Tredje nyeste spor'];
+        const combined = [...(results.winter || []).map(x => ({...x, season:'winter'})), ...(results.summer || []).map(x => ({...x, season:'summer'}))].sort((a,b) => b.date.localeCompare(a.date) || a.file.localeCompare(b.file)).slice(0,3);
+        document.querySelectorAll('.recent-dots').forEach(el => {
+            const season = el.dataset.season;
+            const items = season === 'map' || season === 'beta' ? (results.winter && results.summer ? combined : []) : (results[season] || []).slice(0,3);
+            el.replaceChildren();
+            items.forEach((item,i) => {
+                const dot = document.createElement('span');
+                dot.className = 'recent-dot rank-' + i;
+                dot.setAttribute('aria-hidden','true');
+                const link = document.createElement('a');
+                const targetSeason = item.season || season;
+                const url = new URL(targetSeason === 'winter' ? 'vinter.html' : 'sommer.html', base);
+                url.searchParams.set('fjell', item.id);
+                url.searchParams.set('lang', en ? 'en' : 'no');
+                link.href = url.href;
+                const date = item.date.split('-').reverse().join('.');
+                link.title = `${labels[i]}: ${item.name} – ${date}`;
+                link.setAttribute('aria-label', link.title);
+                link.append(dot, document.createTextNode(date));
+                el.append(link);
+            });
+        });
+    }
+    document.addEventListener('langchange', render);
+    Object.entries(sources).forEach(async ([season,file]) => {
+        try {
+            const response = await fetch(new URL(file,base), {cache:'no-cache'});
+            if (!response.ok) throw new Error(response.status);
+            results[season] = collect(await response.json());
+            render();
+        } catch (err) { console.warn('GPX status:',season,err); }
+    });
+})();
 </script>
 </body>
 </html>
