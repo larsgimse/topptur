@@ -625,7 +625,8 @@ nav { position: relative; border-top: 1px solid var(--ink); }  /* ingen z-index 
                 if (!m) continue;
                 const date = `${m[1]}-${m[2]}-${m[3]}`;
                 if (Number.isNaN(Date.parse(date))) continue;
-                const key = file.toLowerCase();
+                // Samme topp og dato er én tur, også når den har flere GPX-delspor.
+                const key = JSON.stringify([String(topp.id || topp.navn).toLowerCase(), date]);
                 if (!found.has(key)) found.set(key, {file, date, id:topp.id || topp.navn, name:topp.navn || topp.id});
             }
         }
