@@ -52,45 +52,65 @@
   {
     "id": "akselkollen-finnlandsfjellet",
     "navn": "Akselkollen - Finnlandsfjellet",
-    "fil": "2026_11_23.gpx",
+    "fil": "2026_11_24.gpx",
     "video": [
       {
-        "url": "https://www.instagram.com/p/DgGWxHXoB2n/",
+        "url": "https://www.instagram.com/p/DgI9VK5ovcU/",
         "tittel": "Hovedspor",
         "spor": "Hovedspor"
       },
       {
-        "url": "https://www.strava.com/activities/21097000394",
+        "url": "https://www.strava.com/activities/21110306851",
         "tittel": "Se Strava-aktivitet – Hovedspor",
         "spor": "Hovedspor"
       },
       {
-        "url": "https://maps.suunto.com/move/larsgimse/6b0473a863beab0cc961ee3f",
+        "url": "https://maps.suunto.com/move/larsgimse/6b05d231c580ba6e67cce846",
         "tittel": "Se Suunto-aktivitet – Hovedspor",
         "spor": "Hovedspor"
       },
       {
-        "url": "https://www.instagram.com/reel/DRIkwhMiHvg/",
+        "url": "https://www.instagram.com/p/DgGWxHXoB2n/",
         "tittel": "Spor 2",
         "spor": "Spor 2"
       },
       {
-        "url": "https://www.strava.com/activities/16475633460",
+        "url": "https://www.strava.com/activities/21097000394",
         "tittel": "Se Strava-aktivitet – Spor 2",
         "spor": "Spor 2"
       },
       {
-        "url": "https://maps.suunto.com/move/larsgimse/6919d1a4b1d813421b337193",
+        "url": "https://maps.suunto.com/move/larsgimse/6b0473a863beab0cc961ee3f",
         "tittel": "Se Suunto-aktivitet – Spor 2",
         "spor": "Spor 2"
+      },
+      {
+        "url": "https://www.instagram.com/reel/DRIkwhMiHvg/",
+        "tittel": "Spor 3",
+        "spor": "Spor 3"
+      },
+      {
+        "url": "https://www.strava.com/activities/16475633460",
+        "tittel": "Se Strava-aktivitet – Spor 3",
+        "spor": "Spor 3"
+      },
+      {
+        "url": "https://maps.suunto.com/move/larsgimse/6919d1a4b1d813421b337193",
+        "tittel": "Se Suunto-aktivitet – Spor 3",
+        "spor": "Spor 3"
       }
     ],
     "beskrivelse": "Kommer mer info snart...",
     "ekstraSpor": [
       {
-        "fil": "2025_11_16.gpx",
+        "fil": "2026_11_23.gpx",
         "tittel": "Spor 2",
         "farge": "#5c6bc0"
+      },
+      {
+        "fil": "2025_11_16.gpx",
+        "tittel": "Spor 3",
+        "farge": "#008b8b"
       }
     ]
   },
